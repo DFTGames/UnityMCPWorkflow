@@ -22,7 +22,11 @@ namespace YASS.Gameplay
         float _speed;
         float _bulletSpeed;
 
+        public bool BlocksPiercing => false;
         public bool IsAlive { get; private set; }
+
+        /// <summary>The wave this hazard belongs to, or -1 (boss launches, test spawns). Set by the runner after Init.</summary>
+        public int WaveIndex { get; internal set; } = -1;
         public EnemyDefinition Definition => definition;
         public int Points => PointValues.Enemy(definition.Size);
         public float ContactDamage => definition.ContactDamage;
@@ -39,6 +43,7 @@ namespace YASS.Gameplay
         {
             _runner = runner;
             _release = release;
+            WaveIndex = -1;
             _health = new Health(definition.MaxHealth);
             _start = position.ToNumerics();
             _age = 0f;

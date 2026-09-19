@@ -12,6 +12,7 @@ namespace YASS.Core
     public sealed class GameSession
     {
         readonly PlayerShip[] _players;
+        readonly float[] _bossContactCooldown;
 
         bool _bossFightActive;
         bool _damagedDuringBossFight;
@@ -38,6 +39,7 @@ namespace YASS.Core
             if (playerCount < 1 || playerCount > 4) throw new ArgumentOutOfRangeException(nameof(playerCount));
 
             _players = new PlayerShip[playerCount];
+            _bossContactCooldown = new float[playerCount];
             for (var i = 0; i < playerCount; i++)
                 _players[i] = new PlayerShip(i, settings);
 
@@ -62,7 +64,10 @@ namespace YASS.Core
             Score.Tick(deltaTime);
             Drops.Tick(deltaTime);
             for (var i = 0; i < _players.Length; i++)
+            {
                 _players[i].Tick(deltaTime, commands[i], shots);
+                if (_bossContactCooldown[i] > 0f) _bossContactCooldown[i] = Math.Max(0f, _bossContactCooldown[i] - deltaTime);
+            }
         }
 
         /// <summary>
@@ -97,11 +102,17 @@ namespace YASS.Core
         /// <summary>
         /// A player's ship collided with an enemy body. If the enemy is destroyed it counts as that player's kill
         /// and <paramref name="enemyBasePoints"/> are awarded, unless the collision itself ended the player's game.
+        /// Boss collisions report every physics step while overlapping, so after one lands the player ignores boss
+        /// contact for <see cref="GameTuning.BossContactCooldownSeconds"/>.
         /// </summary>
         public RamResult ReportPlayerRam(int playerIndex, bool isBoss, float contactDamage, int enemyBasePoints)
         {
             var player = _players[CheckIndex(playerIndex)];
+            if (isBoss && _bossContactCooldown[playerIndex] > 0f) return new RamResult(HitOutcome.Ignored, false);
+
             var result = player.Ram(isBoss, contactDamage);
+            if (isBoss && result.Outcome != HitOutcome.Ignored)
+                _bossContactCooldown[playerIndex] = GameTuning.BossContactCooldownSeconds;
             OnPlayerHit(result.Outcome);
             if (result.EnemyDestroyed && !player.IsGameOver) Score.RegisterKill(enemyBasePoints);
             return result;

@@ -8,6 +8,8 @@ namespace YASS.Gameplay
     [RequireComponent(typeof(Rigidbody2D))]
     public sealed class MeteorView : MonoBehaviour, IDamageable
     {
+        const float RightDespawnMargin = 6f;
+
         [SerializeField] Rigidbody2D body;
         [SerializeField] SpriteRenderer spriteRenderer;
 
@@ -16,7 +18,11 @@ namespace YASS.Gameplay
         Health _health;
         float _spin;
 
+        public bool BlocksPiercing => false;
         public bool IsAlive { get; private set; }
+
+        /// <summary>The wave this hazard belongs to, or -1 (boss launches, test spawns). Set by the runner after Init.</summary>
+        public int WaveIndex { get; internal set; } = -1;
         public MeteorDefinition Definition { get; private set; }
         public Vector2 Velocity { get; private set; }
         public Vector2 Position => body.position;
@@ -37,6 +43,7 @@ namespace YASS.Gameplay
         {
             _runner = runner;
             _release = release;
+            WaveIndex = -1;
             Definition = definition;
             Velocity = velocity;
             _spin = spinDegrees;
@@ -61,7 +68,9 @@ namespace YASS.Gameplay
 
             var field = _runner.Playfield;
             const float margin = GameRunner.DespawnMargin;
-            if (next.x < field.MinX - margin || next.y < field.MinY - margin || next.y > field.MaxY + margin)
+            // The right edge gets extra room because meteors spawn just beyond it.
+            if (next.x < field.MinX - margin || next.x > field.MaxX + RightDespawnMargin ||
+                next.y < field.MinY - margin || next.y > field.MaxY + margin)
                 Despawn();
         }
 

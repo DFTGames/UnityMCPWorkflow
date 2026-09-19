@@ -12,13 +12,13 @@ using Object = UnityEngine.Object;
 namespace YASS.Tests.Gameplay
 {
     /// <summary>
-    /// Integration tests for the Prototype scene: real physics, prefabs and the GameRunner wiring.
+    /// Integration tests for the Level01 scene: real physics, prefabs and the GameRunner wiring.
     /// The rules themselves are covered by the EditMode tests; these check that the Unity layer reports
     /// the right events. Prefabs are loaded through the AssetDatabase, so these tests run in the Editor only.
     /// </summary>
-    public class PrototypeSceneTests
+    public class Level01SceneTests
     {
-        const string SceneName = "Prototype";
+        const string SceneName = "Level01";
         const string PrefabDir = "Assets/_Game/Prefabs/";
         const string MeteorDir = "Assets/_Game/ScriptableObjects/Meteors/";
 
@@ -64,9 +64,13 @@ namespace YASS.Tests.Gameplay
         }
 
         [UnityTest]
-        public IEnumerator Spawner_BringsHazardsOntoTheField()
+        public IEnumerator FirstWave_BringsFiveDartsAfterTheOpeningDelay()
         {
-            yield return WaitUntil(() => CountLiveHazards() > 0, 6f, "a hazard to spawn");
+            Assert.That(_runner.Director.CurrentWave, Is.EqualTo(-1));
+
+            yield return WaitUntil(() => _runner.Director.CurrentWave == 0, 4f, "the first wave to start");
+            yield return WaitUntil(() => CountLiveHazards() == 5, 4f, "the five Darts of wave 1");
+            Assert.That(_runner.Director.Outstanding(0), Is.EqualTo(5));
         }
 
         [UnityTest]
@@ -243,7 +247,118 @@ namespace YASS.Tests.Gameplay
             Assert.That(ShipPosition.y, Is.EqualTo(_runner.Playfield.MinY + 0.5f).Within(0.01f));
         }
 
+        [UnityTest]
+        public IEnumerator Boss_ClosedCoreArmourAbsorbsShots()
+        {
+            _runner.SpawningEnabled = false;
+            _runner.SetCommandOverride(0, Idle);
+            _runner.StartBossFightNow();
+            var boss = _runner.Boss;
+            var core = boss.GetComponentInChildren<BossCoreView>();
+
+            // Aim above the core, at the upper armour, while the boss flies in: during the entry it only moves
+            // horizontally, so aimed shots land (once it drifts vertically they would trail behind it).
+            while (!boss.Brain.IsCoreOpen && boss.ArmourHits == 0)
+            {
+                AimAt(core.transform.position + Vector3.up * 1.0f);
+                yield return null;
+            }
+
+            Assert.That(boss.ArmourHits, Is.GreaterThan(0), "shots reached the armour");
+            Assert.That(boss.Brain.Health.Current, Is.EqualTo(boss.Brain.Health.Max));
+        }
+
+        [UnityTest]
+        public IEnumerator Boss_OpenCoreTakesDamageFromShots()
+        {
+            _runner.SpawningEnabled = false;
+            _runner.StartBossFightNow();
+            var boss = _runner.Boss;
+            var core = boss.GetComponentInChildren<BossCoreView>();
+            yield return WaitUntil(() => boss.Brain.IsCoreOpen, 6f, "the core to open");
+
+            for (var t = 0f; t < 2f && boss.Brain.Health.Current >= boss.Brain.Health.Max; t += Time.deltaTime)
+            {
+                AimAt(core.transform.position);
+                yield return null;
+            }
+
+            Assert.That(boss.Brain.Health.Current, Is.LessThan(boss.Brain.Health.Max));
+        }
+
+        [UnityTest]
+        public IEnumerator Boss_LaunchesDartsThatBelongToNoWave()
+        {
+            _runner.SpawningEnabled = false;
+            _runner.SetCommandOverride(0, Idle);
+            _runner.StartBossFightNow();
+
+            yield return WaitUntil(() => CountLiveEnemies() >= 3, 1f, "the boss to launch three Darts");
+            foreach (var enemy in Object.FindObjectsByType<EnemyView>())
+                if (enemy.IsAlive) Assert.That(enemy.WaveIndex, Is.EqualTo(-1));
+        }
+
+        [UnityTest]
+        public IEnumerator Boss_Defeat_AwardsExactScoreAndClearsTheSector()
+        {
+            _runner.SpawningEnabled = false;
+            // Park at the top edge, out of the path of the launched Darts.
+            _runner.SetCommandOverride(0, new PlayerCommand(NVector2.UnitY, false, NVector2.UnitX));
+            _runner.StartBossFightNow();
+            var boss = _runner.Boss;
+            yield return WaitUntil(() => boss.Brain.IsCoreOpen, 6f, "the core to open");
+            _runner.SetCommandOverride(0, Idle);
+            Assert.That(Ship.Vitals.Health, Is.EqualTo(100f), "precondition: no damage taken during the fight");
+            var before = Session.Score.Score;
+
+            boss.TakeCoreHit(boss.Brain.Health.Max, 0);
+            yield return new WaitForFixedUpdate();
+
+            Assert.That(boss.IsAlive, Is.False);
+            Assert.That(_runner.IsBossDefeated, Is.True);
+            Assert.That(Session.Score.Score - before, Is.EqualTo(15000 + 7500)); // (10,000 + 5,000 no-damage) x Pilot 1.5
+            var drops = Object.FindObjectsByType<PickupView>();
+            Assert.That(drops, Has.Some.Matches<PickupView>(p => p.IsActive && p.Type == PickupType.WeaponUpgrade));
+            Assert.That(drops, Has.Some.Matches<PickupView>(p => p.IsActive && p.Type == PickupType.Health));
+
+            yield return WaitUntil(() => _runner.IsSectorClear, 4f, "the sector to be cleared");
+            Assert.That(_runner.IsRunning, Is.False);
+            Assert.That(Session.Score.Score - before, Is.EqualTo(15000 + 7500 + 3000)); // + level clear 2,000 x 1.5
+        }
+
+        [UnityTest]
+        public IEnumerator AfterBossDefeat_ThePlayerCannotBeHurt()
+        {
+            _runner.SpawningEnabled = false;
+            _runner.SetCommandOverride(0, Idle);
+            _runner.StartBossFightNow();
+            var boss = _runner.Boss;
+            yield return WaitUntil(() => boss.Brain.IsCoreOpen, 6f, "the core to open");
+            boss.TakeCoreHit(boss.Brain.Health.Max, 0);
+            var health = Ship.Vitals.Health;
+
+            _runner.FireEnemyProjectile(ShipPosition + new Vector2(2f, 0f), 8f, 10f);
+            SpawnEnemy("Dart", ShipPosition + new Vector2(2f, 0f));
+            yield return new WaitForSeconds(1f);
+
+            Assert.That(Ship.Vitals.Health, Is.EqualTo(health));
+            yield return WaitUntil(() => _runner.IsSectorClear, 4f, "the sector to be cleared");
+        }
+
         // ---- Helpers ----
+
+        void AimAt(Vector3 target)
+        {
+            var aim = ((Vector2)target - ShipPosition).ToNumerics();
+            _runner.SetCommandOverride(0, new PlayerCommand(NVector2.Zero, true, aim));
+        }
+
+        static int CountLiveEnemies()
+        {
+            var count = 0;
+            foreach (var enemy in Object.FindObjectsByType<EnemyView>()) if (enemy.IsAlive) count++;
+            return count;
+        }
 
         EnemyView SpawnEnemy(string prefabName, Vector2 position)
         {

@@ -54,7 +54,7 @@ namespace YASS.Gameplay
             if (!IsActive || !other.TryGetComponent(out IDamageable target) || !target.IsAlive) return;
 
             target.TakeHit(Damage, OwnerIndex);
-            if (!Piercing) Release();
+            if (!Piercing || target.BlocksPiercing) Release();
         }
 
         /// <summary>Returns the projectile to its pool. Safe to call more than once.</summary>

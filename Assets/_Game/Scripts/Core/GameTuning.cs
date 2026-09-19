@@ -21,6 +21,9 @@ namespace YASS.Core
 
         public const float GamepadAimDeadZone = 0.3f;
 
+        /// <summary>Provisional: after a boss collision hurts a player, further boss contact is ignored this long.</summary>
+        public const float BossContactCooldownSeconds = 1f;
+
         /// <summary>Provisional: the GDD lists this amount as still to be tuned.</summary>
         public const float HealthPickupAmount = 25f;
     }

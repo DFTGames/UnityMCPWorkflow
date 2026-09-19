@@ -17,8 +17,12 @@ updated: 2026-09-19
 Playable `Prototype` scene: ship movement and twin-stick or mouse firing, Dart and Weaver enemies, splitting and solid meteors, pickups, HUD and game over. A temporary spawner picks random hazards every 1.2 s (divided by the difficulty's enemy count multiplier) with weights Dart 35, Weaver 25, large splitting meteor 25, solid meteor 15; scripted waves, bosses, touch controls and final art come later.
 
 ## Milestones
-| Milestone | Goal | Target date | Status |
-| --------- | ---- | ----------- | ------ |
-|           |      |             |        |
+| Milestone | Goal | Status |
+| --------- | ---- | ------ |
+| Prototype | Playable prototype with AI art and engine particles | Done |
+| M1: Level 1 slice | Wave system, Level 1 waves, Hive Carrier, level-clear flow | In progress |
+| M2: Game flow | Title, difficulty select, pause, settings, credits, game over and sector clear screens | Planned |
+| M3: Game feel | Visual effects, sound effects, music, audio mixer | Planned |
+| Later | Touch controls, UGS leaderboards, levels 2 to 8, Endless mode | Not started |
 
 Back to [[00 GDD Home]]

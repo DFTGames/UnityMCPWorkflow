@@ -22,6 +22,7 @@ Each page has a `status` property: `draft` (being written), `review` (ready for 
 - [[Controls]]
 - [[Progression and Economy]]
 - [[Scoring]]
+- [[Wave System]]
 - [[Difficulty and Balancing]]
 
 ## 3. World and Narrative
@@ -31,6 +32,8 @@ Each page has a `status` property: `draft` (being written), `review` (ready for 
 
 ## 4. Content
 - [[Levels]]
+  - [[Level 01 - Magenta Nebula]]
+  - [[Hive Carrier]]
 - [[Enemies and Hazards]]
 - [[Items and Pickups]]
 

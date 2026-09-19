@@ -39,6 +39,9 @@ Art and audio are new, created with AI generation tools (Unity AI asset generati
 - The playfield has a **fixed visible height**; the horizontal view widens or narrows with the aspect ratio (supported from 4:3 to 21:9, including 19.5:9 phones).
 - The HUD is anchored inside the device safe area (notches, rounded corners).
 
+## Visual effects
+Small and large explosions; a multi-stage explosion for boss deaths; a white hit flash on damaged enemies; muzzle flashes; a sparkle when collecting a pickup; a ripple when the shield absorbs a hit; screen shake when the player is hit and when a boss dies (can be turned off in Settings). All effects are pooled particle systems.
+
 ## Rendering conventions
 - Sorting order (default layer): background -20, starfield -10, engine exhaust -2, pickups 0, enemies and meteors 1, player shots 2, enemy shots 3, player ship 5, shield 6.
 - Gameplay sprites (ships, hazards, pickups, procedural shapes) are packed into one sprite atlas, `Sprites/Gameplay.spriteatlasv2`, compressed as a whole; source sprites stay uncompressed with sizes divisible by 4.

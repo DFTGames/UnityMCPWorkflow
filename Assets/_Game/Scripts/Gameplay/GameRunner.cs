@@ -8,11 +8,30 @@ using NVector2 = System.Numerics.Vector2;
 
 namespace YASS.Gameplay
 {
+    /// <summary>What the HUD needs to know about the level beyond the rules session.</summary>
+    public readonly struct LevelHudState
+    {
+        public readonly bool BossWarning;
+        public readonly float BossHealthFraction;
+        public readonly bool BossActive;
+        public readonly bool SectorClear;
+        public readonly bool GameOver;
+
+        public LevelHudState(bool bossWarning, bool bossActive, float bossHealthFraction, bool sectorClear, bool gameOver)
+        {
+            BossWarning = bossWarning;
+            BossActive = bossActive;
+            BossHealthFraction = bossHealthFraction;
+            SectorClear = sectorClear;
+            GameOver = gameOver;
+        }
+    }
+
     /// <summary>
-    /// Composition root for one run. Owns the <see cref="GameSession"/> and drives it from FixedUpdate (the one
-    /// fixed-step loop required by the Technical Design). Entities report collisions here; this class turns them
-    /// into rules events and spawns whatever results (projectiles, fragments, pickups), all from object pools.
-    /// Players are handled by index throughout, ready for co-op; the prototype scene has one.
+    /// Composition root for one level. Owns the <see cref="GameSession"/> and the <see cref="WaveDirector"/> and
+    /// drives both from FixedUpdate (the one fixed-step loop required by the Technical Design). Entities report
+    /// collisions here; this class turns them into rules events and spawns whatever results, from object pools.
+    /// Players are handled by index throughout, ready for co-op; the scene has one.
     /// </summary>
     [DefaultExecutionOrder(-100)]
     public sealed class GameRunner : MonoBehaviour
@@ -23,21 +42,15 @@ namespace YASS.Gameplay
         /// <summary>Approximate half-height of an enemy, used to keep wave-flying enemies on screen.</summary>
         const float EnemyHalfExtent = 0.5f;
 
+        /// <summary>How far beyond the right edge the boss appears before flying in.</summary>
+        const float BossSpawnOffset = 3f;
+
         const int PoolCapacity = 64;
         const int PoolMaxSize = 512;
         const int ProjectilePrewarm = 48;
         const int HazardPrewarm = 8;
 
         static readonly NVector2 EnemyFallbackAim = -NVector2.UnitX;
-
-        [Serializable]
-        public struct SpawnEntry
-        {
-            [Tooltip("Enemy to spawn. Leave empty to spawn the meteor instead.")]
-            public EnemyView enemyPrefab;
-            public MeteorDefinition meteor;
-            [Min(0)] public int weight;
-        }
 
         [Header("Scene")]
         [SerializeField] Difficulty difficulty = Difficulty.Pilot;
@@ -53,12 +66,11 @@ namespace YASS.Gameplay
         [SerializeField] PlayerDefinition playerDefinition;
         [SerializeField] Projectile playerProjectilePrefab;
 
-        [Header("Hazards (temporary prototype spawner)")]
+        [Header("Level")]
+        [SerializeField] LevelDefinition level;
         [SerializeField] Projectile enemyProjectilePrefab;
         [SerializeField] MeteorView meteorPrefab;
-        [SerializeField] SpawnEntry[] spawnTable = Array.Empty<SpawnEntry>();
-        [SerializeField, Min(0.05f)] float spawnInterval = 1.2f;
-        [SerializeField, Min(0f)] float firstSpawnDelay = 1.5f;
+        [SerializeField, Tooltip("Enemy the boss launches from its bays.")] EnemyView bossMinionPrefab;
         [SerializeField, Min(0f)] float spawnEdgeMargin = 1f;
 
         [Header("Pickups and flow")]
@@ -67,18 +79,17 @@ namespace YASS.Gameplay
         [SerializeField, Min(0f)] float restartDelay = 1f;
 
         readonly List<ShotSpec> _shots = new List<ShotSpec>();
-        readonly List<SpawnRequest> _spawns = new List<SpawnRequest>();
+        readonly List<WaveSpawnRequest> _spawns = new List<WaveSpawnRequest>();
         readonly Dictionary<EnemyView, ObjectPool<EnemyView>> _enemyPools = new Dictionary<EnemyView, ObjectPool<EnemyView>>();
         readonly Dictionary<EnemyView, Action<EnemyView>> _enemyReleasers = new Dictionary<EnemyView, Action<EnemyView>>();
 
         GameSession _session;
         DifficultySettings _settings;
+        WaveDirector _director;
         PlayerCommand[] _commands;
         PlayerCommand?[] _commandOverrides;
         Vector2[] _shipTargets;
         NVector2[] _shipMovement;
-        float[] _spawnMargins;
-        SpawnDirector _spawner;
         IRandomSource _random;
         ObjectPool<Projectile> _playerProjectiles;
         ObjectPool<Projectile> _enemyProjectiles;
@@ -86,20 +97,53 @@ namespace YASS.Gameplay
         ObjectPool<PickupView> _pickups;
         Action<MeteorView> _releaseMeteor;
         Action<PickupView> _releasePickup;
-        float _gameOverTime = -1f;
+        BossView _boss;
+        bool _bossSpawned;
+        bool _bossDefeated;
+        float _endTime = -1f;
+        bool _sectorClear;
 
         public GameSession Session => _session;
+        public WaveDirector Director => _director;
+        public LevelDefinition Level => level;
+        public BossView Boss => _boss;
         public Playfield Playfield { get; private set; }
         public int PlayerCount => players.Length;
-        public bool IsRunning => _session != null && !_session.IsGameOver;
+        public bool IsSectorClear => _sectorClear;
+
+        /// <summary>True while the level is being played: not game over and not yet cleared.</summary>
+        public bool IsRunning => _session != null && !_session.IsGameOver && !_sectorClear;
+
+        /// <summary>
+        /// Once the boss is down the level is won: players can no longer be hurt during the short delay before
+        /// Sector Clear (they can still collect the boss's drops).
+        /// </summary>
+        public bool IsBossDefeated => _bossDefeated;
 
         public PlayerShipView GetPlayerView(int playerIndex) => players[playerIndex];
+
+        /// <summary>The boss has arrived and is still alive (the prewarmed instance does not count until then).</summary>
+        bool BossInPlay => _bossSpawned && _boss != null && _boss.IsAlive;
+
+        public LevelHudState HudState => new LevelHudState(
+            IsRunning && _director.Phase == LevelPhase.BossWarning,
+            BossInPlay,
+            BossInPlay ? _boss.Brain.Health.Current / _boss.Brain.Health.Max : 0f,
+            _sectorClear,
+            _session != null && _session.IsGameOver);
 
         /// <summary>Test seam: while set, replaces the input device for that player.</summary>
         internal void SetCommandOverride(int playerIndex, PlayerCommand? command) => _commandOverrides[playerIndex] = command;
 
-        /// <summary>Test seam: turns the random spawner off so a test controls every hazard.</summary>
+        /// <summary>Test seam: pauses the wave script so a test controls every hazard.</summary>
         internal bool SpawningEnabled { get; set; } = true;
+
+        /// <summary>Test seam: skips the waves and brings the boss in now.</summary>
+        internal void StartBossFightNow()
+        {
+            _director.SkipToBoss();
+            SpawnBoss();
+        }
 
         internal int ActivePlayerProjectiles => _playerProjectiles.CountActive;
 
@@ -114,34 +158,31 @@ namespace YASS.Gameplay
             _settings = DifficultySettings.For(difficulty);
             _random = new SystemRandomSource(randomSeed != 0 ? randomSeed : Environment.TickCount);
             _session = new GameSession(_settings, _random, players.Length);
+            _director = new WaveDirector(level.ToSpecs(), _settings.EnemyCountMultiplier, level.FirstWaveDelay);
             _commands = new PlayerCommand[players.Length];
             _commandOverrides = new PlayerCommand?[players.Length];
             _shipTargets = new Vector2[players.Length];
             _shipMovement = new NVector2[players.Length];
 
-            var weights = new int[spawnTable.Length];
-            _spawnMargins = new float[spawnTable.Length];
-            for (var i = 0; i < spawnTable.Length; i++)
-            {
-                weights[i] = spawnTable[i].weight;
-                _spawnMargins[i] = SpawnMarginFor(spawnTable[i]);
-            }
-
-            _spawner = new SpawnDirector(weights, spawnInterval, _settings.EnemyCountMultiplier, _random, firstSpawnDelay);
-
             _playerProjectiles = CreatePool(playerProjectilePrefab, ProjectilePrewarm);
             _enemyProjectiles = CreatePool(enemyProjectilePrefab, ProjectilePrewarm);
             _meteors = CreatePool(meteorPrefab, HazardPrewarm);
             _pickups = CreatePool(pickupPrefab, HazardPrewarm);
-            _releaseMeteor = m => _meteors.Release(m);
+            _releaseMeteor = m =>
+            {
+                _director.NotifyHazardGone(m.WaveIndex);
+                _meteors.Release(m);
+            };
             _releasePickup = p => _pickups.Release(p);
-            foreach (var entry in spawnTable)
-                if (entry.enemyPrefab != null && !_enemyPools.ContainsKey(entry.enemyPrefab))
-                {
-                    var pool = CreatePool(entry.enemyPrefab, HazardPrewarm);
-                    _enemyPools.Add(entry.enemyPrefab, pool);
-                    _enemyReleasers.Add(entry.enemyPrefab, e => pool.Release(e));
-                }
+
+            RegisterEnemyPool(bossMinionPrefab);
+            foreach (var wave in level.Waves)
+            foreach (var group in wave.groups)
+                if (group.enemy != null) RegisterEnemyPool(group.enemy);
+
+            // Created up front (inactive) so its particle systems do not hitch the boss's entrance.
+            _boss = Instantiate(level.BossPrefab, spawnRoot);
+            _boss.gameObject.SetActive(false);
 
             UpdatePlayfield();
             for (var i = 0; i < players.Length; i++) players[i].Init(this, i);
@@ -159,7 +200,7 @@ namespace YASS.Gameplay
         void FixedUpdate()
         {
             UpdatePlayfield();
-            CheckGameOver();
+            CheckEndOfRun();
             if (!IsRunning) return;
 
             var deltaTime = Time.fixedDeltaTime;
@@ -181,18 +222,17 @@ namespace YASS.Gameplay
             _session.Tick(deltaTime, _commands, _shots);
             foreach (var shot in _shots) SpawnPlayerShot(shot);
 
-            _spawns.Clear();
-            if (SpawningEnabled && _spawner.Tick(deltaTime, _spawns))
-                foreach (var request in _spawns) Spawn(request);
+            // The test seam only pauses the wave script; boss arrival and Sector Clear still run.
+            if (SpawningEnabled || _director.Phase != LevelPhase.Waves) TickWaves(deltaTime);
 
-            CheckGameOver();
+            CheckEndOfRun();
         }
 
         void Update()
         {
             if (_session == null) return;
 
-            hud.Refresh(_session);
+            hud.Refresh(_session, HudState);
             for (var i = 0; i < players.Length; i++)
             {
                 if (_session.GetPlayer(i).IsGameOver) continue;
@@ -200,17 +240,27 @@ namespace YASS.Gameplay
                 players[i].DriveEngine(_shipMovement[i], Time.deltaTime);
             }
 
-            if (!IsRunning && Time.time - _gameOverTime >= restartDelay && AnyRestartPressed())
+            if (!IsRunning && _endTime >= 0f && Time.time - _endTime >= restartDelay && AnyRestartPressed())
                 SceneManager.LoadScene(gameObject.scene.buildIndex);
         }
 
         public bool IsInsidePlayfield(Vector2 position, float margin) =>
             Playfield.Inset(-margin).Contains(position.ToNumerics());
 
+        /// <summary>Unit vector from <paramref name="origin"/> towards the nearest player still in the game.</summary>
+        public Vector2 AimAtNearestPlayer(Vector2 origin) =>
+            EnemyMotion.AimAt(origin.ToNumerics(), NearestPlayerPosition(origin).ToNumerics(), EnemyFallbackAim).ToUnity();
+
         // ---- Events reported by entities ------------------------------------------------------------------
 
         public void OnEnemyDestroyed(EnemyView enemy, int playerIndex)
         {
+            if (!IsRunning)
+            {
+                enemy.Despawn();
+                return;
+            }
+
             _session.ReportKill(playerIndex, enemy.Points);
             TryDropPickup(DropSource.Enemy, playerIndex, enemy.Position);
             enemy.Despawn();
@@ -218,6 +268,12 @@ namespace YASS.Gameplay
 
         public void OnMeteorDestroyed(MeteorView meteor, int playerIndex)
         {
+            if (!IsRunning)
+            {
+                meteor.Despawn();
+                return;
+            }
+
             var definition = meteor.Definition;
             _session.ReportKill(playerIndex, meteor.Points);
             TryDropPickup(MeteorRules.DropSourceFor(definition.Splitting), playerIndex, meteor.Position);
@@ -228,17 +284,29 @@ namespace YASS.Gameplay
                 for (var i = 0; i < MeteorRules.FragmentsPerSplit; i++)
                 {
                     var direction = NVector2.Normalize(MeteorRules.FragmentVelocity(parentVelocity.ToNumerics(), i));
-                    SpawnMeteor(definition.Fragment, meteor.Position, direction.ToUnity() * RandomSpeed(definition.Fragment));
+                    // Fragments join the parent's wave before the parent leaves, so the wave never looks cleared early.
+                    SpawnMeteor(definition.Fragment, meteor.Position, direction.ToUnity() * RandomSpeed(definition.Fragment),
+                        meteor.WaveIndex);
+                    _director.NotifyHazardAdded(meteor.WaveIndex);
                 }
             }
 
             meteor.Despawn();
         }
 
+        public void OnBossDefeated(BossView boss, int playerIndex)
+        {
+            _session.ReportBossDefeated(playerIndex, level.LevelNumber);
+            foreach (var pickup in PickupDropper.BossDrops) SpawnPickup(pickup, boss.Position);
+            _director.NotifyBossDefeated();
+            _bossDefeated = true;
+            boss.Despawn();
+        }
+
         /// <summary>Returns true when the projectile was used up (hit or absorbed); false lets it fly on.</summary>
         public bool OnPlayerHitByProjectile(PlayerShipView ship, Projectile projectile)
         {
-            if (!IsRunning) return false;
+            if (!IsRunning || IsBossDefeated) return false;
 
             var outcome = _session.ReportPlayerHit(ship.PlayerIndex, projectile.Damage);
             return outcome != HitOutcome.Ignored;
@@ -246,28 +314,32 @@ namespace YASS.Gameplay
 
         public void OnPlayerRammedEnemy(PlayerShipView ship, EnemyView enemy)
         {
-            if (!IsRunning || !enemy.IsAlive) return;
+            if (!IsRunning || IsBossDefeated || !enemy.IsAlive) return;
 
             var result = _session.ReportPlayerRam(ship.PlayerIndex, false, enemy.ContactDamage, enemy.Points);
-            if (result.EnemyDestroyed)
-            {
-                TryDropPickup(DropSource.Enemy, ship.PlayerIndex, enemy.Position);
-                enemy.Despawn();
-            }
+            if (!result.EnemyDestroyed) return;
+
+            TryDropPickup(DropSource.Enemy, ship.PlayerIndex, enemy.Position);
+            enemy.Despawn();
         }
 
         /// <summary>A rammed meteor is destroyed without splitting (provisional rule), so fragments cannot chain-hit the ship.</summary>
         public void OnPlayerRammedMeteor(PlayerShipView ship, MeteorView meteor)
         {
-            if (!IsRunning || !meteor.IsAlive) return;
+            if (!IsRunning || IsBossDefeated || !meteor.IsAlive) return;
 
             var definition = meteor.Definition;
             var result = _session.ReportPlayerRam(ship.PlayerIndex, false, definition.ContactDamage, meteor.Points);
-            if (result.EnemyDestroyed)
-            {
-                TryDropPickup(MeteorRules.DropSourceFor(definition.Splitting), ship.PlayerIndex, meteor.Position);
-                meteor.Despawn();
-            }
+            if (!result.EnemyDestroyed) return;
+
+            TryDropPickup(MeteorRules.DropSourceFor(definition.Splitting), ship.PlayerIndex, meteor.Position);
+            meteor.Despawn();
+        }
+
+        public void OnPlayerRammedBoss(PlayerShipView ship, BossView boss)
+        {
+            if (!IsRunning || IsBossDefeated || !boss.IsAlive) return;
+            _session.ReportPlayerRam(ship.PlayerIndex, true, boss.ContactDamage, 0);
         }
 
         public void OnPickupCollected(PlayerShipView ship, PickupView pickup)
@@ -279,16 +351,82 @@ namespace YASS.Gameplay
         }
 
         /// <summary>Fires an enemy bullet at the nearest player still in the game.</summary>
-        public void FireEnemyProjectile(Vector2 origin, float speed, float damage)
+        public void FireEnemyProjectile(Vector2 origin, float speed, float damage) =>
+            FireEnemyProjectile(origin, AimAtNearestPlayer(origin), speed, damage);
+
+        public void FireEnemyProjectile(Vector2 origin, Vector2 direction, float speed, float damage)
         {
             if (!IsRunning) return;
-
-            var direction = EnemyMotion.AimAt(origin.ToNumerics(), NearestPlayerPosition(origin).ToNumerics(),
-                EnemyFallbackAim).ToUnity();
             _enemyProjectiles.Get().Launch(this, _enemyProjectiles, origin, direction, speed, damage, false, -1);
         }
 
+        /// <summary>A Dart launched from the boss's bays. It belongs to no wave.</summary>
+        public void LaunchBossDart(Vector2 position)
+        {
+            if (!IsRunning) return;
+            SpawnEnemy(bossMinionPrefab, position, -1);
+        }
+
         // ---- Internals ---------------------------------------------------------------------------------------
+
+        void TickWaves(float deltaTime)
+        {
+            _spawns.Clear();
+            var levelEvent = _director.Tick(deltaTime, _spawns);
+            foreach (var request in _spawns) SpawnFromWave(request);
+            if (levelEvent == LevelEvent.BossArrives) SpawnBoss();
+            else if (levelEvent == LevelEvent.SectorClear) ClearSector();
+        }
+
+        void SpawnFromWave(WaveSpawnRequest request)
+        {
+            var group = level.GetGroup(request.WaveIndex, request.GroupIndex);
+            var margin = SpawnMarginFor(group.enemy);
+            var position = new Vector2(Playfield.MaxX + spawnEdgeMargin + request.XOffset,
+                Playfield.Inset(margin).YAt(request.NormalisedY));
+
+            if (group.enemy != null)
+            {
+                SpawnEnemy(group.enemy, position, request.WaveIndex);
+            }
+            else
+            {
+                var definition = group.meteor;
+                var vertical = (_random.NextFloat() * 2f - 1f) * definition.MaxVerticalSpeed * _settings.EnemySpeedMultiplier;
+                SpawnMeteor(definition, position, new Vector2(-RandomSpeed(definition), vertical), request.WaveIndex);
+            }
+        }
+
+        void SpawnBoss()
+        {
+            if (_bossSpawned) return;
+            _bossSpawned = true;
+
+            var centreY = (Playfield.MinY + Playfield.MaxY) * 0.5f;
+            _boss.gameObject.SetActive(true);
+            _boss.Init(this, _settings, new Vector2(Playfield.MaxX + BossSpawnOffset, centreY), HiveCarrierSpec.Default);
+            _session.BeginBossFight();
+        }
+
+        void SpawnEnemy(EnemyView prefab, Vector2 position, int waveIndex)
+        {
+            var enemy = _enemyPools[prefab].Get();
+            enemy.Init(this, _settings, position, _enemyReleasers[prefab]);
+            enemy.WaveIndex = waveIndex;
+        }
+
+        void RegisterEnemyPool(EnemyView prefab)
+        {
+            if (_enemyPools.ContainsKey(prefab)) return;
+
+            var pool = CreatePool(prefab, HazardPrewarm);
+            _enemyPools.Add(prefab, pool);
+            _enemyReleasers.Add(prefab, e =>
+            {
+                _director.NotifyHazardGone(e.WaveIndex);
+                pool.Release(e);
+            });
+        }
 
         void UpdatePlayfield()
         {
@@ -297,16 +435,25 @@ namespace YASS.Gameplay
         }
 
         /// <summary>
-        /// Hides ships whose game is over and records when the whole run ended. Called only from FixedUpdate, never
-        /// from trigger callbacks, so ships are not deactivated while physics is still reporting their contacts.
+        /// Hides ships whose game is over and records when the run ended. Called only from FixedUpdate, never from
+        /// trigger callbacks, so ships are not deactivated while physics is still reporting their contacts.
         /// </summary>
-        void CheckGameOver()
+        void CheckEndOfRun()
         {
             for (var i = 0; i < players.Length; i++)
                 if (_session.GetPlayer(i).IsGameOver && players[i].gameObject.activeSelf)
                     players[i].SetAlive(false);
 
-            if (_gameOverTime < 0f && _session.IsGameOver) _gameOverTime = Time.time;
+            if (_endTime < 0f && (_session.IsGameOver || _sectorClear)) _endTime = Time.time;
+        }
+
+        /// <summary>The Sector Clear delay after the boss has passed: award each player's level-clear bonus.</summary>
+        void ClearSector()
+        {
+            if (_sectorClear || _session.IsGameOver) return;
+
+            for (var i = 0; i < players.Length; i++) _session.ReportLevelClear(i);
+            _sectorClear = true;
         }
 
         bool AnyRestartPressed()
@@ -343,46 +490,30 @@ namespace YASS.Gameplay
                 playerDefinition.ProjectileSpeed, playerDefinition.ProjectileDamage, shot.Piercing, shot.PlayerIndex);
         }
 
-        void Spawn(SpawnRequest request)
-        {
-            var entry = spawnTable[request.EntryIndex];
-            var position = new Vector2(Playfield.MaxX + spawnEdgeMargin,
-                Playfield.Inset(_spawnMargins[request.EntryIndex]).YAt(request.NormalisedY));
-
-            if (entry.enemyPrefab != null)
-            {
-                _enemyPools[entry.enemyPrefab].Get()
-                    .Init(this, _settings, position, _enemyReleasers[entry.enemyPrefab]);
-            }
-            else
-            {
-                var definition = entry.meteor;
-                var vertical = (_random.NextFloat() * 2f - 1f) * definition.MaxVerticalSpeed * _settings.EnemySpeedMultiplier;
-                SpawnMeteor(definition, position, new Vector2(-RandomSpeed(definition), vertical));
-            }
-        }
-
         float RandomSpeed(MeteorDefinition definition) =>
             Mathf.Lerp(definition.MinSpeed, definition.MaxSpeed, _random.NextFloat()) * _settings.EnemySpeedMultiplier;
 
-        void SpawnMeteor(MeteorDefinition definition, Vector2 position, Vector2 velocity)
+        void SpawnMeteor(MeteorDefinition definition, Vector2 position, Vector2 velocity, int waveIndex)
         {
             var spin = (_random.NextFloat() * 2f - 1f) * definition.MaxSpinDegrees;
-            _meteors.Get().Init(this, definition, position, velocity, spin, _releaseMeteor);
+            var meteor = _meteors.Get();
+            meteor.Init(this, definition, position, velocity, spin, _releaseMeteor);
+            meteor.WaveIndex = waveIndex;
         }
 
         void TryDropPickup(DropSource source, int playerIndex, Vector2 position)
         {
-            if (_session.TryRollDrop(source, playerIndex, out var type))
-                _pickups.Get().Init(this, type, pickupDriftSpeed, position, _releasePickup);
+            if (_session.TryRollDrop(source, playerIndex, out var type)) SpawnPickup(type, position);
         }
 
+        void SpawnPickup(PickupType type, Vector2 position) =>
+            _pickups.Get().Init(this, type, pickupDriftSpeed, position, _releasePickup);
+
         /// <summary>Wave-flying enemies need a wider margin so their whole path stays on screen.</summary>
-        float SpawnMarginFor(SpawnEntry entry)
+        float SpawnMarginFor(EnemyView enemy)
         {
-            if (entry.enemyPrefab == null || entry.enemyPrefab.Definition.Pattern != MotionPattern.SineWave)
-                return spawnEdgeMargin;
-            return Mathf.Max(spawnEdgeMargin, entry.enemyPrefab.Definition.WaveAmplitude + EnemyHalfExtent);
+            if (enemy == null || enemy.Definition.Pattern != MotionPattern.SineWave) return spawnEdgeMargin;
+            return Mathf.Max(spawnEdgeMargin, enemy.Definition.WaveAmplitude + EnemyHalfExtent);
         }
 
         ObjectPool<T> CreatePool<T>(T prefab, int prewarm) where T : Component
@@ -420,11 +551,14 @@ namespace YASS.Gameplay
             Require(spawnRoot, nameof(spawnRoot));
             Require(playerDefinition, nameof(playerDefinition));
             Require(playerProjectilePrefab, nameof(playerProjectilePrefab));
+            Require(level, nameof(level));
             Require(enemyProjectilePrefab, nameof(enemyProjectilePrefab));
             Require(meteorPrefab, nameof(meteorPrefab));
+            Require(bossMinionPrefab, nameof(bossMinionPrefab));
             Require(pickupPrefab, nameof(pickupPrefab));
 
             if (worldCamera != null && !worldCamera.orthographic) Fail("the world camera must be orthographic.");
+            if (level != null && level.Validate() is string problem) Fail($"level '{level.name}': {problem}.");
 
             if (players.Length < 1 || players.Length > 4) Fail("there must be between 1 and 4 players.");
             if (inputs.Length != players.Length) Fail("there must be one input reader per player.");
@@ -432,16 +566,6 @@ namespace YASS.Gameplay
             // Readers validate their own actions asset in Awake, which runs after this one.
             for (var i = 0; i < inputs.Length; i++) Require(inputs[i], $"{nameof(inputs)}[{i}]");
 
-            var totalWeight = 0;
-            foreach (var entry in spawnTable)
-            {
-                if (entry.enemyPrefab == null && entry.meteor == null) Fail("a spawn entry has neither an enemy nor a meteor.");
-                if (entry.enemyPrefab != null && entry.enemyPrefab.Definition == null)
-                    Fail($"enemy prefab '{entry.enemyPrefab.name}' has no definition.");
-                totalWeight += entry.weight;
-            }
-
-            if (totalWeight <= 0) Fail("the spawn table needs at least one positive weight.");
             return valid;
         }
     }

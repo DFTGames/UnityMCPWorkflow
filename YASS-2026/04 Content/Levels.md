@@ -14,7 +14,7 @@ The campaign has **8 levels**, each about 3 to 4 minutes of waves ending with a 
 
 | # | Setting | Boss | Boss signature |
 | - | ------- | ---- | -------------- |
-| 1 | Magenta Nebula | Hive Carrier | Launches Darts; exposed weak core. |
+| 1 | [[Level 01 - Magenta Nebula|Magenta Nebula]] | [[Hive Carrier]] | Launches Darts; exposed weak core. |
 | 2 | Asteroid Belt | Rock Crusher | Hurls meteors. |
 | 3 | Solar Corona | Sunforge | Sweeping flame beams. |
 | 4 | Ice Rings | Frost Lancer | Fast dashes across the screen. |

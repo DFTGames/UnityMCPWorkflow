@@ -85,8 +85,20 @@ namespace YASS.Gameplay
 
         void HandleHazardContact(Collider2D other)
         {
-            if (other.TryGetComponent(out EnemyView enemy)) _runner.OnPlayerRammedEnemy(this, enemy);
-            else if (other.TryGetComponent(out MeteorView meteor)) _runner.OnPlayerRammedMeteor(this, meteor);
+            if (other.TryGetComponent(out EnemyView enemy))
+            {
+                _runner.OnPlayerRammedEnemy(this, enemy);
+            }
+            else if (other.TryGetComponent(out MeteorView meteor))
+            {
+                _runner.OnPlayerRammedMeteor(this, meteor);
+            }
+            else
+            {
+                // The boss has several colliders (hull pieces and its core), all on one rigidbody; any counts as the boss.
+                var body = other.attachedRigidbody;
+                if (body != null && body.TryGetComponent(out BossView boss)) _runner.OnPlayerRammedBoss(this, boss);
+            }
         }
     }
 }
