@@ -21,6 +21,7 @@ Assets/_Game/
   Scenes/
   ScriptableObjects/
   Scripts/            (YASS.Game assembly)
+    Core/             (YASS.Game.Core assembly: engine-free rules)
     Editor/           (YASS.Game.Editor assembly)
   Shaders/
   Sprites/
@@ -69,13 +70,14 @@ Claude creates all of the game's code and assets. Every change to code follows t
 
 ### Code and test layout
 
-- Runtime code: `Assets/_Game/Scripts/` in the `YASS.Game` assembly (`YASS.Game.asmdef`, references `Unity.InputSystem`), namespace `YASS` (sub-namespaces by feature). Editor-only code goes in `Assets/_Game/Scripts/Editor/` in `YASS.Game.Editor`.
-- Tests: `Assets/_Game/Tests/EditMode/` (`YASS.Game.Tests.EditMode`) and `Assets/_Game/Tests/PlayMode/` (`YASS.Game.Tests.PlayMode`), both test assemblies referencing `YASS.Game`. Code must live in an asmdef for tests to reference it; nothing of ours goes in `Assembly-CSharp`.
+- Game rules: `Assets/_Game/Scripts/Core/` in the `YASS.Game.Core` assembly, namespace `YASS.Core`. It has `noEngineReferences: true`, so it cannot touch `UnityEngine` (use `System.Numerics.Vector2` and `MathF`; convert at the adapter edge). Rules-state mutators are `internal`; presentation changes state only through `GameSession` (`Tick` plus `Report*` methods), called from one fixed-step loop (`FixedUpdate`). `InternalsVisibleTo` exposes internals to the test assemblies.
+- Runtime code: `Assets/_Game/Scripts/` in the `YASS.Game` assembly (`YASS.Game.asmdef`, references `Unity.InputSystem` and `YASS.Game.Core`), namespace `YASS` (sub-namespaces by feature). Editor-only code goes in `Assets/_Game/Scripts/Editor/` in `YASS.Game.Editor`.
+- Tests: `Assets/_Game/Tests/EditMode/` (`YASS.Game.Tests.EditMode`) and `Assets/_Game/Tests/PlayMode/` (`YASS.Game.Tests.PlayMode`), both test assemblies referencing `YASS.Game` and `YASS.Game.Core`. Code must live in an asmdef for tests to reference it; nothing of ours goes in `Assembly-CSharp`.
 - Prefer EditMode tests (fast); use PlayMode tests only for behaviour that needs the player loop, physics or scenes.
 
 ## Build and test
 
-There is no CLI build script. Builds and tests run through the Editor (via MCP or manually), using `com.unity.test-framework` (NUnit). With the Editor open, run tests through MCP (for example `Unity_RunCommand` driving `UnityEditor.TestTools.TestRunner.Api.TestRunnerApi`) and read the results.
+There is no CLI build script. Builds and tests run through the Editor (via MCP or manually), using `com.unity.test-framework` (NUnit). With the Editor open, run tests through MCP. This works (verified): first `Unity_RunCommand` with `AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport)` and confirm a clean console, then a `Unity_RunCommand` that creates a `TestRunnerApi` (`ScriptableObject.CreateInstance<TestRunnerApi>()`), registers an `ICallbacks` collector, and calls `Execute(new ExecutionSettings(new Filter { testMode = TestMode.EditMode, assemblyNames = new[] { "YASS.Game.Tests.EditMode" } }) { runSynchronously = true })`. Log `RunFinished`'s pass/fail counts and each failed leaf test's `FullName` and `Message`. `runSynchronously` only works for EditMode; PlayMode tests run asynchronously, so write results to a file from the callbacks and read it afterwards.
 
 If running tests headless, the Editor must **not** already have the project open:
 

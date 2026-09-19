@@ -42,6 +42,12 @@ Five levels. The player starts at level 1.
 - Collecting another shield refreshes it to full (3 hits, 10 seconds); shields do not stack.
 - While shielded, colliding with a non-boss enemy destroys that enemy (and scores it). Colliding with a boss consumes one shield hit.
 
+## Collisions with enemies
+- Shielded: see [[#Shield]].
+- Unshielded, non-boss enemy: the player takes the enemy's contact damage and the enemy is destroyed (and scores normally). _Provisional: chosen during implementation, awaiting approval._
+- Unshielded, boss: the player takes the boss's contact damage.
+- While invulnerable after losing a life, the ship passes through enemies harmlessly: no damage, and the enemy is not destroyed. _Provisional._
+
 ## Meteors
 Some split into smaller meteors when destroyed; others take several hits and are destroyed outright. See [[Enemies and Hazards]].
 

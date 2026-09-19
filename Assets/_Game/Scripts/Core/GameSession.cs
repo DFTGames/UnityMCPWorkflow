@@ -1,0 +1,162 @@
+using System;
+using System.Collections.Generic;
+
+namespace YASS.Core
+{
+    /// <summary>
+    /// Rules state for one run: players, score and pickup drops. This is the only way presentation code changes
+    /// rules state: it reports events (kills, hits, pickups) and reads the results.
+    /// Call <see cref="Tick"/> and all Report methods from the same fixed-step loop (FixedUpdate, later Fusion's
+    /// FixedUpdateNetwork) so timers advance in constant steps and event order is deterministic.
+    /// </summary>
+    public sealed class GameSession
+    {
+        readonly PlayerShip[] _players;
+
+        bool _bossFightActive;
+        bool _damagedDuringBossFight;
+
+        public DifficultySettings Settings { get; }
+        public ScoreKeeper Score { get; }
+        public PickupDropper Drops { get; }
+        public int PlayerCount => _players.Length;
+
+        public bool IsGameOver
+        {
+            get
+            {
+                foreach (var player in _players)
+                    if (!player.IsGameOver) return false;
+                return true;
+            }
+        }
+
+        public GameSession(DifficultySettings settings, IRandomSource random, int playerCount = 1)
+        {
+            Settings = settings ?? throw new ArgumentNullException(nameof(settings));
+            if (random == null) throw new ArgumentNullException(nameof(random));
+            if (playerCount < 1 || playerCount > 4) throw new ArgumentOutOfRangeException(nameof(playerCount));
+
+            _players = new PlayerShip[playerCount];
+            for (var i = 0; i < playerCount; i++)
+                _players[i] = new PlayerShip(i, settings);
+
+            Score = new ScoreKeeper(settings.ScoreMultiplier);
+            Drops = new PickupDropper(random, settings.PickupDropChanceMultiplier);
+        }
+
+        public PlayerShip GetPlayer(int playerIndex) => _players[CheckIndex(playerIndex)];
+
+        /// <summary>
+        /// Advances all timers by one step and applies each player's command. Shots fired are appended to
+        /// <paramref name="shots"/> (tagged with the firing player's index). Game-over players do not fire.
+        /// </summary>
+        public void Tick(float deltaTime, IReadOnlyList<PlayerCommand> commands, List<ShotSpec> shots)
+        {
+            if (deltaTime < 0f) throw new ArgumentOutOfRangeException(nameof(deltaTime));
+            if (commands == null) throw new ArgumentNullException(nameof(commands));
+            if (commands.Count != _players.Length)
+                throw new ArgumentException($"Expected {_players.Length} commands, got {commands.Count}.", nameof(commands));
+            if (shots == null) throw new ArgumentNullException(nameof(shots));
+
+            Score.Tick(deltaTime);
+            Drops.Tick(deltaTime);
+            for (var i = 0; i < _players.Length; i++)
+                _players[i].Tick(deltaTime, commands[i], shots);
+        }
+
+        /// <summary>A player destroyed an enemy or meteor. Returns the points awarded.</summary>
+        public long ReportKill(int playerIndex, int basePoints)
+        {
+            CheckIndex(playerIndex);
+            return Score.RegisterKill(basePoints);
+        }
+
+        public bool TryRollDrop(DropSource source, int playerIndex, out PickupType pickup)
+        {
+            var player = _players[CheckIndex(playerIndex)];
+            if (player.IsGameOver)
+            {
+                pickup = PickupType.None;
+                return false;
+            }
+
+            return Drops.TryRollDrop(source, player.Weapon.Level, out pickup);
+        }
+
+        public HitOutcome ReportPlayerHit(int playerIndex, float damage)
+        {
+            var outcome = _players[CheckIndex(playerIndex)].TakeHit(damage);
+            OnPlayerHit(outcome);
+            return outcome;
+        }
+
+        /// <summary>
+        /// A player's ship collided with an enemy body. If the enemy is destroyed it counts as that player's kill
+        /// and <paramref name="enemyBasePoints"/> are awarded.
+        /// </summary>
+        public RamResult ReportPlayerRam(int playerIndex, bool isBoss, float contactDamage, int enemyBasePoints)
+        {
+            var result = _players[CheckIndex(playerIndex)].Ram(isBoss, contactDamage);
+            OnPlayerHit(result.Outcome);
+            if (result.EnemyDestroyed) Score.RegisterKill(enemyBasePoints);
+            return result;
+        }
+
+        public void ReportPickupCollected(int playerIndex, PickupType pickup)
+        {
+            var player = _players[CheckIndex(playerIndex)];
+            if (player.IsGameOver) return;
+
+            if (pickup == PickupType.WeaponUpgrade) Drops.NotifyWeaponUpgradeCollected();
+            if (player.Collect(pickup)) Score.RegisterBonus(PointValues.MaxLevelWeaponUpgrade);
+        }
+
+        /// <summary>A boss has appeared. Damage taken from now until it is defeated forfeits the no-damage bonus.</summary>
+        public void BeginBossFight()
+        {
+            _bossFightActive = true;
+            _damagedDuringBossFight = false;
+        }
+
+        /// <summary>
+        /// The boss of <paramref name="levelNumber"/> was destroyed by a player. Awards the boss kill and, if no
+        /// damage was taken since <see cref="BeginBossFight"/>, the no-damage bonus. Returns the points awarded.
+        /// </summary>
+        public long ReportBossDefeated(int playerIndex, int levelNumber)
+        {
+            CheckIndex(playerIndex);
+            var points = Score.RegisterKill(PointValues.Boss(levelNumber));
+            if (_bossFightActive && !_damagedDuringBossFight)
+                points += Score.RegisterBonus(PointValues.NoDamageBossBonus);
+
+            _bossFightActive = false;
+            return points;
+        }
+
+        /// <summary>Awards the level-clear bonus from the player's remaining health. Returns the points awarded.</summary>
+        public long ReportLevelClear(int playerIndex)
+        {
+            var player = _players[CheckIndex(playerIndex)];
+            if (player.IsGameOver) return 0;
+            return Score.RegisterBonus(PointValues.LevelClear(player.Vitals.HealthFraction));
+        }
+
+        public void SetEndlessMultiplier(float multiplier) => Score.SetEndlessMultiplier(multiplier);
+
+        void OnPlayerHit(HitOutcome outcome)
+        {
+            if (!outcome.TookDamage()) return;
+
+            Score.NotifyPlayerDamaged();
+            if (_bossFightActive) _damagedDuringBossFight = true;
+        }
+
+        int CheckIndex(int playerIndex)
+        {
+            if (playerIndex < 0 || playerIndex >= _players.Length)
+                throw new ArgumentOutOfRangeException(nameof(playerIndex), playerIndex, null);
+            return playerIndex;
+        }
+    }
+}
