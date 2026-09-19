@@ -65,10 +65,13 @@ namespace YASS.Core
                 _players[i].Tick(deltaTime, commands[i], shots);
         }
 
-        /// <summary>A player destroyed an enemy or meteor. Returns the points awarded.</summary>
+        /// <summary>
+        /// A player destroyed an enemy or meteor. Returns the points awarded. Kills credited to a player who is
+        /// already out (for example by bullets still in flight at game over) score nothing.
+        /// </summary>
         public long ReportKill(int playerIndex, int basePoints)
         {
-            CheckIndex(playerIndex);
+            if (_players[CheckIndex(playerIndex)].IsGameOver) return 0;
             return Score.RegisterKill(basePoints);
         }
 
@@ -93,13 +96,14 @@ namespace YASS.Core
 
         /// <summary>
         /// A player's ship collided with an enemy body. If the enemy is destroyed it counts as that player's kill
-        /// and <paramref name="enemyBasePoints"/> are awarded.
+        /// and <paramref name="enemyBasePoints"/> are awarded, unless the collision itself ended the player's game.
         /// </summary>
         public RamResult ReportPlayerRam(int playerIndex, bool isBoss, float contactDamage, int enemyBasePoints)
         {
-            var result = _players[CheckIndex(playerIndex)].Ram(isBoss, contactDamage);
+            var player = _players[CheckIndex(playerIndex)];
+            var result = player.Ram(isBoss, contactDamage);
             OnPlayerHit(result.Outcome);
-            if (result.EnemyDestroyed) Score.RegisterKill(enemyBasePoints);
+            if (result.EnemyDestroyed && !player.IsGameOver) Score.RegisterKill(enemyBasePoints);
             return result;
         }
 
@@ -125,7 +129,12 @@ namespace YASS.Core
         /// </summary>
         public long ReportBossDefeated(int playerIndex, int levelNumber)
         {
-            CheckIndex(playerIndex);
+            if (_players[CheckIndex(playerIndex)].IsGameOver)
+            {
+                _bossFightActive = false;
+                return 0;
+            }
+
             var points = Score.RegisterKill(PointValues.Boss(levelNumber));
             if (_bossFightActive && !_damagedDuringBossFight)
                 points += Score.RegisterBonus(PointValues.NoDamageBossBonus);

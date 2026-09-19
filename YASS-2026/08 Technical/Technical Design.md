@@ -23,6 +23,7 @@ Principles:
 - Game rules and state in plain, testable C# classes; MonoBehaviours only adapt them to Unity.
 - **Multiplayer ready:** player input is gathered into per-tick input structs and applied by the simulation, rather than read directly by gameplay code; players are identified by an index or id, never assumed to be a singleton; game state is kept in data that could later become networked state. This keeps a later move to Photon Fusion practical.
 - Rules live in the engine-free `YASS.Game.Core` assembly. `GameSession` is the single entry point: `Tick(dt, commands, shots)` plus `Report*` event methods, all called from one fixed-step loop (`FixedUpdate`, later Fusion's `FixedUpdateNetwork`) so timing does not depend on frame rate.
+- Prototype deviation: per-hazard health and fire timers, and the temporary spawner, live in the Unity layer rather than `GameSession`. Move them into the session before co-op.
 - Snapshot/restore of rules state (needed for Fusion prediction) is deferred until co-op is scheduled; state is kept in a few small classes so it can be added then.
 - Leaderboards sit behind an interface so the UGS implementation can be swapped or mocked in tests.
 

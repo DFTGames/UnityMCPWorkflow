@@ -3,7 +3,9 @@
     "rootNamespace": "YASS",
     "references": [
         "Unity.InputSystem",
-        "YASS.Game.Core"
+        "YASS.Game.Core",
+        "UnityEngine.UI",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

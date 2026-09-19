@@ -1,0 +1,284 @@
+using System;
+using System.Collections;
+using NUnit.Framework;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.TestTools;
+using YASS.Core;
+using YASS.Gameplay;
+using NVector2 = System.Numerics.Vector2;
+using Object = UnityEngine.Object;
+
+namespace YASS.Tests.Gameplay
+{
+    /// <summary>
+    /// Integration tests for the Prototype scene: real physics, prefabs and the GameRunner wiring.
+    /// The rules themselves are covered by the EditMode tests; these check that the Unity layer reports
+    /// the right events. Prefabs are loaded through the AssetDatabase, so these tests run in the Editor only.
+    /// </summary>
+    public class PrototypeSceneTests
+    {
+        const string SceneName = "Prototype";
+        const string PrefabDir = "Assets/_Game/Prefabs/";
+        const string MeteorDir = "Assets/_Game/ScriptableObjects/Meteors/";
+
+        static readonly PlayerCommand Idle = new PlayerCommand(NVector2.Zero, false, NVector2.UnitX);
+        static readonly PlayerCommand FireForward = new PlayerCommand(NVector2.Zero, true, NVector2.UnitX);
+
+        GameRunner _runner;
+        bool _previousRunInBackground;
+
+        GameSession Session => _runner.Session;
+        PlayerShip Ship => Session.GetPlayer(0);
+        PlayerShipView ShipView => _runner.GetPlayerView(0);
+        Vector2 ShipPosition => ShipView.Position;
+
+        [UnitySetUp]
+        public IEnumerator LoadScene()
+        {
+#if !UNITY_EDITOR
+            Assert.Ignore("Loads prefabs through the AssetDatabase, so runs in the Editor only.");
+#endif
+            _previousRunInBackground = Application.runInBackground;
+            Application.runInBackground = true;
+            yield return SceneManager.LoadSceneAsync(SceneName, LoadSceneMode.Single);
+
+            _runner = Object.FindAnyObjectByType<GameRunner>();
+            Assert.That(_runner, Is.Not.Null, "GameRunner missing from the scene");
+            Assert.That(_runner.enabled, Is.True, "GameRunner disabled itself: check its setup errors");
+            yield return new WaitForFixedUpdate();
+        }
+
+        [TearDown]
+        public void RestoreSettings() => Application.runInBackground = _previousRunInBackground;
+
+        [Test]
+        public void Scene_StartsWithFreshSession()
+        {
+            Assert.That(Session, Is.Not.Null);
+            Assert.That(Session.Settings.Difficulty, Is.EqualTo(Difficulty.Pilot));
+            Assert.That(_runner.PlayerCount, Is.EqualTo(1));
+            Assert.That(Ship.Vitals.Lives, Is.EqualTo(3));
+            Assert.That(Session.Score.Score, Is.EqualTo(0));
+            Assert.That(_runner.IsRunning, Is.True);
+        }
+
+        [UnityTest]
+        public IEnumerator Spawner_BringsHazardsOntoTheField()
+        {
+            yield return WaitUntil(() => CountLiveHazards() > 0, 6f, "a hazard to spawn");
+        }
+
+        [UnityTest]
+        public IEnumerator PlayerShots_DestroyADartAndScore()
+        {
+            _runner.SpawningEnabled = false;
+            var dart = SpawnEnemy("Dart", ShipPosition + new Vector2(5f, 0f));
+            _runner.SetCommandOverride(0, FireForward);
+
+            yield return WaitUntil(() => Session.Score.Kills == 1, 3f, "the Dart to be shot down");
+
+            Assert.That(Session.Score.Score, Is.EqualTo(150)); // 100 x Pilot 1.5
+            Assert.That(Ship.Vitals.Health, Is.EqualTo(100f), "the Dart should die before reaching the ship");
+            Assert.That(dart.IsAlive, Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator DartRammingTheShip_DamagesItAndDies()
+        {
+            _runner.SpawningEnabled = false;
+            _runner.SetCommandOverride(0, Idle);
+            var dart = SpawnEnemy("Dart", ShipPosition + new Vector2(3f, 0f));
+
+            yield return WaitUntil(() => Session.Score.Kills == 1, 3f, "the Dart to ram the ship");
+
+            Assert.That(Ship.Vitals.Health, Is.EqualTo(80f).Within(1e-3f)); // 20 contact damage x Pilot 1.0
+            Assert.That(Ship.Vitals.Lives, Is.EqualTo(3));
+            Assert.That(dart.IsAlive, Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator WeaverShot_HitsTheShip()
+        {
+            _runner.SpawningEnabled = false;
+            _runner.SetCommandOverride(0, Idle);
+            SpawnEnemy("Weaver", ShipPosition + new Vector2(7f, 0f));
+
+            yield return WaitUntil(() => Ship.Vitals.Health < 100f, 4f, "the Weaver's shot to land");
+
+            Assert.That(Ship.Vitals.Health, Is.EqualTo(90f).Within(1e-3f)); // 10 bullet damage x Pilot 1.0
+        }
+
+        [UnityTest]
+        public IEnumerator Shield_AbsorbsAnEnemyShot()
+        {
+            _runner.SpawningEnabled = false;
+            _runner.SetCommandOverride(0, Idle);
+            Session.ReportPickupCollected(0, PickupType.Shield);
+            _runner.FireEnemyProjectile(ShipPosition + new Vector2(3f, 0f), 6f, 10f);
+
+            yield return WaitUntil(() => Ship.Shield.HitsRemaining < GameTuning.ShieldHits, 2f, "the shield to absorb the shot");
+
+            Assert.That(Ship.Vitals.Health, Is.EqualTo(100f));
+            Assert.That(Ship.Shield.HitsRemaining, Is.EqualTo(GameTuning.ShieldHits - 1));
+        }
+
+        [UnityTest]
+        public IEnumerator FlyingThroughAPickup_CollectsIt()
+        {
+            _runner.SpawningEnabled = false;
+            _runner.SetCommandOverride(0, Idle);
+            var pickup = Object.Instantiate(LoadPrefab<PickupView>("Pickup"));
+            pickup.Init(_runner, PickupType.WeaponUpgrade, 2f, ShipPosition + new Vector2(1.5f, 0f), null);
+
+            yield return WaitUntil(() => Ship.Weapon.Level == 2, 3f, "the pickup to be collected");
+
+            Assert.That(pickup == null || !pickup.IsActive, Is.True, "the pickup should be removed once collected");
+        }
+
+        [UnityTest]
+        public IEnumerator LargeSplittingMeteor_BreaksIntoTwoMediumOnes()
+        {
+            _runner.SpawningEnabled = false;
+            _runner.SetCommandOverride(0, Idle);
+            var large = LoadAsset<MeteorDefinition>(MeteorDir + "MeteorLarge.asset");
+            var meteor = SpawnMeteor(large, ShipPosition + new Vector2(6f, 0f), new Vector2(-0.5f, 0f));
+
+            meteor.TakeHit(large.MaxHealth, 0);
+            yield return new WaitForFixedUpdate();
+
+            Assert.That(Session.Score.Kills, Is.EqualTo(1));
+            Assert.That(Session.Score.Score, Is.EqualTo(75)); // 50 x Pilot 1.5
+            Assert.That(CountLiveMeteors(MeteorSize.Medium), Is.EqualTo(MeteorRules.FragmentsPerSplit));
+            foreach (var fragment in Object.FindObjectsByType<MeteorView>())
+            {
+                if (!fragment.IsAlive || fragment.Definition.Size != MeteorSize.Medium) continue;
+                var speed = fragment.Velocity.magnitude;
+                Assert.That(speed, Is.InRange(fragment.Definition.MinSpeed, fragment.Definition.MaxSpeed),
+                    "fragments use their own definition's speed range");
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator RammingAMeteor_DestroysItWithoutSplitting()
+        {
+            _runner.SpawningEnabled = false;
+            _runner.SetCommandOverride(0, Idle);
+            var large = LoadAsset<MeteorDefinition>(MeteorDir + "MeteorLarge.asset");
+            SpawnMeteor(large, ShipPosition + new Vector2(2.5f, 0f), new Vector2(-3f, 0f));
+
+            yield return WaitUntil(() => Session.Score.Kills == 1, 3f, "the meteor to hit the ship");
+
+            Assert.That(Ship.Vitals.Health, Is.EqualTo(75f).Within(1e-3f)); // 25 contact damage x Pilot 1.0
+            Assert.That(CountLiveMeteors(MeteorSize.Medium), Is.EqualTo(0));
+        }
+
+        [UnityTest]
+        public IEnumerator GameOver_HidesTheShipAndLaterKillsDoNotScore()
+        {
+            _runner.SpawningEnabled = false;
+            _runner.SetCommandOverride(0, Idle);
+            while (!Ship.IsGameOver)
+            {
+                Session.ReportPlayerHit(0, 1000f);
+                yield return new WaitForSeconds(GameTuning.RespawnInvulnerabilitySeconds + 0.1f);
+            }
+
+            yield return new WaitForFixedUpdate();
+            Assert.That(_runner.IsRunning, Is.False);
+            Assert.That(ShipView.gameObject.activeSelf, Is.False);
+
+            var dart = SpawnEnemy("Dart", new Vector2(0f, 0f));
+            dart.TakeHit(100f, 0);
+            Assert.That(Session.Score.Kills, Is.EqualTo(0));
+            Assert.That(Session.Score.Score, Is.EqualTo(0));
+        }
+
+        [UnityTest]
+        public IEnumerator PlayerShotsLeavingTheScreen_ReturnToThePool()
+        {
+            _runner.SpawningEnabled = false;
+            _runner.SetCommandOverride(0, FireForward);
+            yield return WaitUntil(() => _runner.ActivePlayerProjectiles > 0, 1f, "shots to be fired");
+
+            _runner.SetCommandOverride(0, Idle);
+            yield return WaitUntil(() => _runner.ActivePlayerProjectiles == 0, 3f, "shots to leave the screen");
+        }
+
+        [UnityTest]
+        public IEnumerator Ship_StopsAtTheInsetPlayfieldEdge()
+        {
+            _runner.SpawningEnabled = false;
+            _runner.SetCommandOverride(0, new PlayerCommand(new NVector2(-1f, 1f), false, NVector2.UnitX));
+
+            yield return new WaitForSeconds(2f);
+
+            var field = _runner.Playfield;
+            const float margin = 0.5f; // PlayerDefinition edge margin, GDD "Mechanics"
+            Assert.That(ShipPosition.x, Is.EqualTo(field.MinX + margin).Within(0.01f));
+            Assert.That(ShipPosition.y, Is.EqualTo(field.MaxY - margin).Within(0.01f));
+        }
+
+        // ---- Helpers ----
+
+        EnemyView SpawnEnemy(string prefabName, Vector2 position)
+        {
+            var enemy = Object.Instantiate(LoadPrefab<EnemyView>(prefabName));
+            enemy.Init(_runner, Session.Settings, position, null);
+            return enemy;
+        }
+
+        MeteorView SpawnMeteor(MeteorDefinition definition, Vector2 position, Vector2 velocity)
+        {
+            var meteor = Object.Instantiate(LoadPrefab<MeteorView>("Meteor"));
+            meteor.Init(_runner, definition, position, velocity, 0f, null);
+            return meteor;
+        }
+
+        static int CountLiveHazards()
+        {
+            var count = 0;
+            foreach (var enemy in Object.FindObjectsByType<EnemyView>()) if (enemy.IsAlive) count++;
+            foreach (var meteor in Object.FindObjectsByType<MeteorView>()) if (meteor.IsAlive) count++;
+            return count;
+        }
+
+        static int CountLiveMeteors(MeteorSize size)
+        {
+            var count = 0;
+            foreach (var meteor in Object.FindObjectsByType<MeteorView>())
+                if (meteor.IsAlive && meteor.Definition.Size == size) count++;
+            return count;
+        }
+
+        /// <summary>Waits for <paramref name="condition"/>, failing the test with a clear message on timeout.</summary>
+        static IEnumerator WaitUntil(Func<bool> condition, float timeoutSeconds, string waitingFor)
+        {
+            var deadline = Time.time + timeoutSeconds;
+            while (!condition())
+            {
+                if (Time.time > deadline) Assert.Fail($"Timed out after {timeoutSeconds} s waiting for {waitingFor}.");
+                yield return null;
+            }
+        }
+
+        static T LoadPrefab<T>(string name) where T : Component
+        {
+            var prefab = LoadAsset<GameObject>(PrefabDir + name + ".prefab");
+            var component = prefab.GetComponent<T>();
+            Assert.That(component, Is.Not.Null, $"{name} prefab has no {typeof(T).Name}");
+            return component;
+        }
+
+        static T LoadAsset<T>(string path) where T : Object
+        {
+#if UNITY_EDITOR
+            var asset = UnityEditor.AssetDatabase.LoadAssetAtPath<T>(path);
+            Assert.That(asset, Is.Not.Null, "Missing asset " + path);
+            return asset;
+#else
+            throw new InvalidOperationException("Editor only");
+#endif
+        }
+    }
+}

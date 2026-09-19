@@ -15,6 +15,7 @@ Assets/_Game/
   Animations/
   Audio/
   Fonts/
+  Input/              (Input System actions: YASS.inputactions)
   Materials/
   Prefabs/
   Resources/
@@ -55,6 +56,12 @@ Assets/_Game/
 - Prefer the `mcp__unity-mcp__Unity_*` tools for anything the Editor owns: creating/editing scenes, GameObjects, assets, materials, packages, and reading the console. Hand-editing `.unity`, `.prefab`, `.asset` YAML or `.meta` files risks broken GUIDs and references.
 - After creating or changing C# scripts, check for compile errors with `Unity_GetConsoleLogs` / `Unity_ReadConsole` (or `Unity_ValidateScript`) before reporting the work as done.
 - Every asset under `Assets/` needs its `.meta` file; when creating files on disk directly, let Unity generate the `.meta` (refresh via MCP) and keep both in version control.
+- `Unity_RunCommand` quirks (all verified):
+  - Scripts using `System.IO.File.Delete` or `Object.DestroyImmediate` are rejected ("User interactions are not supported"). Use `result.DestroyObject(go)` and delete files from the shell instead.
+  - The script is wrapped in a `Unity.AI...` namespace where `Image` resolves to a namespace: alias it (`using UImage = UnityEngine.UI.Image;`).
+  - `GetInstanceID()` is obsolete (compile error); use `GetEntityId()`.
+  - Opening a scene while another is dirty would prompt: build new scenes additively (`NewSceneMode.Additive`), save, then `EditorSceneManager.CloseScene(old, true)`.
+- Play mode only advances while the Editor is focused unless `Application.runInBackground = true` (set it at runtime through `Unity_RunCommand`; PlayMode tests set it in their setup). `Unity_Camera_Capture` fails on game cameras; to see the game, render `Camera.main` into a `RenderTexture`, save a PNG under `Temp/` and read it.
 
 ## Development workflow (required)
 
@@ -77,7 +84,7 @@ Claude creates all of the game's code and assets. Every change to code follows t
 
 ## Build and test
 
-There is no CLI build script. Builds and tests run through the Editor (via MCP or manually), using `com.unity.test-framework` (NUnit). With the Editor open, run tests through MCP. This works (verified): first `Unity_RunCommand` with `AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport)` and confirm a clean console, then a `Unity_RunCommand` that creates a `TestRunnerApi` (`ScriptableObject.CreateInstance<TestRunnerApi>()`), registers an `ICallbacks` collector, and calls `Execute(new ExecutionSettings(new Filter { testMode = TestMode.EditMode, assemblyNames = new[] { "YASS.Game.Tests.EditMode" } }) { runSynchronously = true })`. Log `RunFinished`'s pass/fail counts and each failed leaf test's `FullName` and `Message`. `runSynchronously` only works for EditMode; PlayMode tests run asynchronously, so write results to a file from the callbacks and read it afterwards.
+There is no CLI build script. Builds and tests run through the Editor (via MCP or manually), using `com.unity.test-framework` (NUnit). With the Editor open, run tests through MCP. This works (verified): first `Unity_RunCommand` with `AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport)` and confirm a clean console, then a `Unity_RunCommand` that creates a `TestRunnerApi` (`ScriptableObject.CreateInstance<TestRunnerApi>()`), registers an `ICallbacks` collector, and calls `Execute(new ExecutionSettings(new Filter { testMode = TestMode.EditMode, assemblyNames = new[] { "YASS.Game.Tests.EditMode" } }) { runSynchronously = true })`. Log `RunFinished`'s pass/fail counts and each failed leaf test's `FullName` and `Message`. `runSynchronously` only works for EditMode. For PlayMode, start the run with `Execute` (no `runSynchronously`) and read `Temp/YASS-TestResults-PlayMode.txt`, which `Assets/_Game/Tests/EditMode/TestResultsWriter.cs` writes after every run (EditMode runs go to `Temp/YASS-TestResults-EditMode.txt`).
 
 If running tests headless, the Editor must **not** already have the project open:
 
@@ -87,11 +94,17 @@ If running tests headless, the Editor must **not** already have the project open
 
 Use `-testPlatform PlayMode` for play mode tests and `-testFilter <FullyQualifiedName>` to run a single test.
 
+## Gameplay layer (prototype)
+
+`Assets/_Game/Scripts/Gameplay/` (namespace `YASS.Gameplay`): `GameRunner` is the composition root and the only caller of `GameSession`. It reads input, moves the ship, ticks the session in `FixedUpdate` and spawns projectiles, hazards and pickups. Entity views (`PlayerShipView`, `EnemyView`, `MeteorView`, `PickupView`, `Projectile`) report collisions to the runner rather than applying rules themselves. Projectiles, enemies, meteors and pickups are pooled; views reset all state in `Init`/`Launch` and return themselves to their pool in `Despawn`/`Release`. Players are handled by index (`players[]` and `inputs[]` on the runner). Tuning data lives in `PlayerDefinition`, `EnemyDefinition` and `MeteorDefinition` assets under `Assets/_Game/ScriptableObjects/`; `PrototypeDataTests` checks them against the GDD. `GameRunner.SetCommandOverride`, `SpawningEnabled` and `ActivePlayerProjectiles` are internal test seams for the PlayMode tests.
+- Known deviation, accepted for the prototype: per-hazard state (enemy and meteor `Health`, enemy `FireTimer`s) and the `SpawnDirector` are owned by the Unity layer, so their mutators are public. Move them behind `GameSession` when online co-op is scheduled.
+
 ## Project configuration worth knowing
 
 - Render pipeline: URP 2D (`Assets/Settings/UniversalRP.asset` with `Renderer2D.asset`). New materials and shaders must be URP/2D compatible, not Built-in.
 - Input: the **new Input System only** (`activeInputHandler: 1`). Use `UnityEngine.InputSystem`, not `UnityEngine.Input`. Default action map is `Assets/Settings/InputSystem_Actions.inputactions`.
-- The only scene in the build is `Assets/Scenes/SampleScene.unity`.
+- Build scenes: `Assets/_Game/Scenes/Prototype.unity` (index 0). The template's `SampleScene` is kept but disabled.
+- Physics layers: 6 PlayerShip, 7 PlayerProjectile, 8 Hazard (enemies and meteors), 9 EnemyProjectile, 10 Pickup. The 2D collision matrix only allows PlayerShip with Hazard, EnemyProjectile and Pickup, and PlayerProjectile with Hazard. All gameplay bodies are kinematic, interpolated `Rigidbody2D`s with trigger colliders (kinematic-vs-kinematic triggers work without `useFullKinematicContacts`, verified by the PlayMode tests).
 - The generated `*.csproj` / `*.sln` files at the root are regenerated by Unity; do not edit them.
 
 ## Repository layout notes

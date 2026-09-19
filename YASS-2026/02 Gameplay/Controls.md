@@ -23,6 +23,7 @@ updated: 2026-09-19
 | Fire (aimed) | Left mouse button | Right stick beyond 30% dead zone | Right virtual stick held |
 | Fire (forward) | | Right trigger | |
 | Pause | Esc | Start / Menu | Pause button |
+| Restart (game-over screen) | Enter or R | A / Cross (south button) | Tap (to be added with touch controls) |
 
 If the right stick is deflected while the trigger is held, the shot follows the stick.
 

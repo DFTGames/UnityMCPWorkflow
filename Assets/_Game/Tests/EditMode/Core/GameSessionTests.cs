@@ -291,6 +291,42 @@ namespace YASS.Tests.Core
             Assert.That(session.GetPlayer(0).Weapon.Level, Is.EqualTo(1));
         }
 
+        [Test]
+        public void KillsAfterGameOver_ScoreNothing()
+        {
+            var session = new GameSession(DifficultySettings.Ace, new TestRandom());
+            KillPlayer(session, 0);
+
+            Assert.That(session.ReportKill(0, 100), Is.EqualTo(0));
+            Assert.That(session.ReportBossDefeated(0, 1), Is.EqualTo(0));
+            Assert.That(session.Score.Score, Is.EqualTo(0));
+            Assert.That(session.Score.Kills, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void LethalRam_DestroysEnemyButDoesNotScoreIt()
+        {
+            var session = new GameSession(DifficultySettings.Ace, new TestRandom());
+            session.ReportPlayerHit(0, 1000f);
+            Idle(session, GameTuning.RespawnInvulnerabilitySeconds + 0.01f);
+
+            var result = session.ReportPlayerRam(0, false, 1000f, 100);
+
+            Assert.That(result.Outcome, Is.EqualTo(HitOutcome.GameOver));
+            Assert.That(result.EnemyDestroyed, Is.True);
+            Assert.That(session.Score.Kills, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void KillByOneCoopPlayer_StillScoresAfterTheOtherIsOut()
+        {
+            var session = new GameSession(DifficultySettings.Ace, new TestRandom(), 2);
+            KillPlayer(session, 0);
+
+            Assert.That(session.ReportKill(0, 100), Is.EqualTo(0));
+            Assert.That(session.ReportKill(1, 100), Is.EqualTo(250));
+        }
+
         [TestCase(-1)]
         [TestCase(1)]
         public void InvalidPlayerIndex_Throws(int index)

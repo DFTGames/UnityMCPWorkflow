@@ -46,7 +46,11 @@ Five levels. The player starts at level 1.
 - Shielded: see [[#Shield]].
 - Unshielded, non-boss enemy: the player takes the enemy's contact damage and the enemy is destroyed (and scores normally). _Provisional: chosen during implementation, awaiting approval._
 - Unshielded, boss: the player takes the boss's contact damage.
+- Ramming a meteor destroys it without splitting, so fragments cannot immediately hit the ship again. _Provisional._
 - While invulnerable after losing a life, the ship passes through enemies harmlessly: no damage, and the enemy is not destroyed. _Provisional._
+
+## Provisional player values
+Player speed 8 units/s (kept 0.5 units inside the screen edges); player shots travel 18 units/s, deal 1 damage and spawn 0.55 units from the ship's centre in the aim direction. Kills credited to a player whose game is over (bullets still in flight) score nothing. The visible playfield is 10 units tall. _Provisional, to be tuned in playtesting._
 
 ## Meteors
 Some split into smaller meteors when destroyed; others take several hits and are destroyed outright. See [[Enemies and Hazards]].
