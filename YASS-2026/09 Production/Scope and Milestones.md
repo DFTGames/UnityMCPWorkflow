@@ -2,14 +2,16 @@
 tags:
   - gdd
   - production
-status: draft
+status: review
 updated: 2026-09-19
 ---
 
 # Scope and Milestones
 
 ## Scope
-_What is in and what is explicitly out._
+**In:** single-player campaign (8 levels, 8 bosses), Endless mode, 3 difficulties, pickups (health, extra life, weapon upgrades, shield), UGS online leaderboards, PC, mobile and WebGL builds.
+
+**Out (for now):** online co-op (architecture prepared for Photon Fusion), local co-op, monetisation.
 
 ## Milestones
 | Milestone | Goal | Target date | Status |

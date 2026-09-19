@@ -2,19 +2,19 @@
 tags:
   - gdd
   - gameplay
-status: draft
+status: review
 updated: 2026-09-19
 ---
 
 # Progression and Economy
 
 ## Player progression
-_TBD_
-
-## Currencies and resources
-_TBD_
+Within a run only: weapon upgrade level (see [[Mechanics]]). No persistent upgrades or currencies, matching the arcade original.
 
 ## Unlocks
-_TBD_
+- Endless mode unlocks after completing the campaign.
+
+## Currencies and resources
+None. The game is free with no in-app purchases.
 
 Back to [[00 GDD Home]]
