@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A Unity 6 (editor `6000.6.0f1`, see `ProjectSettings/ProjectVersion.txt`) 2D project created from the Universal 2D template, used as a tutorial for driving Unity from Claude Code over MCP. Product name is "YASS 2026". There is no game code yet: `Assets/Welcome/` and `Assets/TextMesh Pro/` are template/package content, not project code.
+A Unity 6 (editor `6000.6.0f1`, see `ProjectSettings/ProjectVersion.txt`) 2D project created from the Universal 2D template, used as a tutorial for driving Unity from Claude Code over MCP. Product name is "YASS 2026". Claude writes all game code and creates all assets (see "Development workflow"). `Assets/Welcome/` and `Assets/TextMesh Pro/` are template/package content, not project code.
 
 ## Project folder structure (required)
 
@@ -49,9 +49,27 @@ Assets/_Game/
 - After creating or changing C# scripts, check for compile errors with `Unity_GetConsoleLogs` / `Unity_ReadConsole` (or `Unity_ValidateScript`) before reporting the work as done.
 - Every asset under `Assets/` needs its `.meta` file; when creating files on disk directly, let Unity generate the `.meta` (refresh via MCP) and keep both in version control.
 
+## Development workflow (required)
+
+Claude creates all of the game's code and assets. Every change to code follows this loop:
+
+1. **Check the GDD** for the feature being built (see above).
+2. **Implement with tests.** All code gets unit tests wherever it is technically possible. Structure code to make that possible: keep game rules and state in plain C# classes (no `MonoBehaviour` dependency) that `MonoBehaviour`s delegate to, and inject dependencies such as time, randomness and input rather than reading them statically. If something genuinely cannot be unit tested (for example pure scene wiring), say so and cover it with a PlayMode test where practical.
+3. **Run the tests** and confirm they pass, along with a clean console (no compile errors).
+4. **Run two independent code review agents** in parallel with the Agent tool, each given the changed files and the relevant GDD pages (not Claude's own conclusions):
+   - **Correctness reviewer:** bugs, edge cases, logic errors, mismatches with the GDD, gaps in test coverage.
+   - **Unity and quality reviewer:** Unity-specific pitfalls (lifecycle order, serialisation, null/destroyed object checks, allocations in `Update`, physics in `FixedUpdate`, Input System usage), performance, readability, and adherence to this file's conventions.
+5. **Verify and fix.** Check each finding against the code before acting on it, fix the valid ones (adding tests for any bug found), re-run the tests, and report which findings were fixed and which were rejected, with the reason.
+
+### Code and test layout
+
+- Runtime code: `Assets/_Game/Scripts/` in the `YASS.Game` assembly (`YASS.Game.asmdef`), namespace `YASS` (sub-namespaces by feature). Editor-only code goes in `Assets/_Game/Scripts/Editor/` in `YASS.Game.Editor`.
+- Tests: `Assets/_Game/Tests/EditMode/` (`YASS.Game.Tests.EditMode`) and `Assets/_Game/Tests/PlayMode/` (`YASS.Game.Tests.PlayMode`), both test assemblies referencing `YASS.Game`. Code must live in an asmdef for tests to reference it; nothing of ours goes in `Assembly-CSharp`.
+- Prefer EditMode tests (fast); use PlayMode tests only for behaviour that needs the player loop, physics or scenes.
+
 ## Build and test
 
-There is no CLI build script. Builds and tests run through the Editor (via MCP or manually). `com.unity.test-framework` is installed but no test assemblies exist yet.
+There is no CLI build script. Builds and tests run through the Editor (via MCP or manually), using `com.unity.test-framework` (NUnit). With the Editor open, run tests through MCP (for example `Unity_RunCommand` driving `UnityEditor.TestTools.TestRunner.Api.TestRunnerApi`) and read the results.
 
 If running tests headless, the Editor must **not** already have the project open:
 
