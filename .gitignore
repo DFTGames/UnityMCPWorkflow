@@ -105,3 +105,17 @@ InitTestScene*.unity*
 
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+
+# Claude Code session files (keep .mcp.json tracked)
+#CLAUDE.md
+.claude/
+.remember/
+
+# Obsidian vault (YASS-2026): per-device state, trash and plugin caches.
+# Shared settings (app, appearance, core-plugins, graph, hotkeys) stay tracked.
+/YASS-2026/.obsidian/workspace.json
+/YASS-2026/.obsidian/workspace-mobile.json
+/YASS-2026/.obsidian/workspaces.json
+/YASS-2026/.obsidian/cache
+/YASS-2026/.obsidian/plugins/*/data.json
+/YASS-2026/.trash/
