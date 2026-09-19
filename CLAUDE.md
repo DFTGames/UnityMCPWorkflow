@@ -12,20 +12,26 @@ Never put our own code or assets directly in the `Assets/` root or in the templa
 
 ```
 Assets/_Game/
-  Scripts/
-  Scenes/
-  Sprites/
-  Textures/
-  Materials/
-  Shaders/
-  Prefabs/
   Animations/
   Audio/
+  Fonts/
+  Materials/
+  Prefabs/
   Resources/
-  ...
+  Scenes/
+  ScriptableObjects/
+  Scripts/            (YASS.Game assembly)
+    Editor/           (YASS.Game.Editor assembly)
+  Shaders/
+  Sprites/
+  Textures/
+  Tests/
+    EditMode/         (YASS.Game.Tests.EditMode assembly)
+    PlayMode/         (YASS.Game.Tests.PlayMode assembly)
 ```
 
-- Create a subfolder when it is first needed, and keep the structure consistent as the project grows.
+- Add further subfolders (by type, then by feature inside them) as needed, and keep the structure consistent as the project grows.
+- Empty folders hold a `.gitkeep` so they survive in git (Unity would otherwise delete the orphaned folder `.meta`). Remove it once the folder has real content.
 - `Resources/` is special in Unity (its contents are always included in builds and loadable with `Resources.Load`), so only put assets there that are genuinely loaded by path.
 - `Assets/Settings/`, `Assets/Welcome/`, `Assets/TextMesh Pro/` and the template's `Assets/Scenes/SampleScene.unity` came from the template or packages; they are not part of `_Game`.
 - To move existing assets, use the Editor or MCP so their `.meta` files and GUID references stay intact, rather than moving files on disk.
@@ -63,7 +69,7 @@ Claude creates all of the game's code and assets. Every change to code follows t
 
 ### Code and test layout
 
-- Runtime code: `Assets/_Game/Scripts/` in the `YASS.Game` assembly (`YASS.Game.asmdef`), namespace `YASS` (sub-namespaces by feature). Editor-only code goes in `Assets/_Game/Scripts/Editor/` in `YASS.Game.Editor`.
+- Runtime code: `Assets/_Game/Scripts/` in the `YASS.Game` assembly (`YASS.Game.asmdef`, references `Unity.InputSystem`), namespace `YASS` (sub-namespaces by feature). Editor-only code goes in `Assets/_Game/Scripts/Editor/` in `YASS.Game.Editor`.
 - Tests: `Assets/_Game/Tests/EditMode/` (`YASS.Game.Tests.EditMode`) and `Assets/_Game/Tests/PlayMode/` (`YASS.Game.Tests.PlayMode`), both test assemblies referencing `YASS.Game`. Code must live in an asmdef for tests to reference it; nothing of ours goes in `Assembly-CSharp`.
 - Prefer EditMode tests (fast); use PlayMode tests only for behaviour that needs the player loop, physics or scenes.
 
@@ -74,10 +80,10 @@ There is no CLI build script. Builds and tests run through the Editor (via MCP o
 If running tests headless, the Editor must **not** already have the project open:
 
 ```
-"C:\Program Files\Unity\Hub\Editor\6000.6.0f1\Editor\Unity.exe" -batchmode -projectPath . -runTests -testPlatform EditMode -testResults TestResults.xml
+"D:\UnityInstalls\6000.6.0f1\Editor\Unity.exe" -batchmode -projectPath . -runTests -testPlatform EditMode -testResults TestResults.xml
 ```
 
-Use `-testPlatform PlayMode` for play mode tests and `-testFilter <FullyQualifiedName>` to run a single test. (The Editor path assumes a default Unity Hub install.)
+Use `-testPlatform PlayMode` for play mode tests and `-testFilter <FullyQualifiedName>` to run a single test.
 
 ## Project configuration worth knowing
 
