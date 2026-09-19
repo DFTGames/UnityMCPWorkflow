@@ -6,6 +6,42 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A Unity 6 (editor `6000.6.0f1`, see `ProjectSettings/ProjectVersion.txt`) 2D project created from the Universal 2D template, used as a tutorial for driving Unity from Claude Code over MCP. Product name is "YASS 2026". There is no game code yet: `Assets/Welcome/` and `Assets/TextMesh Pro/` are template/package content, not project code.
 
+## Project folder structure (required)
+
+Never put our own code or assets directly in the `Assets/` root or in the template folders. Everything we create lives under `Assets/_Game/`, organised by type, for example:
+
+```
+Assets/_Game/
+  Scripts/
+  Scenes/
+  Sprites/
+  Textures/
+  Materials/
+  Shaders/
+  Prefabs/
+  Animations/
+  Audio/
+  Resources/
+  ...
+```
+
+- Create a subfolder when it is first needed, and keep the structure consistent as the project grows.
+- `Resources/` is special in Unity (its contents are always included in builds and loadable with `Resources.Load`), so only put assets there that are genuinely loaded by path.
+- `Assets/Settings/`, `Assets/Welcome/`, `Assets/TextMesh Pro/` and the template's `Assets/Scenes/SampleScene.unity` came from the template or packages; they are not part of `_Game`.
+- To move existing assets, use the Editor or MCP so their `.meta` files and GUID references stay intact, rather than moving files on disk.
+
+## Game Design Document (Obsidian vault)
+
+`YASS-2026/` is an Obsidian vault holding the **GDD, the authoritative source for the game's design**. Claude creates and maintains it.
+
+- Entry point is `00 GDD Home.md`, which links every page. Sections are numbered folders (`01 Vision` to `09 Production`); new pages go in the matching folder and must be linked from `00 GDD Home.md` or their section page.
+- Read the relevant GDD pages before implementing a feature. If the request conflicts with the GDD, or the GDD is silent, raise it rather than guessing, and update the GDD once the decision is made.
+- After a design decision or a change that affects design (mechanics, tuning values, controls, content), update the affected pages, bump their `updated` property, and add an entry to `09 Production/Changelog.md` (newest first).
+- Every page has frontmatter `tags` (`gdd` plus its section), `status` (`draft`, `review`, `approved`, `deprecated`) and `updated` (YYYY-MM-DD). Confirm with the user before building on content that is not yet `approved`.
+- Use `[[wikilinks]]` between pages, `%% ... %%` for authoring notes, `_Templates/Feature Template.md` for new feature pages, and `_Attachments/` for images.
+- Unresolved questions go in `09 Production/Open Questions.md`.
+- Only the vault's shared `.obsidian` settings are tracked (see `.gitignore`).
+
 ## Working with the Unity Editor (MCP)
 
 - `.mcp.json` registers the `unity-mcp` server, which runs the Unity AI Assistant relay (`%USERPROFILE%\.unity\relay\relay_win.exe --mcp`). It comes from the `com.unity.ai.assistant` package and only works while the Editor has this project open.
@@ -34,5 +70,4 @@ Use `-testPlatform PlayMode` for play mode tests and `-testFilter <FullyQualifie
 
 ## Repository layout notes
 
-- `YASS-2026/` is an Obsidian vault used for design notes, unrelated to the Unity build. Only its shared `.obsidian` settings are tracked (see `.gitignore`).
 - `.claude/` and `.remember/` are gitignored; `.mcp.json` is intended to be tracked.
