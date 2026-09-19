@@ -85,6 +85,77 @@ namespace YASS.Tests.Gameplay
             Assert.That(meteor.Sprite, Is.Not.Null);
         }
 
+        [TestCase("PlayerShip", false)]
+        [TestCase("Dart", true)]
+        [TestCase("Weaver", true)]
+        public void Ships_HaveALocalSpaceEngineBehindTheShip(string prefabName, bool facesLeft)
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Game/Prefabs/" + prefabName + ".prefab");
+            var engine = prefab.GetComponentInChildren<EngineExhaust>();
+            Assert.That(engine, Is.Not.Null, prefabName + " has no EngineExhaust");
+
+            var serialized = new SerializedObject(engine);
+            var particles = engine.GetComponent<ParticleSystem>();
+            Assert.That(serialized.FindProperty("particles").objectReferenceValue, Is.SameAs(particles));
+            Assert.That(serialized.FindProperty("shipFacesLeft").boolValue, Is.EqualTo(facesLeft));
+
+            var main = particles.main;
+            Assert.That(main.simulationSpace, Is.EqualTo(ParticleSystemSimulationSpace.Local));
+            Assert.That(main.scalingMode, Is.EqualTo(ParticleSystemScalingMode.Hierarchy));
+            Assert.That(main.startSpeed.constant, Is.EqualTo(0f), "exhaust direction comes from velocity over lifetime only");
+
+            var velocity = particles.velocityOverLifetime;
+            Assert.That(velocity.enabled, Is.True);
+            Assert.That(velocity.space, Is.EqualTo(ParticleSystemSimulationSpace.Local));
+            Assert.That(velocity.x.mode, Is.EqualTo(ParticleSystemCurveMode.Constant));
+            Assert.That(velocity.y.mode, Is.EqualTo(ParticleSystemCurveMode.Constant));
+            Assert.That(velocity.z.mode, Is.EqualTo(ParticleSystemCurveMode.Constant));
+            Assert.That(particles.emission.rateOverTime.mode, Is.EqualTo(ParticleSystemCurveMode.Constant));
+
+            var rearSign = facesLeft ? 1f : -1f;
+            Assert.That(Mathf.Sign(engine.transform.localPosition.x), Is.EqualTo(rearSign), "engine sits at the rear");
+
+            var engineRenderer = engine.GetComponent<ParticleSystemRenderer>();
+            Assert.That(engineRenderer.sortingOrder, Is.LessThan(prefab.GetComponent<SpriteRenderer>().sortingOrder));
+            Assert.That(engineRenderer.sharedMaterial.name, Is.EqualTo("EngineExhaust"));
+        }
+
+        [TestCase("PlayerShip", false)]
+        [TestCase("Dart", true)]
+        public void EngineThrottle_ScalesRateSpeedAndBothEndsOfTheSizeRange(string prefabName, bool facesLeft)
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Game/Prefabs/" + prefabName + ".prefab");
+            var instance = Object.Instantiate(prefab);
+            try
+            {
+                var engine = instance.GetComponentInChildren<EngineExhaust>();
+                var particles = engine.GetComponent<ParticleSystem>();
+                var serialized = new SerializedObject(engine);
+                float Range(string field, string end) => serialized.FindProperty(field + "." + end).floatValue;
+                var authored = particles.main.startSize;
+                var baseMin = authored.constantMin;
+                var baseMax = authored.constantMax;
+                var sign = facesLeft ? 1f : -1f;
+
+                engine.SetThrottle(0f);
+                Assert.That(particles.emission.rateOverTime.constant, Is.EqualTo(Range("emissionRate", "atZero")).Within(1e-4f));
+                Assert.That(particles.velocityOverLifetime.x.constant, Is.EqualTo(sign * Range("exhaustSpeed", "atZero")).Within(1e-4f));
+                Assert.That(particles.main.startSize.constantMin, Is.EqualTo(baseMin * Range("sizeScale", "atZero")).Within(1e-4f));
+                Assert.That(particles.main.startSize.constantMax, Is.EqualTo(baseMax * Range("sizeScale", "atZero")).Within(1e-4f));
+
+                engine.SetThrottle(1f);
+                Assert.That(particles.emission.rateOverTime.constant, Is.EqualTo(Range("emissionRate", "atFull")).Within(1e-4f));
+                Assert.That(particles.velocityOverLifetime.x.constant, Is.EqualTo(sign * Range("exhaustSpeed", "atFull")).Within(1e-4f));
+                Assert.That(particles.main.startSize.constantMin, Is.EqualTo(baseMin * Range("sizeScale", "atFull")).Within(1e-4f));
+                Assert.That(particles.main.startSize.constantMax, Is.EqualTo(baseMax * Range("sizeScale", "atFull")).Within(1e-4f));
+                Assert.That(particles.main.startSize.constantMax, Is.LessThan(0.5f), "particles stay smaller than the ship");
+            }
+            finally
+            {
+                Object.DestroyImmediate(instance);
+            }
+        }
+
         [Test]
         public void SplittingMeteors_ChainLargeToMediumToSmall()
         {

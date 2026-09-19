@@ -21,5 +21,5 @@ MonoBehaviour:
   maxSpeed: 3.5
   maxVerticalSpeed: 0.5
   maxSpinDegrees: 60
-  sprite: {fileID: 21300000, guid: ee4dbf81097b53c4cb77cca55493713c, type: 3}
+  sprite: {fileID: 21300000, guid: 95a49880009dfd540bd4c589a12b3f09, type: 3}
   scale: 0.6

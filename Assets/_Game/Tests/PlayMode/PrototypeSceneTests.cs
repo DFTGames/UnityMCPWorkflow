@@ -219,6 +219,30 @@ namespace YASS.Tests.Gameplay
             Assert.That(ShipPosition.y, Is.EqualTo(field.MaxY - margin).Within(0.01f));
         }
 
+        [UnityTest]
+        public IEnumerator PlayerEngine_FollowsActualMovement()
+        {
+            _runner.SpawningEnabled = false;
+            var engine = ShipView.Engine;
+            Assert.That(engine, Is.Not.Null, "player ship has no engine exhaust");
+            var particles = engine.GetComponent<ParticleSystem>();
+            Assert.That(engine.Throttle, Is.EqualTo(engine.IdleThrottle).Within(0.05f), "starts at idle");
+            var idleMaxSize = particles.main.startSize.constantMax;
+            var idleRate = particles.emission.rateOverTime.constant;
+
+            // Moving down from the centre: full throttle, bigger and denser exhaust.
+            _runner.SetCommandOverride(0, new PlayerCommand(-NVector2.UnitY, false, NVector2.UnitX));
+            yield return WaitUntil(() => engine.Throttle > 0.95f, 2f, "the engine to reach full throttle");
+            Assert.That(particles.main.startSize.constantMax, Is.GreaterThan(idleMaxSize));
+            Assert.That(particles.emission.rateOverTime.constant, Is.GreaterThan(idleRate));
+            Assert.That(particles.velocityOverLifetime.x.constant, Is.LessThan(0f), "exhaust flows out of the rear");
+
+            // Still pushing down but pinned at the bottom edge: the ship is not moving, so the engine idles.
+            yield return WaitUntil(() => engine.Throttle < engine.IdleThrottle + 0.05f, 4f,
+                "the engine to settle while the ship is pinned at the edge");
+            Assert.That(ShipPosition.y, Is.EqualTo(_runner.Playfield.MinY + 0.5f).Within(0.01f));
+        }
+
         // ---- Helpers ----
 
         EnemyView SpawnEnemy(string prefabName, Vector2 position)

@@ -119,3 +119,6 @@ InitTestScene*.unity*
 /YASS-2026/.obsidian/cache
 /YASS-2026/.obsidian/plugins/*/data.json
 /YASS-2026/.trash/
+
+# Unity AI generation cache (prompts, raw outputs). The curated results live under Assets/_Game.
+/GeneratedAssets/

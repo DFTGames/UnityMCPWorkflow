@@ -13,6 +13,7 @@ namespace YASS.Gameplay
         [SerializeField] Rigidbody2D body;
         [SerializeField] SpriteRenderer shipRenderer;
         [SerializeField] SpriteRenderer shieldRenderer;
+        [SerializeField] EngineExhaust engine;
         [SerializeField, Min(0f), Tooltip("Shots spawn this far from the ship's centre, in the aim direction.")]
         float muzzleDistance = 0.55f;
         [SerializeField, Min(0.1f)] float blinksPerSecond = 10f;
@@ -20,6 +21,7 @@ namespace YASS.Gameplay
         GameRunner _runner;
 
         public int PlayerIndex { get; private set; }
+        public EngineExhaust Engine => engine;
         public Vector2 Position => body.position;
 
         void Reset()
@@ -46,6 +48,12 @@ namespace YASS.Gameplay
             var shield = ship.Shield;
             shieldRenderer.enabled = shield.IsActive &&
                                      (!shield.IsFlickering || VisualCues.IsBlinkVisible(shield.TimeRemaining, blinksPerSecond));
+        }
+
+        /// <summary>Engine exhaust grows with how fast the ship is moving (fraction of top speed).</summary>
+        public void DriveEngine(System.Numerics.Vector2 movement, float deltaTime)
+        {
+            if (engine != null) engine.Drive(movement, deltaTime);
         }
 
         public void SetAlive(bool alive) => gameObject.SetActive(alive);

@@ -76,6 +76,7 @@ namespace YASS.Gameplay
         PlayerCommand[] _commands;
         PlayerCommand?[] _commandOverrides;
         Vector2[] _shipTargets;
+        NVector2[] _shipMovement;
         float[] _spawnMargins;
         SpawnDirector _spawner;
         IRandomSource _random;
@@ -116,6 +117,7 @@ namespace YASS.Gameplay
             _commands = new PlayerCommand[players.Length];
             _commandOverrides = new PlayerCommand?[players.Length];
             _shipTargets = new Vector2[players.Length];
+            _shipMovement = new NVector2[players.Length];
 
             var weights = new int[spawnTable.Length];
             _spawnMargins = new float[spawnTable.Length];
@@ -168,8 +170,10 @@ namespace YASS.Gameplay
                 _commands[i] = _commandOverrides[i] ?? inputs[i].ReadCommand(shipPosition, worldCamera);
 
                 if (_session.GetPlayer(i).IsGameOver) continue;
-                _shipTargets[i] = ShipMotor.Step(shipPosition, _commands[i].Move, playerDefinition.Speed, deltaTime,
-                    bounds).ToUnity();
+                var next = ShipMotor.Step(shipPosition, _commands[i].Move, playerDefinition.Speed, deltaTime, bounds);
+                var maxStep = playerDefinition.Speed * deltaTime;
+                _shipMovement[i] = maxStep > 0f ? (next - shipPosition) / maxStep : NVector2.Zero;
+                _shipTargets[i] = next.ToUnity();
                 players[i].MoveTo(_shipTargets[i]);
             }
 
@@ -190,7 +194,11 @@ namespace YASS.Gameplay
 
             hud.Refresh(_session);
             for (var i = 0; i < players.Length; i++)
-                if (!_session.GetPlayer(i).IsGameOver) players[i].Present(_session.GetPlayer(i));
+            {
+                if (_session.GetPlayer(i).IsGameOver) continue;
+                players[i].Present(_session.GetPlayer(i));
+                players[i].DriveEngine(_shipMovement[i], Time.deltaTime);
+            }
 
             if (!IsRunning && Time.time - _gameOverTime >= restartDelay && AnyRestartPressed())
                 SceneManager.LoadScene(gameObject.scene.buildIndex);

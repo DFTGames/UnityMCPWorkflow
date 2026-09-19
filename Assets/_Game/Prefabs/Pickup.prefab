@@ -111,7 +111,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: 0038ac26418bb9941badba0ceab09de6, type: 3}
+  m_Sprite: {fileID: 21300000, guid: ef49c033cc9911b409fc38e80b8a620e, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -172,7 +172,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: YASS.Game::YASS.Gameplay.PickupView
   body: {fileID: 2605506605928202356}
   spriteRenderer: {fileID: 6796223177349414633}
-  healthSprite: {fileID: 21300000, guid: 0038ac26418bb9941badba0ceab09de6, type: 3}
-  weaponUpgradeSprite: {fileID: 21300000, guid: fb2eb7dfdb15f4343b504120bd4cecb6, type: 3}
-  shieldSprite: {fileID: 21300000, guid: cf7c330baaff6e1469d9bd4d06545117, type: 3}
-  extraLifeSprite: {fileID: 21300000, guid: 324e91743e96cb242804e477f07468dd, type: 3}
+  healthSprite: {fileID: 21300000, guid: ef49c033cc9911b409fc38e80b8a620e, type: 3}
+  weaponUpgradeSprite: {fileID: 21300000, guid: cf489991e0bcb734b8b9df7a54818fa4, type: 3}
+  shieldSprite: {fileID: 21300000, guid: 7a9e9153078146644aee5d62041c9596, type: 3}
+  extraLifeSprite: {fileID: 21300000, guid: 1b05a7889d12dc9459177446980a7ab4, type: 3}
