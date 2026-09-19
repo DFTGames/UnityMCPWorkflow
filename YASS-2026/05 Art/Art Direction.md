@@ -18,13 +18,18 @@ updated: 2026-09-19
 - Orange tracer bullets and big fiery explosions.
 - Per-player HUD: heart lives, health bar, kill count, player name.
 
+## Level settings
+Each of the 8 levels has its own backdrop and palette; see [[Levels]].
+
 ## Production
 Art and audio are new, created with AI generation tools (Unity AI asset generation), then curated for consistency.
 
-## Colour palette
-_TBD_
+## Screen and orientation
+- **Landscape only**, designed at a **16:9** reference.
+- The playfield has a **fixed visible height**; the horizontal view widens or narrows with the aspect ratio (supported from 4:3 to 21:9, including 19.5:9 phones).
+- The HUD is anchored inside the device safe area (notches, rounded corners).
 
-## Resolution and pixel density
-_TBD. Must suit PC, mobile and WebGL._
+## Colour palette
+_To be defined._
 
 Back to [[00 GDD Home]]

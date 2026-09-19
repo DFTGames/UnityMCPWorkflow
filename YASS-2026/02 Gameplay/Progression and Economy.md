@@ -2,7 +2,7 @@
 tags:
   - gdd
   - gameplay
-status: review
+status: approved
 updated: 2026-09-19
 ---
 

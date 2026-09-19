@@ -21,6 +21,7 @@ Each page has a `status` property: `draft` (being written), `review` (ready for 
 - [[Mechanics]]
 - [[Controls]]
 - [[Progression and Economy]]
+- [[Scoring]]
 - [[Difficulty and Balancing]]
 
 ## 3. World and Narrative
