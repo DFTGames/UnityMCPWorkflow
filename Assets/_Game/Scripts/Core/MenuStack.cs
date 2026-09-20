@@ -14,7 +14,8 @@ namespace YASS.Core
         Credits,
         Pause,
         GameOver,
-        SectorClear
+        SectorClear,
+        Victory
     }
 
     /// <summary>
@@ -59,7 +60,7 @@ namespace YASS.Core
         /// and nothing can be stacked on top of them.
         /// </summary>
         public static bool IsResult(MenuScreen screen) =>
-            screen == MenuScreen.GameOver || screen == MenuScreen.SectorClear;
+            screen == MenuScreen.GameOver || screen == MenuScreen.SectorClear || screen == MenuScreen.Victory;
 
         /// <summary>
         /// Called the moment the run ends, before the results panel is shown, so the short delay before it

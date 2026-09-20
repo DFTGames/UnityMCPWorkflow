@@ -48,18 +48,21 @@ namespace YASS.Editor
             var settings = MenuSceneParts.BuildSettings(canvas, router, out var settingsFirst);
             var gameOver = BuildGameOver(canvas, out var gameOverFirst, out var gameOverMenu);
             var sectorClear = BuildSectorClear(canvas, out var sectorClearFirst, out var sectorClearMenu);
+            var victory = BuildVictory(canvas, out var victoryFirst, out var victoryMenu);
 
             MenuSceneParts.AddScreen(pause, MenuScreen.Pause, pauseFirst);
             MenuSceneParts.AddScreen(settings, MenuScreen.Settings, settingsFirst);
             MenuSceneParts.AddScreen(gameOver, MenuScreen.GameOver, gameOverFirst);
             MenuSceneParts.AddScreen(sectorClear, MenuScreen.SectorClear, sectorClearFirst);
+            MenuSceneParts.AddScreen(victory, MenuScreen.Victory, victoryFirst);
 
             MenuSceneParts.SerializeRouter(router, MenuScreen.None, new[]
             {
                 pause.GetComponent<MenuScreenView>(),
                 settings.GetComponent<MenuScreenView>(),
                 gameOver.GetComponent<MenuScreenView>(),
-                sectorClear.GetComponent<MenuScreenView>()
+                sectorClear.GetComponent<MenuScreenView>(),
+                victory.GetComponent<MenuScreenView>()
             });
 
             var runner = FindInRoots<GameRunner>(roots);
@@ -71,15 +74,17 @@ namespace YASS.Editor
                 MenuSceneParts.Find(o, "router").objectReferenceValue = router;
                 MenuSceneParts.Find(o, "gameOver").objectReferenceValue = gameOverMenu;
                 MenuSceneParts.Find(o, "sectorClear").objectReferenceValue = sectorClearMenu;
+                MenuSceneParts.Find(o, "victory").objectReferenceValue = victoryMenu;
             });
 
-            MenuSceneParts.LayoutNow(pause, settings, gameOver, sectorClear);
+            MenuSceneParts.LayoutNow(pause, settings, gameOver, sectorClear, victory);
 
             // Nothing is open while the level is being played.
             pause.SetActive(false);
             settings.SetActive(false);
             gameOver.SetActive(false);
             sectorClear.SetActive(false);
+            victory.SetActive(false);
 
             MenuSceneParts.SaveAndRelease(scene, LevelScenePath, openedByBuilder);
             Debug.Log($"Built the menus in {LevelScenePath}");
@@ -116,6 +121,43 @@ namespace YASS.Editor
             MenuSceneParts.Serialize(menu, o => MenuSceneParts.Find(o, "router").objectReferenceValue = router);
 
             first = resume;
+            return panel.gameObject;
+        }
+
+        /// <summary>
+        /// The campaign's ending, shown instead of Sector Clear after the last level (GDD "Core Loop",
+        /// Win conditions). It reports the whole run, not the level just finished.
+        /// </summary>
+        static GameObject BuildVictory(Transform canvas, out Selectable first, out ResultsMenu menu)
+        {
+            var panel = MenuUiFactory.CreatePanel("VictoryScreen", canvas, MenuUiFactory.Panel);
+            var column = MenuUiFactory.CreateColumn("Column", panel);
+
+            MenuUiFactory.CreateText("Heading", column, "Campaign Complete", MenuUiFactory.HeadingFontSize,
+                MenuUiFactory.Secondary);
+            MenuUiFactory.CreateText("Blurb", column, "The sector is yours, pilot.", 24, MenuUiFactory.Text);
+
+            var score = MenuUiFactory.CreateText("Score", column, "Final score 0", MenuUiFactory.BodyFontSize,
+                MenuUiFactory.Text);
+            var kills = MenuUiFactory.CreateText("Kills", column, "Kills 0", MenuUiFactory.BodyFontSize,
+                MenuUiFactory.Text);
+            var chain = MenuUiFactory.CreateText("Chain", column, "Best chain x1.0", MenuUiFactory.BodyFontSize,
+                MenuUiFactory.Secondary);
+
+            menu = panel.gameObject.AddComponent<ResultsMenu>();
+
+            var title = MenuUiFactory.CreateButton("VictoryTitle", column, "Title");
+            UnityEventTools.AddPersistentListener(title.onClick, menu.QuitToTitle);
+
+            MenuSceneParts.Serialize(menu, o =>
+            {
+                MenuSceneParts.Find(o, "scoreText").objectReferenceValue = score;
+                MenuSceneParts.Find(o, "killsText").objectReferenceValue = kills;
+                MenuSceneParts.Find(o, "chainText").objectReferenceValue = chain;
+                MenuSceneParts.Find(o, "scorePrefix").stringValue = "Final score ";
+            });
+
+            first = title;
             return panel.gameObject;
         }
 
@@ -163,7 +205,7 @@ namespace YASS.Editor
             menu = panel.gameObject.AddComponent<ResultsMenu>();
 
             var continueButton = MenuUiFactory.CreateButton("Continue", column, "Continue");
-            UnityEventTools.AddPersistentListener(continueButton.onClick, menu.QuitToTitle);
+            UnityEventTools.AddPersistentListener(continueButton.onClick, menu.Continue);
 
             MenuSceneParts.Serialize(menu, o =>
             {

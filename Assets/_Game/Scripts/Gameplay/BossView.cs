@@ -90,7 +90,7 @@ namespace YASS.Gameplay
         }
 
         /// <summary>Hull hits: the armour absorbs the shot with no damage (the projectile is used up).</summary>
-        public void TakeHit(float damage, int playerIndex)
+        public void TakeHit(float damage, int playerIndex, Vector2 hitPoint)
         {
             ArmourHits++;
             if (_flash != null) _flash.Flash(); // armour absorbs the shot, but the hit still reads
@@ -104,7 +104,7 @@ namespace YASS.Gameplay
             // the opposite of the boss's one mechanic.
             if (!_brain.IsCoreOpen)
             {
-                TakeHit(damage, playerIndex);
+                TakeHit(damage, playerIndex, Position);
                 return;
             }
 

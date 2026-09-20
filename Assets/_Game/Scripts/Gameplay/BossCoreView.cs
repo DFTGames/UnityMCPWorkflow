@@ -25,7 +25,7 @@ namespace YASS.Gameplay
             _shownOpen = null;
         }
 
-        public void TakeHit(float damage, int playerIndex)
+        public void TakeHit(float damage, int playerIndex, Vector2 hitPoint)
         {
             if (_boss != null) _boss.TakeCoreHit(damage, playerIndex);
         }

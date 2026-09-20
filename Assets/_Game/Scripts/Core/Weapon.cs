@@ -94,6 +94,12 @@ namespace YASS.Core
         }
 
         /// <summary>Drops the level by one, never below <see cref="MinLevel"/>.</summary>
+        /// <summary>Restores the level a player carried out of the previous campaign level.</summary>
+        internal void Restore(int level)
+        {
+            Level = Math.Clamp(level, MinLevel, MaxLevel);
+        }
+
         internal void Downgrade()
         {
             if (Level > MinLevel) Level--;

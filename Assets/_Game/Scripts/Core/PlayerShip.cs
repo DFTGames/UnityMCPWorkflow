@@ -36,6 +36,13 @@ namespace YASS.Core
             Weapon = new Weapon();
         }
 
+        /// <summary>Restores what this player carried out of the previous level: lives, health and weapon.</summary>
+        internal void Restore(PlayerCarry carry)
+        {
+            Vitals.Restore(carry.Lives, carry.Health);
+            Weapon.Restore(carry.WeaponLevel);
+        }
+
         /// <summary>
         /// A hit from a projectile or hazard. Invulnerability ignores it without using the shield;
         /// otherwise the shield absorbs it, or health takes the damage. Losing a life drops the weapon one level.

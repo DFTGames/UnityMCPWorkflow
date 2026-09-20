@@ -14,7 +14,11 @@ namespace YASS.UI
         public const string TitleScene = "Title";
         public const string FirstLevelScene = "Level01";
 
+        const string CampaignPath = "Campaign"; // in Resources, so the flow needs no scene reference
+
         static SettingsService _settings;
+        static CampaignProgress _progress;
+        static Campaign _campaign;
 
         /// <summary>The difficulty chosen on the difficulty screen; the default until one is chosen.</summary>
         public static Difficulty SelectedDifficulty => RunContext.Difficulty;
@@ -25,6 +29,24 @@ namespace YASS.UI
         /// <summary>Settings, loaded on first use and shared by every screen.</summary>
         public static SettingsService Settings => _settings ??= new SettingsService(new PlayerPrefsSettingsStore());
 
+        /// <summary>What the player has finished before, across sessions.</summary>
+        public static CampaignProgress Progress => _progress ??= new CampaignProgress(new PlayerPrefsSettingsStore());
+
+        /// <summary>The campaign's levels, in order.</summary>
+        public static Campaign Campaign
+        {
+            get
+            {
+                if (_campaign == null) _campaign = Resources.Load<Campaign>(CampaignPath);
+                if (_campaign == null) Debug.LogError($"No campaign asset at Resources/{CampaignPath}.");
+
+                return _campaign;
+            }
+        }
+
+        /// <summary>The campaign run in progress, or null outside one.</summary>
+        public static CampaignRun Run => RunContext.Campaign;
+
         /// <summary>
         /// This project runs with domain reloading off (Enter Play Mode Options), so statics survive from one
         /// play session to the next. Without this reset the second run in the Editor would start with the
@@ -34,20 +56,60 @@ namespace YASS.UI
         static void ResetStatics()
         {
             _settings = null;
+            _progress = null;
+            _campaign = null;
             RunContext.Clear();
         }
 
         /// <summary>Test seam: replaces the settings, including their store. Null restores the saved ones.</summary>
         internal static void UseSettings(SettingsService settings) => _settings = settings;
 
+        /// <summary>Test seam: replaces saved progress, so a test never reads or writes the player's own.</summary>
+        internal static void UseProgress(CampaignProgress progress) => _progress = progress;
+
         /// <summary>Test seam: forgets the chosen difficulty, as if the game had just started.</summary>
         internal static void ResetForTests() => RunContext.Clear();
 
         public static void StartCampaign(Difficulty difficulty)
         {
-            RunContext.Configure(difficulty);
+            var campaign = Campaign;
+            if (campaign == null) return;
+
+            RunContext.Begin(campaign.NewRun(difficulty));
             Settings.Flush(); // last chance to save before the level takes over
-            SceneManager.LoadScene(FirstLevelScene);
+
+            SceneManager.LoadScene(campaign.SceneFor(0));
+        }
+
+        /// <summary>
+        /// Moves on to the next level of the campaign, or reports that there is none left to play, which is
+        /// how the flow knows the run has been won (GDD "Core Loop", Win conditions).
+        /// </summary>
+        public static bool TryAdvanceToNextLevel()
+        {
+            var run = RunContext.Campaign;
+            var campaign = Campaign;
+            if (run == null || campaign == null || run.IsComplete) return false;
+
+            var scene = campaign.SceneFor(run.LevelIndex);
+            if (scene == null) return false;
+
+            SceneManager.LoadScene(scene);
+            return true;
+        }
+
+        /// <summary>Plays the current campaign level again after a game over, keeping the run's difficulty.</summary>
+        public static void RestartCampaignLevel()
+        {
+            var run = RunContext.Campaign;
+            if (run == null)
+            {
+                RestartLevel();
+                return;
+            }
+
+            // A retry starts the level fresh but keeps what the run has banked from earlier levels.
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }
 
         /// <summary>Plays the current level again, keeping the chosen difficulty.</summary>

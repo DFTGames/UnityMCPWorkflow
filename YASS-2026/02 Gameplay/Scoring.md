@@ -3,7 +3,7 @@ tags:
   - gdd
   - gameplay
 status: approved
-updated: 2026-09-19
+updated: 2026-09-20
 ---
 
 # Scoring
@@ -16,6 +16,7 @@ updated: 2026-09-19
 | Large enemy | 500 |
 | Splitting meteor: large / medium / small | 50 / 30 / 20 |
 | Solid meteor | 150 |
+| Proximity mine shot down | 50 |
 | Boss | 10,000 × level number |
 | Weapon upgrade collected at level 5 | 500 |
 | Level clear | remaining health % × 20 (maximum 2,000) |

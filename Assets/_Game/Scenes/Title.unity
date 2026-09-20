@@ -1494,6 +1494,95 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 357104968}
   m_CullTransparentMesh: 1
+--- !u!1 &369236536
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 369236540}
+  - component: {fileID: 369236539}
+  - component: {fileID: 369236538}
+  - component: {fileID: 369236537}
+  m_Layer: 0
+  m_Name: Feedback
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &369236537
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 369236536}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a3c004fd940369243b0c05d98ff2a799, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: YASS.Game::YASS.Feedback.EffectSpawner
+  effects:
+  - Effect: 1
+    Prefab: {fileID: 3721319857858486735, guid: cda14b9f25239c2499c9a3dc555afa2e, type: 3}
+  - Effect: 2
+    Prefab: {fileID: 1631198982879575353, guid: 563b412f17048b546a8c2c86b695b5b6, type: 3}
+  - Effect: 3
+    Prefab: {fileID: 5367984158466125018, guid: e58ebffe019ae2e43abf7c374feb0476, type: 3}
+  - Effect: 4
+    Prefab: {fileID: 6488165673637949148, guid: ddde53498349e374c9a39c81ac2055d5, type: 3}
+  - Effect: 5
+    Prefab: {fileID: 4396470170297893889, guid: f3c1c36a8f5773445850a04d89f67b11, type: 3}
+  - Effect: 6
+    Prefab: {fileID: 7114297327903152974, guid: 34645f1052604054fb1bab8a6c568be5, type: 3}
+  root: {fileID: 0}
+--- !u!114 &369236538
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 369236536}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac9252e685ede3741bb30c4609a90774, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: YASS.Game::YASS.Feedback.MixerVolumes
+  mixer: {fileID: 24100000, guid: 70632f2d35bba9143bf027e788961d85, type: 2}
+--- !u!114 &369236539
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 369236536}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7521b62ad4a18740977d4c990d8ba2c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: YASS.Game::YASS.Feedback.AudioDirector
+  bank: {fileID: 11400000, guid: 5b9e29a6c12196a4c90309cb8ef8bd7c, type: 2}
+  output: {fileID: 3339253982671389094, guid: 70632f2d35bba9143bf027e788961d85, type: 2}
+  voices: 12
+--- !u!4 &369236540
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 369236536}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1153718043}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &370076677
 GameObject:
   m_ObjectHideFlags: 0
@@ -2576,95 +2665,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 585867123}
   m_CullTransparentMesh: 1
---- !u!1 &637016245
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 637016249}
-  - component: {fileID: 637016248}
-  - component: {fileID: 637016247}
-  - component: {fileID: 637016246}
-  m_Layer: 0
-  m_Name: Feedback
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &637016246
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 637016245}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a3c004fd940369243b0c05d98ff2a799, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: YASS.Game::YASS.Feedback.EffectSpawner
-  effects:
-  - Effect: 1
-    Prefab: {fileID: 3721319857858486735, guid: cda14b9f25239c2499c9a3dc555afa2e, type: 3}
-  - Effect: 2
-    Prefab: {fileID: 1631198982879575353, guid: 563b412f17048b546a8c2c86b695b5b6, type: 3}
-  - Effect: 3
-    Prefab: {fileID: 5367984158466125018, guid: e58ebffe019ae2e43abf7c374feb0476, type: 3}
-  - Effect: 4
-    Prefab: {fileID: 6488165673637949148, guid: ddde53498349e374c9a39c81ac2055d5, type: 3}
-  - Effect: 5
-    Prefab: {fileID: 4396470170297893889, guid: f3c1c36a8f5773445850a04d89f67b11, type: 3}
-  - Effect: 6
-    Prefab: {fileID: 7114297327903152974, guid: 34645f1052604054fb1bab8a6c568be5, type: 3}
-  root: {fileID: 0}
---- !u!114 &637016247
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 637016245}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ac9252e685ede3741bb30c4609a90774, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: YASS.Game::YASS.Feedback.MixerVolumes
-  mixer: {fileID: 24100000, guid: 70632f2d35bba9143bf027e788961d85, type: 2}
---- !u!114 &637016248
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 637016245}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e7521b62ad4a18740977d4c990d8ba2c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: YASS.Game::YASS.Feedback.AudioDirector
-  bank: {fileID: 11400000, guid: 5b9e29a6c12196a4c90309cb8ef8bd7c, type: 2}
-  output: {fileID: 3339253982671389094, guid: 70632f2d35bba9143bf027e788961d85, type: 2}
-  voices: 12
---- !u!4 &637016249
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 637016245}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1006145771}
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &637191458
 GameObject:
   m_ObjectHideFlags: 0
@@ -3597,57 +3597,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 956748002}
   m_CullTransparentMesh: 1
---- !u!1 &1006145770
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1006145771}
-  - component: {fileID: 1006145772}
-  m_Layer: 0
-  m_Name: Music
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1006145771
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1006145770}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 637016249}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1006145772
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1006145770}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dc4c0614d94957b48838ef02f9100220, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: YASS.Game::YASS.Feedback.MusicPlayer
-  output: {fileID: 8054666258466077309, guid: 70632f2d35bba9143bf027e788961d85, type: 2}
-  playOnStart: 1
-  menuTheme: {fileID: 8300000, guid: 3af8c1a27a287e849a9aff4c977751f9, type: 3}
-  levelTheme: {fileID: 8300000, guid: 2a97c3fa03d19ca4287dc1f816feaf69, type: 3}
-  bossTheme: {fileID: 8300000, guid: 3771240ecf1dcfd4ba6fb42cd6839019, type: 3}
-  crossfadeSeconds: 1.5
-  trim: 0.8
 --- !u!1 &1008939078
 GameObject:
   m_ObjectHideFlags: 0
@@ -4402,6 +4351,57 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!1 &1153718042
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1153718043}
+  - component: {fileID: 1153718044}
+  m_Layer: 0
+  m_Name: Music
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1153718043
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1153718042}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 369236540}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1153718044
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1153718042}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc4c0614d94957b48838ef02f9100220, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: YASS.Game::YASS.Feedback.MusicPlayer
+  output: {fileID: 8054666258466077309, guid: 70632f2d35bba9143bf027e788961d85, type: 2}
+  playOnStart: 1
+  menuTheme: {fileID: 8300000, guid: 3af8c1a27a287e849a9aff4c977751f9, type: 3}
+  levelTheme: {fileID: 8300000, guid: 2a97c3fa03d19ca4287dc1f816feaf69, type: 3}
+  bossTheme: {fileID: 8300000, guid: 3771240ecf1dcfd4ba6fb42cd6839019, type: 3}
+  crossfadeSeconds: 1.5
+  trim: 0.8
 --- !u!1 &1170292970
 GameObject:
   m_ObjectHideFlags: 0
@@ -8702,4 +8702,4 @@ SceneRoots:
   - {fileID: 97484044}
   - {fileID: 1745320812}
   - {fileID: 141443896}
-  - {fileID: 637016249}
+  - {fileID: 369236540}

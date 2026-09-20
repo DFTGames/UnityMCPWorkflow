@@ -128,6 +128,11 @@ namespace YASS.Gameplay
             {
                 _runner.OnPlayerRammedMeteor(this, meteor);
             }
+            else if (other.TryGetComponent(out MineView _))
+            {
+                // Deliberately nothing: a mine goes off by proximity, which is wider than its collider, so
+                // touching one is already covered. Treating it as contact damage too would hit twice.
+            }
             else
             {
                 // The boss has several colliders (hull pieces and its core), all on one rigidbody; any counts as the boss.

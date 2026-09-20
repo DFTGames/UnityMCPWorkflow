@@ -57,6 +57,17 @@ namespace YASS.Core
             return HitOutcome.LifeLost;
         }
 
+        /// <summary>Puts the ship back into the state it left the previous level in (GDD "Core Loop").</summary>
+        internal void Restore(int lives, float health)
+        {
+            if (lives < 0) throw new ArgumentOutOfRangeException(nameof(lives));
+            if (health < 0f) throw new ArgumentOutOfRangeException(nameof(health));
+
+            Lives = lives;
+            Health = MathF.Min(health, MaxHealth);
+            InvulnerabilityRemaining = 0f;
+        }
+
         internal void Heal(float amount)
         {
             if (IsGameOver || amount <= 0f) return;

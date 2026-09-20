@@ -3,7 +3,7 @@ tags:
   - gdd
   - content
 status: approved
-updated: 2026-09-19
+updated: 2026-09-20
 ---
 
 # Enemies and Hazards
@@ -35,6 +35,20 @@ Base values before difficulty scaling; stored in `Assets/_Game/ScriptableObjects
 | ---- | ------ | ----- | -------------- | ------ | ------ |
 | Dart | 1 | 7 | 20 | Straight | None |
 | Weaver | 3 | 3 | 20 | Sine wave, amplitude 1.5, 0.4 Hz | Aimed shot every 2 s (first after 0.8 s), speed 6, damage 10 |
+| Swarm drone | 1 | 6 | 15 | Straight; spawned eight at a time in a wedge or line ([[Wave System]] formations) | None |
+| Gunship | 12 | 2.5 | 30 | Flies in, stops a third of the way in from the right edge | Bursts of 3 shots 0.15 s apart, 2.2 s between bursts, speed 7, damage 10 |
+| Diver | 4 | 3 | 30 | Enters for 0.8 s, stops and locks on for 0.6 s, then charges at 12 along the line it locked | None |
+| Mine Layer | 5 | 2.5 | 20 | Straight, dropping a mine every 1.6 s | Mines (below) |
+| Frigate | 16 | 2 | 30 | Straight and slow | None: a shielded wall to be flown around |
+| Sniper | 3 | 3 | 20 | Flies in, stops a quarter of the way in from the right edge | Warns for 1.2 s along a fixed line, then a 0.25 s beam (damage 20, half-width 0.15), 1.5 s before the next |
+
+### The new enemies' rules
+%% Implemented in Core (EnemyBehaviours.cs) and driven by EnemyView. %%
+- **The Diver commits.** It takes its aim at the end of the lock and cannot steer after that, so stopping still is the tell and moving is the answer.
+- **The Sniper's line is fixed** when the warning starts and the beam never follows the player; the warning is the whole fight. The line is shown from the moment it is chosen, fading up as the shot nears, and goes out between shots. The beam is a line, not a projectile: it hits the instant it fires, once per shot.
+- **Difficulty scales every clock, not just the guns.** A harder run means a faster charge, mines laid sooner and a shorter warning; the beam's own quarter-second is fixed.
+- **The Frigate's shield covers 70 degrees either side of its nose.** Shots into its front are turned away, so it has to be hit from the side or behind: this is what the twin-stick aiming is for ([[Controls]]).
+- **Mines arm after 0.6 s**, so a Mine Layer cannot kill the ship chasing it, trigger within 1.5 units, deal 25 damage, and expire after 12 s if nobody comes near. A mine can also be shot down (50 points), but the blast is the same wherever it is set off, so clearing one from close range costs health: mines are laid to be flown around, not tidied up. They drift left with the field and belong to no wave, so a wave is never held open by mines nobody went near.
 
 | Meteor | Health | Speed | Contact damage | Size (units) |
 | ------ | ------ | ----- | -------------- | ------------ |

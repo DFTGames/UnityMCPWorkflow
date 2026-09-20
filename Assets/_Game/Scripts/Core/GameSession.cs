@@ -50,6 +50,13 @@ namespace YASS.Core
         public PlayerShip GetPlayer(int playerIndex) => _players[CheckIndex(playerIndex)];
 
         /// <summary>
+        /// Starts a player where the previous level left them, rather than fresh (GDD "Core Loop": a campaign
+        /// is one run through the levels).
+        /// </summary>
+        public void RestorePlayer(int playerIndex, PlayerCarry carry) =>
+            _players[CheckIndex(playerIndex)].Restore(carry);
+
+        /// <summary>
         /// Advances all timers by one step and applies each player's command. Shots fired are appended to
         /// <paramref name="shots"/> (tagged with the firing player's index). Game-over players do not fire.
         /// </summary>

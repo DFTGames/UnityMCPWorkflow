@@ -26,6 +26,7 @@ namespace YASS.Tests.UI
         const string LevelScene = "Level01";
 
         bool _previousRunInBackground;
+        InputSettings.BackgroundBehavior _previousBackgroundBehavior;
 
         /// <summary>An in-memory store, so tests never touch the player's own saved settings.</summary>
         sealed class MemoryStore : ISettingsStore
@@ -47,7 +48,14 @@ namespace YASS.Tests.UI
         {
             _previousRunInBackground = Application.runInBackground;
             Application.runInBackground = true;
+
+            // Queued input is discarded while the Editor is unfocused, which is how an automated run always
+            // works: without this the input-driven tests pass or fail depending on where the mouse happens to be.
+            _previousBackgroundBehavior = InputSystem.settings.backgroundBehavior;
+            InputSystem.settings.backgroundBehavior = InputSettings.BackgroundBehavior.IgnoreFocus;
+
             GameFlow.UseSettings(new SettingsService(new MemoryStore()));
+            GameFlow.UseProgress(new CampaignProgress(new MemoryStore()));
             GameFlow.ResetForTests();
         }
 
@@ -56,7 +64,9 @@ namespace YASS.Tests.UI
         {
             Time.timeScale = 1f;
             Application.runInBackground = _previousRunInBackground;
+            InputSystem.settings.backgroundBehavior = _previousBackgroundBehavior;
             GameFlow.UseSettings(null);
+            GameFlow.UseProgress(null);
             GameFlow.ResetForTests();
         }
 
@@ -265,8 +275,10 @@ namespace YASS.Tests.UI
             // consume the press in a frame the router has already run.
             InputSystem.QueueStateEvent(keyboard, new KeyboardState(key));
             yield return null;
+            yield return null; // the Input System updates early in a frame; give it one to be seen
 
             InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+            yield return null;
             yield return null;
         }
 
@@ -290,11 +302,11 @@ namespace YASS.Tests.UI
             Assert.That(Router.Current, Is.EqualTo(MenuScreen.None));
 
             yield return PressKey(Key.Escape);
-            Assert.That(Router.Current, Is.EqualTo(MenuScreen.Pause), "Escape opens the pause menu");
+            yield return WaitUntil(() => Router.Current == MenuScreen.Pause, 2f, "Escape to open the pause menu");
             Assert.That(Time.timeScale, Is.Zero);
 
             yield return PressKey(Key.Escape);
-            Assert.That(Router.Current, Is.EqualTo(MenuScreen.None), "Escape again resumes");
+            yield return WaitUntil(() => Router.Current == MenuScreen.None, 2f, "Escape again to resume");
             Assert.That(Time.timeScale, Is.EqualTo(1f));
         }
 
@@ -306,8 +318,8 @@ namespace YASS.Tests.UI
             yield return null;
 
             yield return PressKey(Key.Escape);
+            yield return WaitUntil(() => Router.Current == MenuScreen.Title, 2f, "Escape to go back");
 
-            Assert.That(Router.Current, Is.EqualTo(MenuScreen.Title));
             Assert.That(Time.timeScale, Is.EqualTo(1f), "there is no game to pause in the menus");
         }
 
@@ -524,6 +536,86 @@ namespace YASS.Tests.UI
             Assert.That(Time.timeScale, Is.EqualTo(1f));
             Assert.That(GameFlow.HasChosenDifficulty, Is.False, "no run is configured at the menus");
             Assert.That(Router.Current, Is.EqualTo(MenuScreen.Title));
+        }
+
+        // ---- The campaign ----
+
+        [UnityTest]
+        public IEnumerator StartingACampaign_BeginsARunOnTheFirstLevel()
+        {
+            yield return Load(TitleScene);
+            FindButton("Play").onClick.Invoke();
+            yield return null;
+            FindButton("Pilot").onClick.Invoke();
+            yield return WaitUntil(() => SceneManager.GetActiveScene().name == LevelScene, 10f, "Level01 to load");
+            yield return null;
+
+            var run = GameFlow.Run;
+            Assert.That(run, Is.Not.Null, "no campaign run was started");
+            Assert.That(run.LevelNumber, Is.EqualTo(1));
+            Assert.That(run.Difficulty, Is.EqualTo(Difficulty.Pilot));
+            Assert.That(run.LevelCount, Is.EqualTo(GameFlow.Campaign.LevelCount));
+        }
+
+        [UnityTest]
+        public IEnumerator ClearingTheLastLevel_WinsTheCampaign()
+        {
+            // The campaign is one level long for now, so clearing it is the ending.
+            yield return StartCampaignAndClearTheLevel();
+
+            yield return WaitUntil(() => Router.Current == MenuScreen.Victory, 8f, "the campaign ending");
+
+            Assert.That(GameFlow.Run.IsComplete, Is.True);
+            Assert.That(GameFlow.Progress.IsCampaignComplete(Difficulty.Pilot), Is.True, "and it is remembered");
+            Assert.That(GameFlow.Progress.IsEndlessUnlocked, Is.True, "which is what unlocks Endless");
+        }
+
+        [UnityTest]
+        public IEnumerator TheEndingShowsTheRunsTotals()
+        {
+            yield return StartCampaignAndClearTheLevel();
+            yield return WaitUntil(() => Router.Current == MenuScreen.Victory, 8f, "the campaign ending");
+
+            var texts = FindScreen(MenuScreen.Victory).GetComponentsInChildren<TMPro.TMP_Text>(true);
+            var joined = string.Join(" | ", Array.ConvertAll(texts, t => t.text));
+
+            Assert.That(joined, Does.Contain("Final score " + GameFlow.Run.CarriedScore));
+            Assert.That(joined, Does.Contain("Kills " + GameFlow.Run.CarriedKills));
+        }
+
+        [UnityTest]
+        public IEnumerator ALevelPlayedOnItsOwn_StillShowsSectorClear()
+        {
+            // Opening the scene directly is not a campaign; it must not try to advance one.
+            yield return Load(LevelScene);
+            var runner = Object.FindAnyObjectByType<GameRunner>();
+            yield return ClearTheLevel(runner);
+
+            yield return WaitUntil(() => Router.Current == MenuScreen.SectorClear, 8f, "the Sector Clear screen");
+            Assert.That(GameFlow.Run, Is.Null);
+        }
+
+        /// <summary>Starts a campaign from the menus and beats the level's boss.</summary>
+        IEnumerator StartCampaignAndClearTheLevel()
+        {
+            yield return Load(TitleScene);
+            FindButton("Play").onClick.Invoke();
+            yield return null;
+            FindButton("Pilot").onClick.Invoke();
+            yield return WaitUntil(() => SceneManager.GetActiveScene().name == LevelScene, 10f, "Level01 to load");
+            yield return null;
+
+            yield return ClearTheLevel(Object.FindAnyObjectByType<GameRunner>());
+        }
+
+        static IEnumerator ClearTheLevel(GameRunner runner)
+        {
+            runner.SpawningEnabled = false;
+            runner.StartBossFightNow();
+
+            var boss = runner.Boss;
+            yield return WaitUntil(() => boss.Brain.IsCoreOpen, 8f, "the boss core to open");
+            boss.TakeCoreHit(boss.Brain.Health.Max, 0);
         }
 
         [UnityTest]

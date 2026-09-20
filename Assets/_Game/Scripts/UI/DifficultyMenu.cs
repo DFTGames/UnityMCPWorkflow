@@ -22,11 +22,17 @@ namespace YASS.UI
         {
             if (endlessButton == null) return;
 
+            // The unlock rule is in place (GDD "Core Loop": finishing the campaign unlocks Endless), but the
+            // mode itself is not built yet, so the entry stays disabled and says which it is.
             endlessButton.interactable = false;
 
-            // The colour tint only dims the button's own graphic; its label would stay bright white.
             var label = endlessButton.GetComponentInChildren<TMP_Text>(true);
-            if (label != null) label.color = lockedLabel;
+            if (label == null) return;
+
+            label.text = GameFlow.Progress.IsEndlessUnlocked ? "Endless (coming soon)" : "Endless (locked)";
+
+            // The colour tint only dims the button's own graphic; its label would stay bright white.
+            label.color = lockedLabel;
         }
 
         public void ChooseCadet() => Choose(Difficulty.Cadet);

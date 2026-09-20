@@ -79,7 +79,7 @@ namespace YASS.Gameplay
                 Despawn();
         }
 
-        public void TakeHit(float damage, int playerIndex)
+        public void TakeHit(float damage, int playerIndex, Vector2 hitPoint)
         {
             if (!IsAlive) return;
 

@@ -34,6 +34,7 @@ namespace YASS.UI
 
         public MenuScreen Current => Stack.Current;
 
+
         void Awake()
         {
             Stack = new MenuStack(rootScreen);

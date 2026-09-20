@@ -3,7 +3,7 @@ tags:
   - gdd
   - gameplay
 status: approved
-updated: 2026-09-19
+updated: 2026-09-20
 ---
 
 # Core Loop
@@ -20,6 +20,14 @@ Pick mode and difficulty, play a run until victory or game over, submit the scor
 
 ## Long-term loop
 Beat the campaign on higher difficulties, unlock Endless, climb the leaderboards.
+
+## Campaign runs (as built)
+A campaign is **one run through the levels**, not a series of separate games.
+- Lives, health and weapon level carry from each cleared level into the next; score and kills accumulate across the whole run, and the results screens show the run's totals rather than the level's.
+- Clearing a level shows **Sector Clear**, and Continue moves on to the next. Clearing the last one shows the **campaign ending** with the final totals.
+- **Retry** after a game over replays the current level, keeping what the run has banked from earlier ones.
+- Progress is saved per difficulty: how many levels have been cleared, and whether the campaign has been finished. Finishing on any difficulty unlocks Endless; replaying an early level never lowers what has been reached.
+- The campaign's levels are listed in `Assets/_Game/Resources/Campaign.asset`, so the run is won after the last level in that list. Only Level 1 exists so far, so clearing it currently ends the campaign.
 
 ## Win and lose conditions
 - Lose: all lives lost (see [[Mechanics]]).

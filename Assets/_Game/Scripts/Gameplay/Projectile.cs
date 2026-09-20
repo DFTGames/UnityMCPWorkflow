@@ -53,7 +53,7 @@ namespace YASS.Gameplay
         {
             if (!IsActive || !other.TryGetComponent(out IDamageable target) || !target.IsAlive) return;
 
-            target.TakeHit(Damage, OwnerIndex);
+            target.TakeHit(Damage, OwnerIndex, body.position);
             if (!Piercing || target.BlocksPiercing) Release();
         }
 

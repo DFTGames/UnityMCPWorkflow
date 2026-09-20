@@ -28,19 +28,35 @@ namespace YASS.UI
         /// Shows one run's figures: total score and kills, the best chain (Game Over) and the bonus points that
         /// made up the total (Sector Clear). Panels leave out whatever they do not show.
         /// </summary>
-        public void Fill(ScoreKeeper score)
+        public void Fill(ScoreKeeper score) =>
+            Fill(score.Score, score.Kills, score.BestChainSteps, score.BonusPoints);
+
+        /// <summary>Shows a whole campaign run's figures, which span several levels.</summary>
+        public void Fill(long score, int kills, int bestChainSteps, long bonuses)
         {
-            Write(scoreText, scorePrefix, score.Score.ToString());
-            Write(killsText, killsPrefix, score.Kills.ToString());
-            Write(clearBonusText, clearBonusPrefix, score.BonusPoints.ToString());
-            Write(chainText, chainPrefix, Multiplier(score.BestChainMultiplier));
+            Write(scoreText, scorePrefix, score.ToString());
+            Write(killsText, killsPrefix, kills.ToString());
+            Write(clearBonusText, clearBonusPrefix, bonuses.ToString());
+            Write(chainText, chainPrefix, Multiplier((10 + bestChainSteps) / 10f));
         }
 
         public void Retry()
         {
             Cue.Play(Sfx.UiConfirm);
             Time.timeScale = 1f;
-            GameFlow.RestartLevel();
+            GameFlow.RestartCampaignLevel();
+        }
+
+        /// <summary>
+        /// Sector Clear: on to the next level of the campaign. With none left the run is over, and the flow
+        /// shows the ending instead, so this only has to handle the ordinary case.
+        /// </summary>
+        public void Continue()
+        {
+            Cue.Play(Sfx.UiConfirm);
+            Time.timeScale = 1f;
+
+            if (!GameFlow.TryAdvanceToNextLevel()) GameFlow.GoToTitle();
         }
 
         public void QuitToTitle()

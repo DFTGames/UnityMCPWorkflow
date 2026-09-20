@@ -429,7 +429,7 @@ namespace YASS.Tests.Feedback
             yield return null;
 
             var closedColour = coreRenderer.color;
-            boss.TakeHit(10f, 0); // armour: flashes the hull
+            boss.TakeHit(10f, 0, boss.Position); // armour: flashes the hull
 
             yield return new WaitForSeconds(VisualCues.HitFlashSeconds * 3f);
 
@@ -465,7 +465,7 @@ namespace YASS.Tests.Feedback
             var renderer = meteor.GetComponentInChildren<SpriteRenderer>();
             var resting = renderer.color;
 
-            meteor.TakeHit(1f, 0); // large meteors take several hits
+            meteor.TakeHit(1f, 0, meteor.Position); // large meteors take several hits
             yield return null;
 
             Assert.That(meteor.IsAlive, Is.True, "the meteor survived, so the hit must read");

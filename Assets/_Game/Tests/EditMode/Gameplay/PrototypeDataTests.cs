@@ -64,6 +64,139 @@ namespace YASS.Tests.Gameplay
             Assert.That(weaver.BulletDamage, Is.EqualTo(10f));
         }
 
+        [TestCase("SwarmDrone", EnemySize.Small, 1f, 6f, 15f)]
+        [TestCase("Gunship", EnemySize.Large, 12f, 2.5f, 30f)]
+        [TestCase("Diver", EnemySize.Medium, 4f, 3f, 30f)]
+        [TestCase("MineLayer", EnemySize.Medium, 5f, 2.5f, 20f)]
+        [TestCase("Frigate", EnemySize.Large, 16f, 2f, 30f)]
+        [TestCase("Sniper", EnemySize.Medium, 3f, 3f, 20f)]
+        public void NewEnemies_MatchGdd(string name, EnemySize size, float health, float speed, float contactDamage)
+        {
+            var enemy = Load<EnemyDefinition>("Enemies/" + name + ".asset");
+
+            Assert.That(enemy.Size, Is.EqualTo(size));
+            Assert.That(enemy.MaxHealth, Is.EqualTo(health));
+            Assert.That(enemy.Speed, Is.EqualTo(speed));
+            Assert.That(enemy.ContactDamage, Is.EqualTo(contactDamage));
+        }
+
+        [Test]
+        public void SwarmDrone_FliesStraightAndDoesNotShoot()
+        {
+            var drone = Load<EnemyDefinition>("Enemies/SwarmDrone.asset");
+
+            Assert.That(drone.Pattern, Is.EqualTo(MotionPattern.Straight));
+            Assert.That(drone.Fires, Is.False, "the swarm is dangerous in numbers, not in firepower");
+        }
+
+        [Test]
+        public void Gunship_HoldsTheRightThirdAndFiresBurstsOfThree()
+        {
+            var gunship = Load<EnemyDefinition>("Enemies/Gunship.asset");
+
+            Assert.That(gunship.Pattern, Is.EqualTo(MotionPattern.HoldPosition));
+            Assert.That(gunship.StationFromRight, Is.EqualTo(1f / 3f).Within(1e-4f));
+            Assert.That(gunship.Fires, Is.True);
+            Assert.That(gunship.ShotsPerBurst, Is.EqualTo(3));
+            Assert.That(gunship.BurstShotInterval, Is.EqualTo(0.15f));
+            Assert.That(gunship.FireInterval, Is.EqualTo(2.2f), "the gap between bursts");
+            Assert.That(gunship.BulletSpeed, Is.EqualTo(7f));
+            Assert.That(gunship.BulletDamage, Is.EqualTo(10f));
+        }
+
+        [Test]
+        public void Diver_EntersLocksOnThenCharges()
+        {
+            var diver = Load<EnemyDefinition>("Enemies/Diver.asset");
+
+            Assert.That(diver.Pattern, Is.EqualTo(MotionPattern.Dive));
+            Assert.That(diver.DiveEntrySeconds, Is.EqualTo(0.8f));
+            Assert.That(diver.DiveLockSeconds, Is.EqualTo(0.6f));
+            Assert.That(diver.DiveChargeSpeed, Is.EqualTo(12f));
+            Assert.That(diver.Fires, Is.False, "the charge is the whole attack");
+        }
+
+        [Test]
+        public void MineLayer_DropsAMineEveryOnePointSixSeconds()
+        {
+            var layer = Load<EnemyDefinition>("Enemies/MineLayer.asset");
+
+            Assert.That(layer.LaysMines, Is.True);
+            Assert.That(layer.MineInterval, Is.EqualTo(1.6f));
+            Assert.That(layer.Pattern, Is.EqualTo(MotionPattern.Straight));
+        }
+
+        [Test]
+        public void Frigate_IsAShieldedWallWithNoWeapon()
+        {
+            var frigate = Load<EnemyDefinition>("Enemies/Frigate.asset");
+
+            Assert.That(frigate.HasFrontShield, Is.True);
+            Assert.That(frigate.Fires, Is.False, "it is a wall to be flown around, not a gun");
+            Assert.That(frigate.Pattern, Is.EqualTo(MotionPattern.Straight));
+        }
+
+        [Test]
+        public void Sniper_WarnsThenFiresAFixedBeam()
+        {
+            var sniper = Load<EnemyDefinition>("Enemies/Sniper.asset");
+
+            Assert.That(sniper.Pattern, Is.EqualTo(MotionPattern.HoldPosition));
+            Assert.That(sniper.StationFromRight, Is.EqualTo(0.25f), "a quarter of the way in from the right edge");
+            Assert.That(sniper.FiresBeam, Is.True);
+            Assert.That(sniper.BeamWarningSeconds, Is.EqualTo(1.2f));
+            Assert.That(sniper.BeamSeconds, Is.EqualTo(0.25f));
+            Assert.That(sniper.BeamRecoverySeconds, Is.EqualTo(1.5f));
+            Assert.That(sniper.BeamDamage, Is.EqualTo(20f));
+            Assert.That(sniper.BeamHalfWidth, Is.EqualTo(0.15f));
+            Assert.That(sniper.BeamLength, Is.EqualTo(40f), "long enough to cross the playfield");
+        }
+
+        /// <summary>
+        /// Every enemy is built on the hardest difficulty as well as the easiest, and the rules objects the view
+        /// makes from these numbers refuse nonsense in their constructors. A definition that cannot be turned
+        /// into a working enemy would throw in the middle of a wave, so it is caught here instead.
+        /// </summary>
+        [TestCase("Dart")]
+        [TestCase("Weaver")]
+        [TestCase("SwarmDrone")]
+        [TestCase("Gunship")]
+        [TestCase("Diver")]
+        [TestCase("MineLayer")]
+        [TestCase("Frigate")]
+        [TestCase("Sniper")]
+        public void EveryEnemy_CanBeBuiltOnEveryDifficulty(string name)
+        {
+            var definition = Load<EnemyDefinition>("Enemies/" + name + ".asset");
+
+            foreach (Difficulty difficulty in System.Enum.GetValues(typeof(Difficulty)))
+            {
+                var settings = DifficultySettings.For(difficulty);
+                var fireInterval = definition.FireInterval / settings.EnemyFireRateMultiplier;
+
+                if (definition.Fires && definition.ShotsPerBurst > 1)
+                    Assert.DoesNotThrow(() => new BurstFire(definition.ShotsPerBurst, definition.BurstShotInterval,
+                        Mathf.Max(fireInterval, definition.BurstShotInterval * (definition.ShotsPerBurst + 1)),
+                        definition.FirstShotDelay), $"{name} on {difficulty}");
+                else if (definition.Fires)
+                    Assert.DoesNotThrow(() => new FireTimer(fireInterval, definition.FirstShotDelay),
+                        $"{name} on {difficulty}");
+
+                if (definition.LaysMines)
+                    Assert.DoesNotThrow(() => new FireTimer(definition.MineInterval / settings.EnemyFireRateMultiplier,
+                        definition.MineInterval), $"{name} on {difficulty}");
+
+                if (definition.Pattern == MotionPattern.Dive)
+                    Assert.DoesNotThrow(() => new DiveAttack(definition.DiveEntrySeconds, definition.DiveLockSeconds,
+                        definition.DiveChargeSpeed * settings.EnemySpeedMultiplier), $"{name} on {difficulty}");
+
+                if (definition.FiresBeam)
+                    Assert.DoesNotThrow(() => new SniperShot(
+                        definition.BeamWarningSeconds / settings.EnemyFireRateMultiplier, definition.BeamSeconds,
+                        definition.BeamRecoverySeconds / settings.EnemyFireRateMultiplier), $"{name} on {difficulty}");
+            }
+        }
+
         [TestCase("MeteorLarge", true, MeteorSize.Large, 4f, 1.5f, 2.5f, 25f, 1.6f)]
         [TestCase("MeteorMedium", true, MeteorSize.Medium, 2f, 2f, 3f, 15f, 1.0f)]
         [TestCase("MeteorSmall", true, MeteorSize.Small, 1f, 2.5f, 3.5f, 10f, 0.6f)]

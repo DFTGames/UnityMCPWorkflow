@@ -36,7 +36,8 @@ flowchart LR
 - **Settings:** Music volume, Sound effects volume, Screen shake (on/off), Fullscreen (desktop only, hidden elsewhere). Saved between sessions, as soon as each is changed, so leaving by any route keeps it. Reachable from Title and Pause. Defaults: music 0.7, effects 0.9, screen shake on, fullscreen on.
 - **Credits:** DFT Games Studios, the 2010 original, AI tools used, packages.
 - **Game Over:** score, kills, best chain of the run; Retry, Title.
-- **Sector Clear:** score, bonus points earned (level clear, no-damage boss, max-level upgrades) and kills; Continue (to Title while only level 1 exists).
+- **Sector Clear:** the run's score, bonus points earned (level clear, no-damage boss, max-level upgrades) and kills; **Continue** moves on to the next level of the campaign.
+- **Campaign ending:** shown instead of Sector Clear after the campaign's last level, with the run's final score, kills and best chain; Title.
 
 Results screens appear **1.5 seconds** after the run ends, so the last explosion is not hidden by a panel. They cannot be paused or dismissed with Back: the player leaves them by choosing a button.
 

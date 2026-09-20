@@ -70,6 +70,8 @@ namespace YASS.Gameplay
         [SerializeField, Tooltip("Enemy the boss launches from its bays.")] EnemyView bossMinionPrefab;
         [SerializeField, Min(0f)] float spawnEdgeMargin = 1f;
 
+        [SerializeField, Tooltip("Dropped by Mine Layers.")] MineView minePrefab;
+
         [Header("Pickups and flow")]
         [SerializeField] PickupView pickupPrefab;
         [SerializeField, Min(0f)] float pickupDriftSpeed = 2f;
@@ -91,8 +93,10 @@ namespace YASS.Gameplay
         ObjectPool<Projectile> _enemyProjectiles;
         ObjectPool<MeteorView> _meteors;
         ObjectPool<PickupView> _pickups;
+        ObjectPool<MineView> _mines;
         Action<MeteorView> _releaseMeteor;
         Action<PickupView> _releasePickup;
+        Action<MineView> _releaseMine;
         BossView _boss;
         bool _bossSpawned;
         bool _bossDefeated;
@@ -164,6 +168,7 @@ namespace YASS.Gameplay
             _random = new SystemRandomSource(randomSeed != 0 ? randomSeed : Environment.TickCount);
             _session = new GameSession(_settings, _random, players.Length);
             _director = new WaveDirector(level.ToSpecs(), _settings.EnemyCountMultiplier, level.FirstWaveDelay);
+            RestoreCampaignProgress();
             _commands = new PlayerCommand[players.Length];
             _commandOverrides = new PlayerCommand?[players.Length];
             _shipTargets = new Vector2[players.Length];
@@ -173,12 +178,14 @@ namespace YASS.Gameplay
             _enemyProjectiles = CreatePool(enemyProjectilePrefab, ProjectilePrewarm);
             _meteors = CreatePool(meteorPrefab, HazardPrewarm);
             _pickups = CreatePool(pickupPrefab, HazardPrewarm);
+            _mines = CreatePool(minePrefab, HazardPrewarm);
             _releaseMeteor = m =>
             {
                 _director.NotifyHazardGone(m.WaveIndex);
                 _meteors.Release(m);
             };
             _releasePickup = p => _pickups.Release(p);
+            _releaseMine = m => _mines.Release(m);
 
             RegisterEnemyPool(bossMinionPrefab);
             foreach (var wave in level.Waves)
@@ -199,6 +206,7 @@ namespace YASS.Gameplay
             _enemyProjectiles?.Dispose();
             _meteors?.Dispose();
             _pickups?.Dispose();
+            _mines?.Dispose();
             foreach (var pool in _enemyPools.Values) pool.Dispose();
         }
 
@@ -379,6 +387,59 @@ namespace YASS.Gameplay
             Cue.Play(Sfx.EnemyShot);
         }
 
+        /// <summary>
+        /// Drops a proximity mine (Mine Layer). Mines belong to no wave: a wave must not wait on mines nobody
+        /// goes near, and they clear themselves after <see cref="MineSpec.LifetimeSeconds"/>.
+        /// </summary>
+        public void DropMine(Vector2 position)
+        {
+            if (!IsRunning) return;
+            _mines.Get().Init(this, position, _releaseMine);
+        }
+
+        /// <summary>
+        /// A mine goes off: everyone inside the blast is hurt, wherever it was triggered from.
+        /// <paramref name="playerIndex"/> is who shot it down, or -1 when a player simply came too close.
+        /// </summary>
+        public void OnMineDetonated(MineView mine, int playerIndex)
+        {
+            if (!mine.IsAlive) return;
+
+            if (IsRunning && !IsBossDefeated)
+                for (var i = 0; i < players.Length; i++)
+                {
+                    if (_session.GetPlayer(i).IsGameOver) continue;
+                    if (Vector2.Distance(players[i].Position, mine.Position) > MineSpec.TriggerRadius) continue;
+
+                    ShowPlayerHurt(players[i], _session.ReportPlayerHit(i, MineSpec.Damage));
+                }
+
+            if (IsRunning && playerIndex >= 0) _session.ReportKill(playerIndex, mine.Points);
+
+            Cue.Spawn(Effect.SmallExplosion, mine.Position, Sfx.SmallExplosion);
+            Cue.Shake(ScreenShake.PlayerHitTrauma * 0.5f);
+            mine.Despawn();
+        }
+
+        /// <summary>
+        /// The Sniper's beam: a line, not a projectile, so it hits the instant it fires. The warning before it is
+        /// the player's only chance to be somewhere else (GDD "Enemies and Hazards").
+        /// </summary>
+        public void FireBeam(Vector2 origin, Vector2 aim, float length, float halfWidth, float damage)
+        {
+            if (!IsRunning || IsBossDefeated) return;
+
+            Cue.Play(Sfx.EnemyShot);
+            for (var i = 0; i < players.Length; i++)
+            {
+                if (_session.GetPlayer(i).IsGameOver) continue;
+                if (!SniperShot.HitsPoint(origin.ToNumerics(), aim.ToNumerics(), players[i].Position.ToNumerics(),
+                        halfWidth, length)) continue;
+
+                ShowPlayerHurt(players[i], _session.ReportPlayerHit(i, damage));
+            }
+        }
+
         /// <summary>A Dart launched from the boss's bays. It belongs to no wave.</summary>
         public void LaunchBossDart(Vector2 position)
         {
@@ -452,6 +513,22 @@ namespace YASS.Gameplay
             });
         }
 
+        /// <summary>
+        /// Mid-campaign, players keep the lives, health and weapon they finished the last level with
+        /// (GDD "Core Loop": a campaign is one run, not eight separate games).
+        /// </summary>
+        void RestoreCampaignProgress()
+        {
+            var run = RunContext.Campaign;
+            if (run == null) return;
+
+            for (var i = 0; i < players.Length; i++)
+            {
+                var carry = run.CarryFor(i);
+                if (carry.HasValue) _session.RestorePlayer(i, carry.Value);
+            }
+        }
+
         void UpdatePlayfield()
         {
             // The steady position, not the current one: a screen shake must not drag the playfield (and with it
@@ -488,22 +565,32 @@ namespace YASS.Gameplay
             _sectorClear = true;
         }
 
-        Vector2 NearestPlayerPosition(Vector2 from)
+        /// <summary>
+        /// The position of the nearest player still in the game, or a point to the left when there is none:
+        /// what everything that aims at or dives at the player uses. Anything that measures the distance instead
+        /// must use <see cref="TryGetNearestPlayer"/>, because the fallback is only one unit away.
+        /// </summary>
+        public Vector2 NearestPlayerPosition(Vector2 from) =>
+            TryGetNearestPlayer(from, out var position) ? position : from + Vector2.left;
+
+        /// <summary>The nearest player still in the game, or false when every player is out.</summary>
+        public bool TryGetNearestPlayer(Vector2 from, out Vector2 position)
         {
-            var best = from + Vector2.left;
+            position = default;
             var bestDistance = float.MaxValue;
+            var found = false;
             for (var i = 0; i < players.Length; i++)
             {
                 if (_session.GetPlayer(i).IsGameOver) continue;
                 var distance = (players[i].Position - from).sqrMagnitude;
-                if (distance < bestDistance)
-                {
-                    bestDistance = distance;
-                    best = players[i].Position;
-                }
+                if (distance >= bestDistance) continue;
+
+                bestDistance = distance;
+                position = players[i].Position;
+                found = true;
             }
 
-            return best;
+            return found;
         }
 
         void SpawnPlayerShot(ShotSpec shot)
@@ -631,6 +718,7 @@ namespace YASS.Gameplay
             Require(meteorPrefab, nameof(meteorPrefab));
             Require(bossMinionPrefab, nameof(bossMinionPrefab));
             Require(pickupPrefab, nameof(pickupPrefab));
+            Require(minePrefab, nameof(minePrefab));
 
             if (worldCamera != null && !worldCamera.orthographic) Fail("the world camera must be orthographic.");
             if (level != null && level.Validate() is string problem) Fail($"level '{level.name}': {problem}.");

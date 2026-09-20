@@ -20,6 +20,9 @@ namespace YASS.Core
     public static class PointValues
     {
         public const int SolidMeteor = 150;
+
+        /// <summary>A mine shot down before it can be used against the player.</summary>
+        public const int Mine = 50;
         public const int NoDamageBossBonus = 5000;
         public const int MaxLevelWeaponUpgrade = 500;
         public const int LevelClearMaximum = 2000;
