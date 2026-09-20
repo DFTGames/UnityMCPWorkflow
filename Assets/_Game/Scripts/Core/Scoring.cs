@@ -83,6 +83,18 @@ namespace YASS.Core
 
         public int ChainSteps => _chainSteps;
 
+        /// <summary>The longest chain reached this run, for the Game Over screen (GDD "UI Flow and Screens").</summary>
+        public int BestChainSteps { get; private set; }
+
+        /// <summary>The best chain as the multiplier the HUD showed at the time.</summary>
+        public float BestChainMultiplier => (10 + BestChainSteps) / 10f;
+
+        /// <summary>Points awarded as bonuses (level clear, no-damage boss, max-level upgrade), for the results breakdown.</summary>
+        public long BonusPoints { get; private set; }
+
+        /// <summary>Points earned by destroying things, that is <see cref="Score"/> without <see cref="BonusPoints"/>.</summary>
+        public long KillPoints => Score - BonusPoints;
+
         /// <summary>Endless-mode cycle multiplier; 1.0 in Campaign.</summary>
         public float EndlessMultiplier => (float)_endlessMultiplier;
 
@@ -113,6 +125,7 @@ namespace YASS.Core
             if (basePoints < 0) throw new ArgumentOutOfRangeException(nameof(basePoints));
 
             if (_chainLive && _chainSteps < _chainMaxSteps) _chainSteps++;
+            if (_chainSteps > BestChainSteps) BestChainSteps = _chainSteps;
             _chainLive = true;
             _timeSinceLastKill = 0f;
             Kills++;
@@ -124,7 +137,10 @@ namespace YASS.Core
         internal long RegisterBonus(int basePoints)
         {
             if (basePoints < 0) throw new ArgumentOutOfRangeException(nameof(basePoints));
-            return Award(basePoints);
+
+            var awarded = Award(basePoints);
+            BonusPoints += awarded;
+            return awarded;
         }
 
         /// <summary>The player took damage (not a shield-absorbed hit): the chain resets.</summary>

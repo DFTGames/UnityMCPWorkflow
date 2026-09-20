@@ -49,15 +49,6 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
-                },
-                {
-                    "name": "Restart",
-                    "type": "Button",
-                    "id": "50b29fa7-7351-4fd3-94b6-81e2c07f9366",
-                    "expectedControlType": "Button",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -225,37 +216,63 @@
                     "action": "FirePointer",
                     "isComposite": false,
                     "isPartOfComposite": false
+                }
+            ]
+        },
+        {
+            "name": "Menu",
+            "id": "8a1c6d40-91b2-4e73-8c35-1f4a7d2e9b10",
+            "actions": [
+                {
+                    "name": "Pause",
+                    "type": "Button",
+                    "id": "8b2d7e51-a2c3-4f84-9d46-2a5b8e3f0c21",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 },
                 {
+                    "name": "Cancel",
+                    "type": "Button",
+                    "id": "9c3e8f62-b3d4-4095-ae57-3b6c9f401d32",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
                     "name": "",
-                    "id": "50b29f7a-7381-4ff3-94a9-81e2c0782676",
-                    "path": "<Keyboard>/enter",
+                    "id": "a4f90163-c4e5-41a6-bf68-4c7d0a512e43",
+                    "path": "<Gamepad>/start",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Restart",
+                    "action": "Pause",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
                 {
                     "name": "",
-                    "id": "61c3a08b-849a-4a14-a5ba-92f3d1893787",
-                    "path": "<Keyboard>/r",
+                    "id": "b50a1274-d5f6-42b7-c079-5d8e1b623f54",
+                    "path": "<Keyboard>/escape",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Restart",
+                    "action": "Cancel",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
                 {
                     "name": "",
-                    "id": "72d4b19c-95a3-4b25-b6cb-a304e2a4b898",
-                    "path": "<Gamepad>/buttonSouth",
+                    "id": "c61b2385-e607-43c8-d18a-6e9f2c734065",
+                    "path": "<Gamepad>/buttonEast",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Restart",
+                    "action": "Cancel",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

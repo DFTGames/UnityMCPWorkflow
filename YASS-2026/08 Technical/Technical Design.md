@@ -3,7 +3,7 @@ tags:
   - gdd
   - technical
 status: review
-updated: 2026-09-19
+updated: 2026-09-20
 ---
 
 # Technical Design
@@ -28,7 +28,13 @@ Principles:
 - Leaderboards sit behind an interface so the UGS implementation can be swapped or mocked in tests.
 
 ## Scenes
-_TBD_
+`Title` (build index 0) and one scene per level, starting with `Level01` (index 1). The title scene holds the Title, Difficulty, Settings and Credits screens; each level scene holds its own Pause, Settings, Game Over and Sector Clear screens, on a canvas drawn above the HUD.
+
+- **Menus are built by editor scripts**, not by hand: `Tools/YASS/Build Title Scene` and `Tools/YASS/Build Level Menus` (`Assets/_Game/Scripts/Editor/`). Re-running them rebuilds the screens after a layout or palette change, and keeps every screen consistent. Hand edits inside those objects are overwritten.
+- **What crosses a scene change** lives in `GameFlow` (static): the chosen difficulty and the settings service. A level started from the menus uses the chosen difficulty; opened directly in the Editor it falls back to its own serialised field, so a scene can still be played on its own.
+- **Which screen is showing** is `MenuStack` (engine-free, in `YASS.Game.Core`): a stack, because Settings is reachable from both the Title and Pause and must return where it came from. It also decides when the game is stopped, and the `MenuRouter` applies that as `Time.timeScale`, restoring it when the scene is left so a paused level cannot freeze the next one.
+- **Accepted deviation:** `MenuStack`'s mutators are public rather than internal (the router lives in another assembly), as with `WaveDirector.SkipToBoss`. Menu state is presentation, not rules, so it does not go through `GameSession`.
+- **Settings** are held by `SettingsService` (engine-free) over an `ISettingsStore`; the Unity implementation is PlayerPrefs, which works on every target including WebGL. Tests use an in-memory store, so they never touch the player's own saved settings.
 
 ## Data
 ScriptableObjects for enemies, waves, levels, pickups and difficulty settings.

@@ -23,7 +23,10 @@ updated: 2026-09-20
 | Fire (aimed) | Left mouse button | Right stick beyond 30% dead zone | Right virtual stick held |
 | Fire (forward) | | Right trigger | |
 | Pause | Esc | Start / Menu | Pause button |
-| Restart (game-over screen) | Enter or R | A / Cross (south button) | Tap (to be added with touch controls) |
+| Confirm (menus) | Enter | A / Cross (south button) | Tap |
+| Back (menus) | Esc | B / Circle (east button) | Back button |
+
+Menu screens are driven by their buttons rather than by a dedicated key: on Game Over, Retry is selected when the panel opens, so Confirm retries. Esc in a level with nothing open opens the pause menu. The on-screen pause button arrives with the touch controls.
 
 If the right stick is deflected while the trigger is held, the shot follows the stick.
 

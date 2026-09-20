@@ -22,7 +22,6 @@ namespace YASS.Gameplay
         InputAction _fireForward;
         InputAction _pointerPosition;
         InputAction _firePointer;
-        InputAction _restart;
 
         void Awake()
         {
@@ -38,13 +37,10 @@ namespace YASS.Gameplay
             _fireForward = _map.FindAction("FireForward", true);
             _pointerPosition = _map.FindAction("PointerPosition", true);
             _firePointer = _map.FindAction("FirePointer", true);
-            _restart = _map.FindAction("Restart", true);
         }
 
         void OnEnable() => _map?.Enable();
         void OnDisable() => _map?.Disable();
-
-        public bool RestartPressed => _restart != null && _restart.WasPressedThisFrame();
 
         public PlayerCommand ReadCommand(NVector2 shipPosition, Camera worldCamera)
         {

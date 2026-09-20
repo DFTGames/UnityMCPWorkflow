@@ -3,7 +3,7 @@ tags:
   - gdd
   - ui
 status: approved
-updated: 2026-09-19
+updated: 2026-09-20
 ---
 
 # UI Flow and Screens
@@ -31,14 +31,18 @@ flowchart LR
 
 ## Screens
 - **Title:** "YASS 2026" logo; **Play**, **Settings**, **Credits**, **Quit** (as in the original; "Tell a Friend" is dropped). Quit is hidden on WebGL and mobile.
-- **Difficulty select:** Cadet, Pilot, Ace, each with a one-line description; then the Campaign starts. **Endless** is shown but locked until the campaign is completed.
+- **Difficulty select:** Cadet, Pilot, Ace, each with a one-line description; then the Campaign starts. **Endless** is shown but locked until the campaign is completed. Pilot is selected by default, being the intended fight.
 - **Pause** (Esc, gamepad Start/Menu, on-screen button): Resume, Restart, Settings, Quit to Title. Game time stops while paused.
-- **Settings:** Music volume, Sound effects volume, Screen shake (on/off), Fullscreen (PC only). Saved between sessions. Reachable from Title and Pause.
+- **Settings:** Music volume, Sound effects volume, Screen shake (on/off), Fullscreen (desktop only, hidden elsewhere). Saved between sessions, as soon as each is changed, so leaving by any route keeps it. Reachable from Title and Pause. Defaults: music 0.7, effects 0.9, screen shake on, fullscreen on.
 - **Credits:** DFT Games Studios, the 2010 original, AI tools used, packages.
-- **Game Over:** score, kills, highest chain; Retry, Title.
-- **Sector Clear:** score breakdown (level score, level-clear bonus, no-damage boss bonus), kills; Continue (to Title while only level 1 exists).
+- **Game Over:** score, kills, best chain of the run; Retry, Title.
+- **Sector Clear:** score, bonus points earned (level clear, no-damage boss, max-level upgrades) and kills; Continue (to Title while only level 1 exists).
+
+Results screens appear **1.5 seconds** after the run ends, so the last explosion is not hidden by a panel. They cannot be paused or dismissed with Back: the player leaves them by choosing a button.
 
 ## Navigation
-Every menu works with keyboard (arrows, Enter, Esc), gamepad (stick/D-pad, south to confirm, east to go back) and mouse. The first button is selected when a menu opens.
+Every menu works with keyboard (arrows, Enter, Esc), gamepad (stick/D-pad, south to confirm, east to go back) and mouse. The first button is selected when a menu opens, so the menus are usable without touching the mouse; a locked entry (Endless) never takes that selection.
+
+**Back** (Esc or the gamepad's east button) leaves the open screen and returns to the one it was opened from: Settings goes back to the Title or to Pause depending on where it was opened. In a level, Back with nothing open opens the pause menu, and the gamepad's Start button toggles pause.
 
 Back to [[00 GDD Home]]

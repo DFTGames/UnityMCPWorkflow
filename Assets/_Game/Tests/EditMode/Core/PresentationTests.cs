@@ -82,6 +82,22 @@ namespace YASS.Tests.Core
         {
             Assert.Throws<ArgumentOutOfRangeException>(() => NumberFormatter.WriteMultiplier(-1f, new char[10]));
             Assert.Throws<ArgumentException>(() => NumberFormatter.WriteMultiplier(10f, new char[4]));
+            Assert.Throws<ArgumentOutOfRangeException>(() => NumberFormatter.WriteMultiplier(1f, new char[10], -1));
+            Assert.Throws<ArgumentException>(() => NumberFormatter.WriteMultiplier(1f, new char[10], 8),
+                "the offset must leave room for the whole multiplier");
+        }
+
+        [Test]
+        public void WriteMultiplier_WritesAfterAPrefix()
+        {
+            // The results screen writes "Best chain x2.1" into one buffer (GDD "UI Flow and Screens").
+            var buffer = new char[32];
+            const string prefix = "Best chain ";
+            prefix.CopyTo(0, buffer, 0, prefix.Length);
+
+            var length = prefix.Length + NumberFormatter.WriteMultiplier(2.1f, buffer, prefix.Length);
+
+            Assert.That(new string(buffer, 0, length), Is.EqualTo("Best chain x2.1"));
         }
     }
 }

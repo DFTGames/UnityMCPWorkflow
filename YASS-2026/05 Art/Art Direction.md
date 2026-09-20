@@ -49,6 +49,17 @@ Small and large explosions; a multi-stage explosion for boss deaths; a white hit
 - Backgrounds render unlit; any darkening is baked into the texture.
 
 ## Colour palette
-_To be defined._
+The menu palette, taken from the nebula backdrops (magenta and purple) and the player's orange-yellow ship. _Provisional: gameplay sprites are not yet bound to it._
+
+| Role | Hex | Used for |
+| ---- | --- | -------- |
+| Background | `#120A1E` | Menu backdrop |
+| Panel | `#1E1033` (95% alpha) | Screens drawn over the game |
+| Text | `#F2E9FF` | Body text and button labels |
+| Accent | `#FF4FC3` | Logo, headings, slider fills, pressed buttons |
+| Secondary | `#FFB13B` | Highlights that must not read as "danger": slider handles, checkmarks, Sector Clear |
+| Button | `#2A1A47` | Button background |
+| Button hover / selected | `#46246E` / `#5B2E8C` | Mouse-over and keyboard or gamepad selection |
+| Button disabled | `#241A33` (50% alpha) | Locked entries such as Endless |
 
 Back to [[00 GDD Home]]

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Pool;
-using UnityEngine.SceneManagement;
 using YASS.Core;
 using NVector2 = System.Numerics.Vector2;
 
@@ -14,16 +13,12 @@ namespace YASS.Gameplay
         public readonly bool BossWarning;
         public readonly float BossHealthFraction;
         public readonly bool BossActive;
-        public readonly bool SectorClear;
-        public readonly bool GameOver;
 
-        public LevelHudState(bool bossWarning, bool bossActive, float bossHealthFraction, bool sectorClear, bool gameOver)
+        public LevelHudState(bool bossWarning, bool bossActive, float bossHealthFraction)
         {
             BossWarning = bossWarning;
             BossActive = bossActive;
             BossHealthFraction = bossHealthFraction;
-            SectorClear = sectorClear;
-            GameOver = gameOver;
         }
     }
 
@@ -53,7 +48,8 @@ namespace YASS.Gameplay
         static readonly NVector2 EnemyFallbackAim = -NVector2.UnitX;
 
         [Header("Scene")]
-        [SerializeField] Difficulty difficulty = Difficulty.Pilot;
+        [SerializeField, Tooltip("Used when the scene is played directly; a real run uses the difficulty chosen on the menu.")]
+        Difficulty difficulty = Difficulty.Pilot;
         [SerializeField, Tooltip("0 picks a time-based seed.")] int randomSeed;
         [SerializeField] Camera worldCamera;
         [SerializeField] PlayerShipView[] players = Array.Empty<PlayerShipView>();
@@ -76,7 +72,6 @@ namespace YASS.Gameplay
         [Header("Pickups and flow")]
         [SerializeField] PickupView pickupPrefab;
         [SerializeField, Min(0f)] float pickupDriftSpeed = 2f;
-        [SerializeField, Min(0f)] float restartDelay = 1f;
 
         readonly List<ShotSpec> _shots = new List<ShotSpec>();
         readonly List<WaveSpawnRequest> _spawns = new List<WaveSpawnRequest>();
@@ -114,6 +109,15 @@ namespace YASS.Gameplay
         /// <summary>True while the level is being played: not game over and not yet cleared.</summary>
         public bool IsRunning => _session != null && !_session.IsGameOver && !_sectorClear;
 
+        /// <summary>The difficulty this run is being played on.</summary>
+        public Difficulty Difficulty { get; private set; }
+
+        /// <summary>
+        /// Seconds since the run ended, or -1 while it is still going. The flow layer waits a beat on this before
+        /// covering the screen with a results panel.
+        /// </summary>
+        public float SecondsSinceRunEnded => _endTime < 0f ? -1f : Time.time - _endTime;
+
         /// <summary>
         /// Once the boss is down the level is won: players can no longer be hurt during the short delay before
         /// Sector Clear (they can still collect the boss's drops).
@@ -128,9 +132,7 @@ namespace YASS.Gameplay
         public LevelHudState HudState => new LevelHudState(
             IsRunning && _director.Phase == LevelPhase.BossWarning,
             BossInPlay,
-            BossInPlay ? _boss.Brain.Health.Current / _boss.Brain.Health.Max : 0f,
-            _sectorClear,
-            _session != null && _session.IsGameOver);
+            BossInPlay ? _boss.Brain.Health.Current / _boss.Brain.Health.Max : 0f);
 
         /// <summary>Test seam: while set, replaces the input device for that player.</summary>
         internal void SetCommandOverride(int playerIndex, PlayerCommand? command) => _commandOverrides[playerIndex] = command;
@@ -155,7 +157,9 @@ namespace YASS.Gameplay
                 return;
             }
 
-            _settings = DifficultySettings.For(difficulty);
+            // A run started from the menus carries its difficulty; opening the scene directly uses the field.
+            Difficulty = RunContext.IsConfigured ? RunContext.Difficulty : difficulty;
+            _settings = DifficultySettings.For(Difficulty);
             _random = new SystemRandomSource(randomSeed != 0 ? randomSeed : Environment.TickCount);
             _session = new GameSession(_settings, _random, players.Length);
             _director = new WaveDirector(level.ToSpecs(), _settings.EnemyCountMultiplier, level.FirstWaveDelay);
@@ -240,9 +244,6 @@ namespace YASS.Gameplay
                 players[i].DriveEngine(_shipMovement[i], Time.deltaTime);
                 players[i].PresentAim(_commands[i].Fire, _commands[i].AimDirection, Time.deltaTime);
             }
-
-            if (!IsRunning && _endTime >= 0f && Time.time - _endTime >= restartDelay && AnyRestartPressed())
-                SceneManager.LoadScene(gameObject.scene.buildIndex);
         }
 
         public bool IsInsidePlayfield(Vector2 position, float margin) =>
@@ -461,13 +462,6 @@ namespace YASS.Gameplay
 
             for (var i = 0; i < players.Length; i++) _session.ReportLevelClear(i);
             _sectorClear = true;
-        }
-
-        bool AnyRestartPressed()
-        {
-            foreach (var input in inputs)
-                if (input.RestartPressed) return true;
-            return false;
         }
 
         Vector2 NearestPlayerPosition(Vector2 from)

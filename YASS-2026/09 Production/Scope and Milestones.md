@@ -3,7 +3,7 @@ tags:
   - gdd
   - production
 status: review
-updated: 2026-09-19
+updated: 2026-09-20
 ---
 
 # Scope and Milestones
@@ -20,8 +20,8 @@ Playable `Prototype` scene: ship movement and twin-stick or mouse firing, Dart a
 | Milestone | Goal | Status |
 | --------- | ---- | ------ |
 | Prototype | Playable prototype with AI art and engine particles | Done |
-| M1: Level 1 slice | Wave system, Level 1 waves, Hive Carrier, level-clear flow | In progress |
-| M2: Game flow | Title, difficulty select, pause, settings, credits, game over and sector clear screens | Planned |
+| M1: Level 1 slice | Wave system, Level 1 waves, Hive Carrier, level-clear flow | Done |
+| M2: Game flow | Title, difficulty select, pause, settings, credits, game over and sector clear screens | Done |
 | M3: Game feel | Visual effects, sound effects, music, audio mixer | Planned |
 | Later | Touch controls, UGS leaderboards, levels 2 to 8, Endless mode | Not started |
 

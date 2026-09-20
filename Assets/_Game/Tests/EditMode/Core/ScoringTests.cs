@@ -164,6 +164,57 @@ namespace YASS.Tests.Core
         }
 
         [Test]
+        public void BestChain_KeepsTheHighestReached()
+        {
+            // The Game Over screen reports the best chain of the run, not the one live when the player died.
+            var score = WithChainSteps(1f, 4);
+            Assert.That(score.BestChainSteps, Is.EqualTo(4));
+            Assert.That(score.BestChainMultiplier, Is.EqualTo(1.4f).Within(1e-5f));
+
+            score.NotifyPlayerDamaged();
+            Assert.That(score.ChainSteps, Is.Zero, "the live chain resets");
+            Assert.That(score.BestChainSteps, Is.EqualTo(4), "the best of the run is kept");
+
+            score.RegisterKill(10);
+            score.Tick(0.1f);
+            score.RegisterKill(10);
+            Assert.That(score.BestChainSteps, Is.EqualTo(4), "a shorter chain does not lower it");
+        }
+
+        [Test]
+        public void BestChain_StartsAtZero()
+        {
+            var score = new ScoreKeeper(1f);
+
+            Assert.That(score.BestChainSteps, Is.Zero);
+            Assert.That(score.BestChainMultiplier, Is.EqualTo(1f));
+        }
+
+        [Test]
+        public void Score_SplitsIntoKillPointsAndBonuses()
+        {
+            // The Sector Clear screen shows the breakdown (GDD "UI Flow and Screens").
+            var score = new ScoreKeeper(1f);
+            score.RegisterKill(100);
+            score.RegisterBonus(2000);
+
+            Assert.That(score.Score, Is.EqualTo(2100));
+            Assert.That(score.BonusPoints, Is.EqualTo(2000));
+            Assert.That(score.KillPoints, Is.EqualTo(100));
+        }
+
+        [Test]
+        public void BonusPoints_CountTheAwardedAmountNotTheBase()
+        {
+            var score = new ScoreKeeper(2.5f);
+
+            score.RegisterBonus(500);
+
+            Assert.That(score.BonusPoints, Is.EqualTo(1250), "the difficulty multiplier applies to bonuses too");
+            Assert.That(score.KillPoints, Is.Zero);
+        }
+
+        [Test]
         public void InvalidArguments_Throw()
         {
             Assert.Throws<ArgumentOutOfRangeException>(() => new ScoreKeeper(0f));

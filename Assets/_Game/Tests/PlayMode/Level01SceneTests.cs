@@ -41,6 +41,11 @@ namespace YASS.Tests.Gameplay
 #endif
             _previousRunInBackground = Application.runInBackground;
             Application.runInBackground = true;
+
+            // The level reads the run context and the scene's SettingsApplier reads the saved settings: start
+            // from a clean, in-memory state so these tests neither depend on nor touch either.
+            RunContext.Clear();
+            YASS.UI.GameFlow.UseSettings(new SettingsService(new MemorySettingsStore()));
             yield return SceneManager.LoadSceneAsync(SceneName, LoadSceneMode.Single);
 
             _runner = Object.FindAnyObjectByType<GameRunner>();
@@ -50,7 +55,22 @@ namespace YASS.Tests.Gameplay
         }
 
         [TearDown]
-        public void RestoreSettings() => Application.runInBackground = _previousRunInBackground;
+        public void RestoreSettings()
+        {
+            Application.runInBackground = _previousRunInBackground;
+            YASS.UI.GameFlow.UseSettings(null);
+            RunContext.Clear();
+        }
+
+        /// <summary>Settings that live only for the test, so a run never writes to the developer's own prefs.</summary>
+        sealed class MemorySettingsStore : ISettingsStore
+        {
+            public float GetFloat(string key, float fallback) => fallback;
+            public void SetFloat(string key, float value) { }
+            public bool GetBool(string key, bool fallback) => fallback;
+            public void SetBool(string key, bool value) { }
+            public void Save() { }
+        }
 
         [Test]
         public void Scene_StartsWithFreshSession()

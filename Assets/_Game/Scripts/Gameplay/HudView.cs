@@ -6,16 +6,15 @@ using YASS.Core;
 namespace YASS.Gameplay
 {
     /// <summary>
-    /// In-level HUD for one player: score, lives, health bar, weapon level, chain and kills; the boss warning and
-    /// boss health bar; and the game-over and sector-clear panels. Text is only rewritten when a value changes,
-    /// through a reusable char buffer, so it does not allocate.
+    /// In-level HUD for one player: score, lives, health bar, weapon level, chain and kills, plus the boss
+    /// warning and boss health bar. The results panels belong to the flow layer (YASS.UI). Text is only
+    /// rewritten when a value changes, through a reusable char buffer, so it does not allocate.
     /// </summary>
     public sealed class HudView : MonoBehaviour
     {
         const string LivesPrefix = "Lives ";
         const string WeaponPrefix = "Weapon Lv ";
         const string KillsPrefix = "Kills ";
-        const string FinalScorePrefix = "Score ";
         const float WarningBlinksPerSecond = 3f;
 
         [SerializeField, Min(0)] int playerIndex;
@@ -25,16 +24,11 @@ namespace YASS.Gameplay
         [SerializeField] TMP_Text chainText;
         [SerializeField] TMP_Text killsText;
         [SerializeField] Image healthFill;
-        [SerializeField] GameObject gameOverPanel;
 
         [Header("Boss")]
         [SerializeField] TMP_Text bossWarning;
         [SerializeField] GameObject bossBar;
         [SerializeField] Image bossHealthFill;
-
-        [Header("Sector clear")]
-        [SerializeField] GameObject sectorClearPanel;
-        [SerializeField] TMP_Text sectorClearScoreText;
 
         readonly char[] _buffer = new char[48];
 
@@ -45,10 +39,8 @@ namespace YASS.Gameplay
         int? _kills;
         float? _health;
         float? _bossHealth;
-        bool? _gameOver;
         bool? _bossBarShown;
         bool? _warningShown;
-        bool? _sectorClear;
 
         public void Refresh(GameSession session, LevelHudState level)
         {
@@ -75,15 +67,6 @@ namespace YASS.Gameplay
             if (level.BossActive != _bossBarShown) bossBar.SetActive((_bossBarShown = level.BossActive).Value);
             if (level.BossActive && (_bossHealth == null || !Mathf.Approximately(level.BossHealthFraction, _bossHealth.Value)))
                 bossHealthFill.fillAmount = (_bossHealth = level.BossHealthFraction).Value;
-
-            if (level.GameOver != _gameOver) gameOverPanel.SetActive((_gameOver = level.GameOver).Value);
-
-            if (level.SectorClear != _sectorClear)
-            {
-                _sectorClear = level.SectorClear;
-                sectorClearPanel.SetActive(level.SectorClear);
-                if (level.SectorClear) SetNumber(sectorClearScoreText, FinalScorePrefix, score.Score);
-            }
         }
 
         void SetNumber(TMP_Text text, string prefix, long value)

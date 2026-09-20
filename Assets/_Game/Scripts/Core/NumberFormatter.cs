@@ -37,10 +37,14 @@ namespace YASS.Core
             return length;
         }
 
-        /// <summary>Writes a multiplier with one decimal place, for example "x2.1". Rounds half away from zero.</summary>
-        public static int WriteMultiplier(float value, char[] buffer)
+        /// <summary>
+        /// Writes a multiplier with one decimal place, for example "x2.1", starting at <paramref name="offset"/>.
+        /// Rounds half away from zero. Returns the number of chars written.
+        /// </summary>
+        public static int WriteMultiplier(float value, char[] buffer, int offset = 0)
         {
             if (buffer == null) throw new ArgumentNullException(nameof(buffer));
+            if (offset < 0) throw new ArgumentOutOfRangeException(nameof(offset));
             if (value < 0f) throw new ArgumentOutOfRangeException(nameof(value));
 
             var tenths = (long)Math.Round(value * 10.0, MidpointRounding.AwayFromZero);
@@ -48,12 +52,12 @@ namespace YASS.Core
             var fraction = (int)(tenths % 10);
 
             var needed = 1 + DigitCount((ulong)whole) + 2;
-            if (buffer.Length < needed) throw new ArgumentException("Buffer too small.", nameof(buffer));
+            if (buffer.Length - offset < needed) throw new ArgumentException("Buffer too small.", nameof(buffer));
 
-            buffer[0] = 'x';
-            var length = 1 + Write(whole, buffer, 1);
-            buffer[length++] = '.';
-            buffer[length++] = (char)('0' + fraction);
+            buffer[offset] = 'x';
+            var length = 1 + Write(whole, buffer, offset + 1);
+            buffer[offset + length++] = '.';
+            buffer[offset + length++] = (char)('0' + fraction);
             return length;
         }
 
