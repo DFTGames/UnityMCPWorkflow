@@ -1,5 +1,6 @@
 using UnityEngine;
 using YASS.Core;
+using YASS.Feedback;
 using YASS.Gameplay;
 
 namespace YASS.UI
@@ -43,6 +44,7 @@ namespace YASS.UI
             var panel = screen == MenuScreen.SectorClear ? sectorClear : gameOver;
             if (panel != null) panel.Fill(runner.Session.Score);
 
+            Cue.Play(screen == MenuScreen.SectorClear ? Sfx.SectorClear : Sfx.GameOver);
             router.ShowResult(screen);
         }
     }

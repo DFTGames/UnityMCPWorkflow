@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using YASS.Core;
+using YASS.Feedback;
 using NVector2 = System.Numerics.Vector2;
 
 namespace YASS.Gameplay
@@ -31,6 +32,8 @@ namespace YASS.Gameplay
         readonly List<NVector2> _directions = new List<NVector2>();
 
         GameRunner _runner;
+
+        HitFlash _flash;
         HiveCarrierBrain _brain;
         NVector2 _start;
         float _holdX;
@@ -49,6 +52,8 @@ namespace YASS.Gameplay
         public Vector2 Position => body.position;
 
         void Reset() => body = GetComponent<Rigidbody2D>();
+
+        void Awake() => _flash = GetComponent<HitFlash>();
 
         public void Init(GameRunner runner, DifficultySettings settings, Vector2 position, HiveCarrierSpec spec)
         {
@@ -85,11 +90,30 @@ namespace YASS.Gameplay
         }
 
         /// <summary>Hull hits: the armour absorbs the shot with no damage (the projectile is used up).</summary>
-        public void TakeHit(float damage, int playerIndex) => ArmourHits++;
+        public void TakeHit(float damage, int playerIndex)
+        {
+            ArmourHits++;
+            if (_flash != null) _flash.Flash(); // armour absorbs the shot, but the hit still reads
+        }
 
         public void TakeCoreHit(float damage, int playerIndex)
         {
-            if (!IsAlive || !_brain.TakeCoreHit(damage)) return;
+            if (!IsAlive) return;
+
+            // A closed core absorbs the shot like armour. Showing a damage explosion here would teach the player
+            // the opposite of the boss's one mechanic.
+            if (!_brain.IsCoreOpen)
+            {
+                TakeHit(damage, playerIndex);
+                return;
+            }
+
+            if (!_brain.TakeCoreHit(damage))
+            {
+                if (_flash != null) _flash.Flash();
+                Cue.Spawn(Effect.SmallExplosion, Position, Sfx.SmallExplosion);
+                return;
+            }
 
             IsAlive = false;
             _runner.OnBossDefeated(this, playerIndex);

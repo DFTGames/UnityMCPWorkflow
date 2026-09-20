@@ -9469,6 +9469,93 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1736356249}
   m_CullTransparentMesh: 1
+--- !u!1 &1738798670
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1738798674}
+  - component: {fileID: 1738798673}
+  - component: {fileID: 1738798672}
+  - component: {fileID: 1738798671}
+  m_Layer: 0
+  m_Name: Feedback
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1738798671
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1738798670}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7ba2c45a2fd285f46bbcce1a6a2035b0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: YASS.Game::YASS.Feedback.CameraShaker
+  target: {fileID: 1975789932}
+--- !u!114 &1738798672
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1738798670}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a3c004fd940369243b0c05d98ff2a799, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: YASS.Game::YASS.Feedback.EffectSpawner
+  effects:
+  - Effect: 1
+    Prefab: {fileID: 3721319857858486735, guid: cda14b9f25239c2499c9a3dc555afa2e, type: 3}
+  - Effect: 2
+    Prefab: {fileID: 1631198982879575353, guid: 563b412f17048b546a8c2c86b695b5b6, type: 3}
+  - Effect: 3
+    Prefab: {fileID: 5367984158466125018, guid: e58ebffe019ae2e43abf7c374feb0476, type: 3}
+  - Effect: 4
+    Prefab: {fileID: 6488165673637949148, guid: ddde53498349e374c9a39c81ac2055d5, type: 3}
+  - Effect: 5
+    Prefab: {fileID: 4396470170297893889, guid: f3c1c36a8f5773445850a04d89f67b11, type: 3}
+  - Effect: 6
+    Prefab: {fileID: 7114297327903152974, guid: 34645f1052604054fb1bab8a6c568be5, type: 3}
+  root: {fileID: 0}
+--- !u!114 &1738798673
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1738798670}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7521b62ad4a18740977d4c990d8ba2c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: YASS.Game::YASS.Feedback.AudioDirector
+  bank: {fileID: 11400000, guid: 5b9e29a6c12196a4c90309cb8ef8bd7c, type: 2}
+  voices: 12
+--- !u!4 &1738798674
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1738798670}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1768578161
 GameObject:
   m_ObjectHideFlags: 0
@@ -10439,6 +10526,7 @@ GameObject:
   - component: {fileID: 1975789932}
   - component: {fileID: 1975789930}
   - component: {fileID: 1975789931}
+  - component: {fileID: 1975789933}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -10556,6 +10644,14 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!81 &1975789933
+AudioListener:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1975789929}
+  m_Enabled: 1
 --- !u!1 &1978636734
 GameObject:
   m_ObjectHideFlags: 0
@@ -11449,3 +11545,4 @@ SceneRoots:
   - {fileID: 589070638}
   - {fileID: 937263495}
   - {fileID: 1362103592}
+  - {fileID: 1738798674}

@@ -4808,6 +4808,7 @@ GameObject:
   - component: {fileID: 2046757145580388537}
   - component: {fileID: 487404635763420008}
   - component: {fileID: 3503565269730651822}
+  - component: {fileID: 8172483700183751568}
   m_Layer: 8
   m_Name: HiveCarrier
   m_TagString: Untagged
@@ -5085,3 +5086,18 @@ MonoBehaviour:
   spreadAngle: 60
   spreadBulletSpeed: 6
   spreadBulletDamage: 10
+--- !u!114 &8172483700183751568
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8624906614580906131}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 20ece13ce47362a458dca386066ceb08, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: YASS.Game::YASS.Feedback.HitFlash
+  renderers:
+  - {fileID: 7457785934438450836}
+  flashBrightness: 2.4

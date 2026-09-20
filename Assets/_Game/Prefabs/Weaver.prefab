@@ -2337,6 +2337,7 @@ GameObject:
   - component: {fileID: 4524407458120163291}
   - component: {fileID: 500366098104843962}
   - component: {fileID: 6805865718903888221}
+  - component: {fileID: 3055117680589506190}
   m_Layer: 8
   m_Name: Weaver
   m_TagString: Untagged
@@ -2498,3 +2499,17 @@ MonoBehaviour:
   definition: {fileID: 11400000, guid: 819fbefa9b2e6e340bffb92e8b06936f, type: 2}
   body: {fileID: 4907873913846860053}
   muzzleOffset: {x: -0.4, y: 0}
+--- !u!114 &3055117680589506190
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4449161960738743858}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 20ece13ce47362a458dca386066ceb08, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: YASS.Game::YASS.Feedback.HitFlash
+  renderers: []
+  flashBrightness: 2.4

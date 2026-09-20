@@ -1,5 +1,6 @@
 using UnityEngine;
 using YASS.Core;
+using YASS.Feedback;
 
 namespace YASS.Gameplay
 {
@@ -23,6 +24,7 @@ namespace YASS.Gameplay
         float tiltResponsiveness = 12f;
 
         GameRunner _runner;
+        HitFlash _flash;
 
         public int PlayerIndex { get; private set; }
         public EngineExhaust Engine => engine;
@@ -36,6 +38,14 @@ namespace YASS.Gameplay
             body = GetComponent<Rigidbody2D>();
             visual = transform.Find("Visual");
             shipRenderer = visual != null ? visual.GetComponent<SpriteRenderer>() : null;
+        }
+
+        void Awake() => _flash = GetComponent<HitFlash>();
+
+        /// <summary>Flashes the ship white when it takes damage (GDD "Art Direction", Visual effects).</summary>
+        public void Flash()
+        {
+            if (_flash != null) _flash.Flash();
         }
 
         public void Init(GameRunner runner, int playerIndex)

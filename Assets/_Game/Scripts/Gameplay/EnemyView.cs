@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using YASS.Core;
+using YASS.Feedback;
 using NVector2 = System.Numerics.Vector2;
 
 namespace YASS.Gameplay
@@ -14,6 +15,8 @@ namespace YASS.Gameplay
         [SerializeField] Vector2 muzzleOffset = new Vector2(-0.4f, 0f);
 
         GameRunner _runner;
+
+        HitFlash _flash;
         Action<EnemyView> _release;
         Health _health;
         FireTimer _fireTimer;
@@ -29,6 +32,9 @@ namespace YASS.Gameplay
         public int WaveIndex { get; internal set; } = -1;
         public EnemyDefinition Definition => definition;
         public int Points => PointValues.Enemy(definition.Size);
+
+        /// <summary>How big a bang this enemy goes out with (GDD "Art Direction", Visual effects).</summary>
+        public EnemySize Size => definition.Size;
         public float ContactDamage => definition.ContactDamage;
         public Vector2 Position => body.position;
 
@@ -39,6 +45,8 @@ namespace YASS.Gameplay
         /// <paramref name="release"/> returns it to its pool; when null, <see cref="Despawn"/> destroys it instead.
         /// Until Init is called the enemy is inert.
         /// </summary>
+        void Awake() => _flash = GetComponent<HitFlash>();
+
         public void Init(GameRunner runner, DifficultySettings settings, Vector2 position, Action<EnemyView> release)
         {
             _runner = runner;
@@ -77,7 +85,10 @@ namespace YASS.Gameplay
 
         public void TakeHit(float damage, int playerIndex)
         {
-            if (IsAlive && _health.TakeDamage(damage)) _runner.OnEnemyDestroyed(this, playerIndex);
+            if (!IsAlive) return;
+
+            if (_health.TakeDamage(damage)) _runner.OnEnemyDestroyed(this, playerIndex);
+            else if (_flash != null) _flash.Flash(); // a hit that does not kill must still read
         }
 
         /// <summary>Removes the enemy (back to its pool, or destroyed). Safe to call more than once.</summary>

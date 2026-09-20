@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 1781710442036428735}
   - component: {fileID: 183619874060763740}
   - component: {fileID: 2357551711190050276}
+  - component: {fileID: 6098009600319150154}
   m_Layer: 8
   m_Name: Dart
   m_TagString: Untagged
@@ -175,6 +176,20 @@ MonoBehaviour:
   definition: {fileID: 11400000, guid: 32bbc7224a5c30945a9e059811b42d04, type: 2}
   body: {fileID: 8191679619442834026}
   muzzleOffset: {x: -0.4, y: 0}
+--- !u!114 &6098009600319150154
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2222016127833925175}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 20ece13ce47362a458dca386066ceb08, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: YASS.Game::YASS.Feedback.HitFlash
+  renderers: []
+  flashBrightness: 2.4
 --- !u!1 &5020025787683010281
 GameObject:
   m_ObjectHideFlags: 0

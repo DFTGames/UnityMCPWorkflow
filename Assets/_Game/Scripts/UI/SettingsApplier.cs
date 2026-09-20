@@ -51,9 +51,9 @@ namespace YASS.UI
 
         static void Apply(GameSettings settings)
         {
-            // Until the mixer exists, the loudest of the two volumes stands in for the master level, so muting
-            // both silences the game and neither slider is simply ignored.
-            AudioListener.volume = Mathf.Max(settings.MusicVolume, settings.SfxVolume);
+            // The effects volume belongs to the audio director, which applies it per voice; scaling the listener
+            // as well would apply it twice, and would let the (still silent) music slider change effect loudness.
+            AudioListener.volume = 1f;
 
             if (GameFlow.SupportsFullscreen && Screen.fullScreen != settings.Fullscreen)
                 Screen.fullScreen = settings.Fullscreen;

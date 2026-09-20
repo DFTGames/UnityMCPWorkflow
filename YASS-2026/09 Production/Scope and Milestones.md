@@ -22,7 +22,7 @@ Playable `Prototype` scene: ship movement and twin-stick or mouse firing, Dart a
 | Prototype | Playable prototype with AI art and engine particles | Done |
 | M1: Level 1 slice | Wave system, Level 1 waves, Hive Carrier, level-clear flow | Done |
 | M2: Game flow | Title, difficulty select, pause, settings, credits, game over and sector clear screens | Done |
-| M3: Game feel | Visual effects, sound effects, music, audio mixer | Planned |
+| M3: Game feel | Visual effects, sound effects, music, audio mixer | Effects and sound done; music and mixer groups remain |
 | Later | Touch controls, UGS leaderboards, levels 2 to 8, Endless mode | Not started |
 
 Back to [[00 GDD Home]]

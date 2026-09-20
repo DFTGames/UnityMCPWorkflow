@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using YASS.Feedback;
 using UnityEngine.UI;
 using YASS.Core;
 
@@ -34,6 +35,10 @@ namespace YASS.UI
 
         public void ChooseAce() => Choose(Difficulty.Ace);
 
-        static void Choose(Difficulty difficulty) => GameFlow.StartCampaign(difficulty);
+        static void Choose(Difficulty difficulty)
+        {
+            Cue.Play(Sfx.UiConfirm);
+            GameFlow.StartCampaign(difficulty);
+        }
     }
 }

@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using YASS.Core;
+using YASS.Feedback;
 
 namespace YASS.UI
 {
@@ -25,6 +26,8 @@ namespace YASS.UI
         InputAction _pause;
         InputAction _cancel;
         MenuScreenView _currentView;
+        GameObject _lastSelected;
+        bool _selectionIsOurs;
         bool _timeScaleHeld;
 
         public MenuStack Stack { get; private set; }
@@ -62,9 +65,33 @@ namespace YASS.UI
         void Update()
         {
             RestoreLostSelection();
+            ReportSelectionMoved();
 
             if (_cancel != null && _cancel.WasPressedThisFrame()) OnCancel();
             else if (_pause != null && _pause.WasPressedThisFrame()) OnPause();
+        }
+
+        /// <summary>
+        /// Puts the selection back on the open screen when it has been lost: clicking the background clears it,
+        /// and the EventSystem may not exist yet when the first screen is shown during scene load. Without this
+        /// the keyboard and gamepad go dead until the mouse finds a button (GDD "UI Flow", Navigation).
+        /// </summary>
+        /// <summary>A soft tick as the selection moves, so keyboard and gamepad navigation has a voice too.</summary>
+        void ReportSelectionMoved()
+        {
+            var events = EventSystem.current;
+            if (events == null) return;
+
+            var selected = events.currentSelectedGameObject;
+            if (selected == _lastSelected) return;
+
+            var hadSelection = _lastSelected != null;
+            _lastSelected = selected;
+
+            // Selections the game makes for itself (opening a screen, restoring one lost to a stray click) are
+            // recorded silently: only navigation the player performed is heard.
+            if (hadSelection && selected != null && !_selectionIsOurs) Cue.Play(Sfx.UiMove);
+            _selectionIsOurs = false;
         }
 
         /// <summary>
@@ -79,13 +106,22 @@ namespace YASS.UI
             var events = EventSystem.current;
             if (events == null || events.currentSelectedGameObject != null) return;
 
+            _selectionIsOurs = true;
             _currentView.SelectFirst();
         }
 
-        public void Open(MenuScreen screen) => Stack.Open(screen);
+        public void Open(MenuScreen screen)
+        {
+            Cue.Play(Sfx.UiConfirm);
+            Stack.Open(screen);
+        }
 
         /// <summary>For Back buttons; also what Escape and the gamepad's east button do.</summary>
-        public void Back() => Stack.Back();
+        public void Back()
+        {
+            Cue.Play(Sfx.UiMove);
+            Stack.Back();
+        }
 
         public void ShowResult(MenuScreen screen) => Stack.ShowResult(screen);
 
@@ -118,6 +154,7 @@ namespace YASS.UI
                 if (screen.Screen == current)
                 {
                     _currentView = screen;
+                    _selectionIsOurs = true; // the screen selects its own first button; that is not navigation
                     screen.Show();
                 }
                 else if (screen.IsShown)

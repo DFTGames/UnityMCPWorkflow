@@ -105,6 +105,7 @@ GameObject:
   - component: {fileID: 8979936779940808156}
   - component: {fileID: 1605626372744743709}
   - component: {fileID: 1487520219545796063}
+  - component: {fileID: 2534542911678546691}
   m_Layer: 6
   m_Name: PlayerShip
   m_TagString: Untagged
@@ -213,6 +214,21 @@ MonoBehaviour:
   muzzleDistance: 0.55
   blinksPerSecond: 10
   tiltResponsiveness: 12
+--- !u!114 &2534542911678546691
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1855048063166472841}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 20ece13ce47362a458dca386066ceb08, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: YASS.Game::YASS.Feedback.HitFlash
+  renderers:
+  - {fileID: 3637722732611249517}
+  flashBrightness: 2.4
 --- !u!1 &3792882465481870775
 GameObject:
   m_ObjectHideFlags: 0

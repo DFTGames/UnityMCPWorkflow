@@ -1,6 +1,7 @@
 using TMPro;
 using UnityEngine;
 using YASS.Core;
+using YASS.Feedback;
 
 namespace YASS.UI
 {
@@ -37,12 +38,14 @@ namespace YASS.UI
 
         public void Retry()
         {
+            Cue.Play(Sfx.UiConfirm);
             Time.timeScale = 1f;
             GameFlow.RestartLevel();
         }
 
         public void QuitToTitle()
         {
+            Cue.Play(Sfx.UiConfirm);
             Time.timeScale = 1f;
             GameFlow.GoToTitle();
         }

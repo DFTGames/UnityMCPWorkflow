@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using YASS.Core;
+using YASS.Feedback;
 
 namespace YASS.Gameplay
 {
@@ -14,6 +15,8 @@ namespace YASS.Gameplay
         [SerializeField] SpriteRenderer spriteRenderer;
 
         GameRunner _runner;
+
+        HitFlash _flash;
         Action<MeteorView> _release;
         Health _health;
         float _spin;
@@ -38,6 +41,8 @@ namespace YASS.Gameplay
         /// Activates the meteor, resetting all state so pooled instances can be reused. <paramref name="release"/>
         /// returns it to its pool; when null, <see cref="Despawn"/> destroys it instead.
         /// </summary>
+        void Awake() => _flash = GetComponent<HitFlash>();
+
         public void Init(GameRunner runner, MeteorDefinition definition, Vector2 position, Vector2 velocity,
             float spinDegrees, Action<MeteorView> release)
         {
@@ -76,7 +81,10 @@ namespace YASS.Gameplay
 
         public void TakeHit(float damage, int playerIndex)
         {
-            if (IsAlive && _health.TakeDamage(damage)) _runner.OnMeteorDestroyed(this, playerIndex);
+            if (!IsAlive) return;
+
+            if (_health.TakeDamage(damage)) _runner.OnMeteorDestroyed(this, playerIndex);
+            else if (_flash != null) _flash.Flash(); // large and solid meteors take several hits
         }
 
         /// <summary>Removes the meteor (back to its pool, or destroyed). Safe to call more than once.</summary>

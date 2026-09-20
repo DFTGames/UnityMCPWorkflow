@@ -32,7 +32,8 @@ namespace YASS.Gameplay
 
         public void ShowOpen(bool open)
         {
-            if (_shownOpen == open) return;
+            // Written every step rather than only on a change: the core's colour is the player's one tell, and
+            // anything else that touches the renderer (a hit flash, say) must not be able to leave it wrong.
             _shownOpen = open;
             coreRenderer.color = open ? openColour : closedColour;
         }

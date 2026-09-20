@@ -1,5 +1,6 @@
 using UnityEngine;
 using YASS.Core;
+using YASS.Feedback;
 
 namespace YASS.UI
 {
@@ -23,6 +24,7 @@ namespace YASS.UI
 
         public void Restart()
         {
+            Cue.Play(Sfx.UiConfirm);
             // The router restores time on destroy, but the reload starts before that: do it here too so a paused
             // restart cannot drop into a frozen level.
             Time.timeScale = 1f;
@@ -31,6 +33,7 @@ namespace YASS.UI
 
         public void QuitToTitle()
         {
+            Cue.Play(Sfx.UiConfirm);
             Time.timeScale = 1f;
             GameFlow.GoToTitle();
         }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Pool;
 using YASS.Core;
+using YASS.Feedback;
 using NVector2 = System.Numerics.Vector2;
 
 namespace YASS.Gameplay
@@ -265,6 +266,7 @@ namespace YASS.Gameplay
 
             _session.ReportKill(playerIndex, enemy.Points);
             TryDropPickup(DropSource.Enemy, playerIndex, enemy.Position);
+            ShowEnemyDeath(enemy);
             enemy.Despawn();
         }
 
@@ -279,6 +281,7 @@ namespace YASS.Gameplay
             var definition = meteor.Definition;
             _session.ReportKill(playerIndex, meteor.Points);
             TryDropPickup(MeteorRules.DropSourceFor(definition.Splitting), playerIndex, meteor.Position);
+            ShowMeteorDeath(definition, meteor.Position);
 
             if (definition.Splitting && definition.Fragment != null && MeteorRules.TrySplit(definition.Size, out _))
             {
@@ -302,6 +305,9 @@ namespace YASS.Gameplay
             foreach (var pickup in PickupDropper.BossDrops) SpawnPickup(pickup, boss.Position);
             _director.NotifyBossDefeated();
             _bossDefeated = true;
+
+            Cue.Spawn(Effect.BossExplosion, boss.Position, Sfx.BossExplosion);
+            Cue.Shake(ScreenShake.BossDefeatedTrauma);
             boss.Despawn();
         }
 
@@ -311,6 +317,7 @@ namespace YASS.Gameplay
             if (!IsRunning || IsBossDefeated) return false;
 
             var outcome = _session.ReportPlayerHit(ship.PlayerIndex, projectile.Damage);
+            ShowPlayerHurt(ship, outcome);
             return outcome != HitOutcome.Ignored;
         }
 
@@ -319,9 +326,11 @@ namespace YASS.Gameplay
             if (!IsRunning || IsBossDefeated || !enemy.IsAlive) return;
 
             var result = _session.ReportPlayerRam(ship.PlayerIndex, false, enemy.ContactDamage, enemy.Points);
+            ShowPlayerHurt(ship, result.Outcome);
             if (!result.EnemyDestroyed) return;
 
             TryDropPickup(DropSource.Enemy, ship.PlayerIndex, enemy.Position);
+            ShowEnemyDeath(enemy);
             enemy.Despawn();
         }
 
@@ -332,16 +341,20 @@ namespace YASS.Gameplay
 
             var definition = meteor.Definition;
             var result = _session.ReportPlayerRam(ship.PlayerIndex, false, definition.ContactDamage, meteor.Points);
+            ShowPlayerHurt(ship, result.Outcome);
             if (!result.EnemyDestroyed) return;
 
             TryDropPickup(MeteorRules.DropSourceFor(definition.Splitting), ship.PlayerIndex, meteor.Position);
+            ShowMeteorDeath(definition, meteor.Position);
             meteor.Despawn();
         }
 
         public void OnPlayerRammedBoss(PlayerShipView ship, BossView boss)
         {
             if (!IsRunning || IsBossDefeated || !boss.IsAlive) return;
-            _session.ReportPlayerRam(ship.PlayerIndex, true, boss.ContactDamage, 0);
+
+            var outcome = _session.ReportPlayerRam(ship.PlayerIndex, true, boss.ContactDamage, 0).Outcome;
+            ShowPlayerHurt(ship, outcome);
         }
 
         public void OnPickupCollected(PlayerShipView ship, PickupView pickup)
@@ -349,6 +362,8 @@ namespace YASS.Gameplay
             if (!IsRunning || !pickup.IsActive) return;
 
             _session.ReportPickupCollected(ship.PlayerIndex, pickup.Type);
+            Cue.Spawn(Effect.PickupSparkle, pickup.transform.position,
+                pickup.Type == PickupType.WeaponUpgrade ? Sfx.WeaponUpgrade : Sfx.Pickup);
             pickup.Despawn();
         }
 
@@ -359,7 +374,9 @@ namespace YASS.Gameplay
         public void FireEnemyProjectile(Vector2 origin, Vector2 direction, float speed, float damage)
         {
             if (!IsRunning) return;
+
             _enemyProjectiles.Get().Launch(this, _enemyProjectiles, origin, direction, speed, damage, false, -1);
+            Cue.Play(Sfx.EnemyShot);
         }
 
         /// <summary>A Dart launched from the boss's bays. It belongs to no wave.</summary>
@@ -376,7 +393,8 @@ namespace YASS.Gameplay
             _spawns.Clear();
             var levelEvent = _director.Tick(deltaTime, _spawns);
             foreach (var request in _spawns) SpawnFromWave(request);
-            if (levelEvent == LevelEvent.BossArrives) SpawnBoss();
+            if (levelEvent == LevelEvent.BossWarning) Cue.Play(Sfx.BossWarning);
+            else if (levelEvent == LevelEvent.BossArrives) SpawnBoss();
             else if (levelEvent == LevelEvent.SectorClear) ClearSector();
         }
 
@@ -432,7 +450,9 @@ namespace YASS.Gameplay
 
         void UpdatePlayfield()
         {
-            var cameraPosition = worldCamera.transform.position;
+            // The steady position, not the current one: a screen shake must not drag the playfield (and with it
+            // the ships clamped to its edges) around the screen.
+            var cameraPosition = CameraShaker.SteadyPosition(worldCamera);
             Playfield = Playfield.FromCamera(cameraPosition.ToNumerics(), worldCamera.orthographicSize, worldCamera.aspect);
         }
 
@@ -489,6 +509,56 @@ namespace YASS.Gameplay
                            shot.Offset.ToUnity();
             _playerProjectiles.Get().Launch(this, _playerProjectiles, position, direction,
                 playerDefinition.ProjectileSpeed, playerDefinition.ProjectileDamage, shot.Piercing, shot.PlayerIndex);
+
+            Cue.Spawn(Effect.MuzzleFlash, position, Sfx.PlayerShot);
+        }
+
+        /// <summary>
+        /// One place for every way the player can be hurt, so a shot, a ram and a boss collision cannot drift
+        /// apart: an absorbed hit ripples off the shield, a real hit shakes the screen, and losing a life
+        /// shakes it harder.
+        /// </summary>
+        void ShowPlayerHurt(PlayerShipView ship, HitOutcome outcome)
+        {
+            switch (outcome)
+            {
+                case HitOutcome.Absorbed:
+                    Cue.Spawn(Effect.ShieldRipple, ship.Position, Sfx.ShieldHit);
+                    break;
+                case HitOutcome.Damaged:
+                    Cue.Play(Sfx.PlayerHit);
+                    Cue.Shake(ScreenShake.PlayerHitTrauma);
+                    ship.Flash();
+                    break;
+                case HitOutcome.LifeLost:
+                case HitOutcome.GameOver:
+                    Cue.Spawn(Effect.LargeExplosion, ship.Position, Sfx.LifeLost);
+                    Cue.Shake(ScreenShake.LifeLostTrauma);
+                    break;
+            }
+        }
+
+        /// <summary>Bigger enemies go out with a bigger bang.</summary>
+        static void ShowEnemyDeath(EnemyView enemy)
+        {
+            var large = enemy.Size >= EnemySize.Large;
+            Cue.Spawn(large ? Effect.LargeExplosion : Effect.SmallExplosion, enemy.Position,
+                large ? Sfx.LargeExplosion : Sfx.SmallExplosion);
+        }
+
+        /// <summary>
+        /// One death for a meteor however it died: shooting one and flying into the same rock used to sound
+        /// different. Splitting rocks crack; solid ones blow up, and big ones do it loudly.
+        /// </summary>
+        static void ShowMeteorDeath(MeteorDefinition definition, Vector2 position)
+        {
+            var large = definition.Size >= MeteorSize.Large;
+            var effect = large ? Effect.LargeExplosion : Effect.SmallExplosion;
+            var sound = definition.Splitting
+                ? Sfx.MeteorBreak
+                : large ? Sfx.LargeExplosion : Sfx.SmallExplosion;
+
+            Cue.Spawn(effect, position, sound);
         }
 
         float RandomSpeed(MeteorDefinition definition) =>
