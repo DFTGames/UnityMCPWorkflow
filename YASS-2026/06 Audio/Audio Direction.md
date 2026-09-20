@@ -18,6 +18,8 @@ Sound effects were a highlighted feature of the original ("a beautiful set of SF
 ## First music set (Google Lyria 3 Clip, looping clips)
 Menu theme, Level 1 track, boss theme. Tracks crossfade on scene and boss transitions. Adaptive intensity layers come later.
 
+**As built.** Three 30-second clips in `Assets/_Game/Audio/Music/`, looped. The title plays the menu theme; a level starts on its own track and crossfades to the boss theme when the boss warning sounds, over 1.5 seconds with both tracks briefly audible rather than one cutting to the other. The music runs on unscaled time, so pausing does not silence it. Lyria does not generate seamless loops, so the clips are asked for a steady piece with no fade at either end; a true seamless loop needs editing the clip, which is not done yet.
+
 ## Sound effects (ElevenLabs Sound Effects V2)
 | Event | Description | Status |
 | ----- | ----------- | ------ |
@@ -40,7 +42,9 @@ Menu theme, Level 1 track, boss theme. Tracks crossfade on scene and boss transi
 ## Mixing
 An audio mixer with **Music** and **SFX** groups, whose volumes the Settings screen controls. Repeated sounds (shots) are rate-limited so they do not stack into noise.
 
-**As built (effects pass):** the effects volume is applied directly to the pooled voices that play them, and repeats are limited per sound (shots 60 ms, explosions 40 ms, player and shield hits 100 ms) with a small repeating pitch variation so a stream of shots is not one flat note. Each clip also has its own trim in the sound bank, so a long explosion cannot drown a shot. Twelve voices play at once; when they are all busy the one closest to finishing is reused, so a four-second boss explosion survives the shots fired over it. Changing the volume reaches sounds already playing. The mixer groups themselves arrive with the music pass, which is what needs them; until then the **music slider changes nothing audible**.
+**As built.** `Assets/_Game/Audio/YASS.mixer` has the Music and SFX groups under Master, with their volumes exposed as `MusicVolume` and `SfxVolume`. The Settings sliders are linear but loudness is not, so each value is converted to decibels (half the slider is about -6 dB, and zero is silence rather than a quiet hum) and written to the group. Both sliders now do what they say.
+
+Effect voices feed the SFX group and carry only their clip's own trim from the sound bank, so the volume is applied once. Repeats are limited per sound (shots 60 ms, explosions 40 ms, player and shield hits 100 ms) with a small repeating pitch variation so a stream of shots is not one flat note. Twelve voices play at once; when they are all busy the one closest to finishing is reused, so a four-second boss explosion survives the shots fired over it.
 
 Sound effects are generated into `Assets/_Game/Audio/SFX/`, one file per entry above, named after it. `Tools/YASS/Build Feedback Assets` matches those files to the game's sound list, so adding or replacing a sound only means generating a file with the right name and rebuilding.
 

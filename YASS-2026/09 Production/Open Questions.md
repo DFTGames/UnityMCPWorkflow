@@ -12,7 +12,7 @@ updated: 2026-09-20
 
 - [ ] Health pickup: confirm the provisional 25 health.
 - [ ] Co-op (future): chain, pity timer and score are currently shared by all players. Per-player instead? With a shared score, the level-clear bonus is currently awarded once per surviving player.
-- [ ] M3: give music and effects their own mixer groups. Until then both sliders drive one master volume, so moving the music slider alone may not change what you hear.
+- [ ] Music loops are 30-second clips that do not loop seamlessly (the generator produces a piece with a beginning and an end). Edit them into true loops, or crossfade a track with itself.
 - [ ] Confirm the provisional firing arc: 35 degrees either way, with the ship's tilt showing that same angle.
 - [ ] Confirm that the level 5 spread may fan outside the arc (+/-20 degrees around the aim, so up to 55 degrees), or whether the whole spread should be clamped into the arc instead.
 - [ ] Confirm provisional boss rule: 1 second of boss-contact immunity after a boss collision hurts the player.

@@ -122,3 +122,7 @@ InitTestScene*.unity*
 
 # Unity AI generation cache (prompts, raw outputs). The curated results live under Assets/_Game.
 /GeneratedAssets/
+
+# Scratch folder the Unity AI toolkit creates while generating; never holds anything we author.
+/Assets/AI Toolkit/
+/Assets/AI Toolkit.meta

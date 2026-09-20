@@ -2,7 +2,9 @@ using System;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Audio;
 using UnityEngine.SceneManagement;
+using YASS.Core;
 using YASS.Feedback;
 
 namespace YASS.Editor
@@ -36,8 +38,8 @@ namespace YASS.Editor
         {
             AddFlashToPrefabs();
 
-            AddFeedbackTo(TitleSceneBuilder.ScenePath, withShaker: false);
-            AddFeedbackTo(LevelScenePath, withShaker: true);
+            AddFeedbackTo(TitleSceneBuilder.ScenePath, withShaker: false, Track.Menu);
+            AddFeedbackTo(LevelScenePath, withShaker: true, Track.Level);
 
             AssetDatabase.SaveAssets();
             Debug.Log("Wired the feedback objects into the scenes and prefabs");
@@ -97,6 +99,53 @@ namespace YASS.Editor
         }
 
         /// <summary>
+        /// The mixer's groups carry the player's volumes, and the music player feeds the Music group
+        /// (GDD "Audio Direction"). The level starts on its own theme and switches to the boss's when the
+        /// warning sounds.
+        /// </summary>
+        static void AddAudioMixing(GameObject feedback, Track music)
+        {
+            var mixer = AssetDatabase.LoadAssetAtPath<AudioMixer>(AudioMixerBuilder.MixerPath);
+            if (mixer == null)
+            {
+                Debug.LogError($"No mixer at {AudioMixerBuilder.MixerPath}; run Tools/YASS/Build Audio Mixer first.");
+                return;
+            }
+
+            var volumes = feedback.AddComponent<MixerVolumes>();
+            MenuSceneParts.Serialize(volumes, o => MenuSceneParts.Find(o, "mixer").objectReferenceValue = mixer);
+
+            var musicObject = new GameObject("Music");
+            musicObject.transform.SetParent(feedback.transform, false);
+            var player = musicObject.AddComponent<MusicPlayer>();
+            MenuSceneParts.Serialize(player, o =>
+            {
+                MenuSceneParts.Find(o, "output").objectReferenceValue = GroupNamed(mixer, AudioRules.MusicGroup);
+                MenuSceneParts.Find(o, "playOnStart").enumValueIndex = (int)music;
+                MenuSceneParts.Find(o, "menuTheme").objectReferenceValue = LoadTrack("MenuTheme");
+                MenuSceneParts.Find(o, "levelTheme").objectReferenceValue = LoadTrack("Level01");
+                MenuSceneParts.Find(o, "bossTheme").objectReferenceValue = LoadTrack("BossTheme");
+            });
+        }
+
+        static AudioMixerGroup GroupNamed(AudioMixer mixer, string name)
+        {
+            var groups = mixer.FindMatchingGroups(name);
+            if (groups.Length > 0) return groups[0];
+
+            Debug.LogError($"The mixer has no {name} group.");
+            return null;
+        }
+
+        static AudioClip LoadTrack(string name)
+        {
+            var clip = AssetDatabase.LoadAssetAtPath<AudioClip>($"Assets/_Game/Audio/Music/{name}.wav");
+            if (clip == null) Debug.LogWarning($"No music track named {name}.");
+
+            return clip;
+        }
+
+        /// <summary>
         /// Without a listener in the scene, every sound plays into nothing and Unity says not a word about it.
         /// </summary>
         static void EnsureAudioListener(Scene scene)
@@ -114,7 +163,7 @@ namespace YASS.Editor
             else Debug.LogError($"No camera in {scene.path}: the scene has nowhere to hear from.");
         }
 
-        static void AddFeedbackTo(string scenePath, bool withShaker)
+        static void AddFeedbackTo(string scenePath, bool withShaker, Track music)
         {
             var scene = MenuSceneParts.OpenForBuilding(scenePath, out var openedByBuilder);
 
@@ -128,8 +177,16 @@ namespace YASS.Editor
 
             var audio = go.AddComponent<AudioDirector>();
             MenuSceneParts.Serialize(audio, o =>
+            {
                 MenuSceneParts.Find(o, "bank").objectReferenceValue =
-                    AssetDatabase.LoadAssetAtPath<SoundBank>(FeedbackBuilder.BankPath));
+                    AssetDatabase.LoadAssetAtPath<SoundBank>(FeedbackBuilder.BankPath);
+
+                var mixer = AssetDatabase.LoadAssetAtPath<AudioMixer>(AudioMixerBuilder.MixerPath);
+                MenuSceneParts.Find(o, "output").objectReferenceValue =
+                    mixer == null ? null : GroupNamed(mixer, AudioRules.SfxGroup);
+            });
+
+            AddAudioMixing(go, music);
 
             var spawner = go.AddComponent<EffectSpawner>();
             MenuSceneParts.Serialize(spawner, o =>

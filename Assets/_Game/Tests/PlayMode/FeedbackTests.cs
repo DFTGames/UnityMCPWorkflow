@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -144,13 +145,16 @@ namespace YASS.Tests.Feedback
 
             var source = PlayingSource();
             Assert.That(source, Is.Not.Null, "nothing is playing");
-            Assert.That(AudioListener.volume, Is.EqualTo(1f).Within(1e-4f));
-            Assert.That(source.volume, Is.EqualTo(0.7f * 0.5f).Within(1e-3f), "clip trim times the slider, once");
+            Assert.That(AudioListener.volume, Is.EqualTo(1f).Within(1e-4f), "the listener is left alone");
+            Assert.That(source.volume, Is.EqualTo(0.7f).Within(1e-3f), "the voice carries only its clip's trim");
+            Assert.That(source.outputAudioMixerGroup, Is.Not.Null, "and feeds the mixer, which applies the slider");
+            Assert.That(source.outputAudioMixerGroup.name, Is.EqualTo(AudioRules.SfxGroup));
         }
 
         [UnityTest]
         public IEnumerator ChangingTheVolume_ReachesSoundsAlreadyPlaying()
         {
+            // The mixer group carries the volume, so a change reaches whatever is already playing through it.
             Audio.Play(Sfx.BossExplosion);
             yield return null;
             Assert.That(PlayingSource(), Is.Not.Null);
@@ -158,8 +162,9 @@ namespace YASS.Tests.Feedback
             GameFlow.Settings.SetSfxVolume(0f);
             yield return null;
 
-            foreach (var source in Audio.GetComponents<AudioSource>())
-                Assert.That(source.volume, Is.Zero.Within(1e-4f), "a long sound must not run on at its old level");
+            var volumes = Object.FindAnyObjectByType<MixerVolumes>();
+            Assert.That(volumes.TryGetDecibels(AudioRules.SfxVolumeParameter, out var decibels), Is.True);
+            Assert.That(decibels, Is.EqualTo(AudioRules.MutedDecibels), "a long sound is silenced with the rest");
         }
 
         [UnityTest]
@@ -187,6 +192,94 @@ namespace YASS.Tests.Feedback
 
             return null;
         }
+
+        // ---- Music and the mixer ----
+
+        [Test]
+        public void TheLevelHasItsMusicAndMixer()
+        {
+            Assert.That(MusicPlayer.Instance, Is.Not.Null, "no MusicPlayer in the level");
+            Assert.That(Object.FindAnyObjectByType<MixerVolumes>(), Is.Not.Null, "no MixerVolumes in the level");
+        }
+
+        [UnityTest]
+        public IEnumerator TheLevelPlaysItsOwnTheme()
+        {
+            yield return null; // Start runs a frame after Awake
+
+            Assert.That(MusicPlayer.Instance.Playing, Is.EqualTo(Track.Level));
+            Assert.That(MusicSources().Any(s => s.isPlaying), Is.True, "the music is audible");
+        }
+
+        [UnityTest]
+        public IEnumerator TheBossWarning_CrossfadesToTheBossTheme()
+        {
+            yield return null;
+            Assert.That(MusicPlayer.Instance.Playing, Is.EqualTo(Track.Level));
+
+            _runner.StartBossFightNow();
+            MusicPlayer.Instance.Play(Track.Boss); // what the boss warning does
+
+            // Both tracks are audible together while the crossfade runs, rather than one cutting to the other.
+            yield return new WaitForSecondsRealtime(0.3f);
+            Assert.That(MusicSources().Count(s => s.isPlaying), Is.EqualTo(2), "the two tracks overlap");
+
+            yield return new WaitForSecondsRealtime(2f);
+            Assert.That(MusicSources().Count(s => s.isPlaying), Is.EqualTo(1), "and the old one stops");
+            Assert.That(MusicPlayer.Instance.Playing, Is.EqualTo(Track.Boss));
+        }
+
+        [UnityTest]
+        public IEnumerator AskingForTheTrackAlreadyPlaying_DoesNothing()
+        {
+            yield return null;
+            var source = MusicSources().First(s => s.isPlaying);
+            var time = source.time;
+
+            MusicPlayer.Instance.Play(Track.Level);
+            yield return null;
+
+            Assert.That(MusicSources().First(s => s.isPlaying), Is.SameAs(source), "the same source keeps going");
+            Assert.That(source.time, Is.GreaterThanOrEqualTo(time), "the track was not restarted");
+        }
+
+        [UnityTest]
+        public IEnumerator TheMusicKeepsPlayingWhilePaused()
+        {
+            yield return null;
+            Time.timeScale = 0f;
+
+            var source = MusicSources().First(s => s.isPlaying);
+            var before = source.time;
+            yield return new WaitForSecondsRealtime(0.3f);
+
+            Assert.That(source.time, Is.GreaterThan(before), "a pause must not silence the music");
+        }
+
+        [UnityTest]
+        public IEnumerator TheVolumeSliders_ReachTheMixerGroups()
+        {
+            var volumes = Object.FindAnyObjectByType<MixerVolumes>();
+
+            GameFlow.Settings.SetMusicVolume(0.5f);
+            GameFlow.Settings.SetSfxVolume(1f);
+            yield return null;
+
+            Assert.That(volumes.TryGetDecibels(AudioRules.MusicVolumeParameter, out var music), Is.True);
+            Assert.That(volumes.TryGetDecibels(AudioRules.SfxVolumeParameter, out var sfx), Is.True);
+
+            // Half the slider is about -6 dB, not half the decibels (AudioRules.ToDecibels).
+            Assert.That(music, Is.EqualTo(-6.02f).Within(0.05f));
+            Assert.That(sfx, Is.EqualTo(0f).Within(0.01f));
+
+            GameFlow.Settings.SetMusicVolume(0f);
+            yield return null;
+            Assert.That(volumes.TryGetDecibels(AudioRules.MusicVolumeParameter, out var muted), Is.True);
+            Assert.That(muted, Is.EqualTo(AudioRules.MutedDecibels), "zero means silence, not a quiet hum");
+        }
+
+        static IEnumerable<AudioSource> MusicSources() =>
+            MusicPlayer.Instance.GetComponents<AudioSource>();
 
         // ---- Effects and sounds on real events ----
 
@@ -302,7 +395,10 @@ namespace YASS.Tests.Feedback
             yield return new WaitForSeconds(0.5f);
 
             Assert.That(Audio.PlayCount(Sfx.PlayerShot), Is.GreaterThan(before), "the game still asks for shots");
-            Assert.That(PlayingSource(), Is.Null, "but a muted game makes no sound");
+
+            var volumes = Object.FindAnyObjectByType<MixerVolumes>();
+            Assert.That(volumes.TryGetDecibels(AudioRules.SfxVolumeParameter, out var decibels), Is.True);
+            Assert.That(decibels, Is.EqualTo(AudioRules.MutedDecibels), "but the effects group is silent");
         }
 
         [UnityTest]

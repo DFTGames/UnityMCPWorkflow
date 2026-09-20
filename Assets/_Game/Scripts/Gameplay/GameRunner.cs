@@ -393,7 +393,11 @@ namespace YASS.Gameplay
             _spawns.Clear();
             var levelEvent = _director.Tick(deltaTime, _spawns);
             foreach (var request in _spawns) SpawnFromWave(request);
-            if (levelEvent == LevelEvent.BossWarning) Cue.Play(Sfx.BossWarning);
+            if (levelEvent == LevelEvent.BossWarning)
+            {
+                Cue.Play(Sfx.BossWarning);
+                MusicPlayer.PlayIfPresent(Track.Boss); // the warning is where the fight starts to feel different
+            }
             else if (levelEvent == LevelEvent.BossArrives) SpawnBoss();
             else if (levelEvent == LevelEvent.SectorClear) ClearSector();
         }

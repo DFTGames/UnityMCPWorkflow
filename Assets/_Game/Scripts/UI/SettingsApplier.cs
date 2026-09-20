@@ -8,8 +8,8 @@ namespace YASS.UI
     /// them here or two scenes ago.
     /// </summary>
     /// <remarks>
-    /// Volumes drive <see cref="AudioListener.volume"/> for now; M3 replaces this with separate music and effects
-    /// mixer groups (GDD "Audio Direction"). Screen shake is read by the effects that will use it in M3.
+    /// Volumes belong to the mixer (see MixerVolumes in the feedback layer) and screen shake to the camera
+    /// shaker; what is left here is the window itself.
     /// </remarks>
     public sealed class SettingsApplier : MonoBehaviour
     {
@@ -51,8 +51,7 @@ namespace YASS.UI
 
         static void Apply(GameSettings settings)
         {
-            // The effects volume belongs to the audio director, which applies it per voice; scaling the listener
-            // as well would apply it twice, and would let the (still silent) music slider change effect loudness.
+            // The listener is left alone: both volumes are applied once, on the mixer's groups.
             AudioListener.volume = 1f;
 
             if (GameFlow.SupportsFullscreen && Screen.fullScreen != settings.Fullscreen)

@@ -1,6 +1,6 @@
 using UnityEngine;
+using UnityEngine.Audio;
 using YASS.Core;
-using YASS.UI;
 
 namespace YASS.Feedback
 {
@@ -10,8 +10,8 @@ namespace YASS.Feedback
     /// does not stack into noise, and the effects volume from Settings is applied here.
     /// </summary>
     /// <remarks>
-    /// Music, and with it the mixer groups the GDD describes, arrives with the music pass; until then the
-    /// effects volume is applied to each voice directly.
+    /// Voices feed the mixer's SFX group, which carries the player's effects volume (see
+    /// <see cref="MixerVolumes"/>); each voice applies only its clip's own trim from the bank.
     /// </remarks>
     [DefaultExecutionOrder(-200)] // ready before anything that might play a sound on its first frame
     public sealed class AudioDirector : MonoBehaviour
@@ -19,6 +19,8 @@ namespace YASS.Feedback
         static readonly int SfxCount = System.Enum.GetValues(typeof(Sfx)).Length;
 
         [SerializeField] SoundBank bank;
+        [SerializeField, Tooltip("The mixer's SFX group; the effects volume is applied there.")]
+        AudioMixerGroup output;
 
         [SerializeField, Min(1), Tooltip("How many sounds can overlap before the longest-running one is replaced.")]
         int voices = 12;
@@ -27,8 +29,6 @@ namespace YASS.Feedback
         float[] _clipVolume;
         float[] _lastPlayed;
         int[] _playCount;
-        SettingsService _settings;
-        float _volume = 1f;
 
         /// <summary>The director in the current scene, if any. Sounds are optional: callers check for null.</summary>
         public static AudioDirector Instance { get; private set; }
@@ -51,6 +51,7 @@ namespace YASS.Feedback
                 var source = gameObject.AddComponent<AudioSource>();
                 source.playOnAwake = false;
                 source.spatialBlend = 0f; // 2D: the playfield is one screen wide
+                source.outputAudioMixerGroup = output;
                 _sources[i] = source;
             }
 
@@ -58,18 +59,6 @@ namespace YASS.Feedback
             _lastPlayed = new float[SfxCount];
             _playCount = new int[SfxCount];
             for (var i = 0; i < SfxCount; i++) _lastPlayed[i] = -1f;
-        }
-
-        void OnEnable()
-        {
-            _settings = GameFlow.Settings;
-            _settings.Changed += ApplyVolume;
-            ApplyVolume(_settings.Settings);
-        }
-
-        void OnDisable()
-        {
-            if (_settings != null) _settings.Changed -= ApplyVolume;
         }
 
         void OnDestroy()
@@ -87,17 +76,15 @@ namespace YASS.Feedback
             if (!AudioRules.CanPlay(sfx, _lastPlayed[(int)sfx], now)) return;
             if (!bank.TryGet(sfx, out var clip, out var clipVolume)) return;
 
-            // Counted even when muted: the game asked for this sound, which is what tests care about.
             _lastPlayed[(int)sfx] = now;
             var index = _playCount[(int)sfx]++;
-            if (_volume <= 0f) return;
 
             var voice = FreeVoice();
             var source = _sources[voice];
 
             _clipVolume[voice] = Mathf.Clamp01(clipVolume);
             source.clip = clip;
-            source.volume = _clipVolume[voice] * _volume;
+            source.volume = _clipVolume[voice];
             source.pitch = AudioRules.Pitch(sfx, index);
             source.Play();
         }
@@ -133,13 +120,5 @@ namespace YASS.Feedback
             if (Instance != null) Instance.Play(sfx);
         }
 
-        void ApplyVolume(GameSettings settings)
-        {
-            _volume = Mathf.Clamp01(settings.SfxVolume);
-
-            // Sounds already playing follow the slider too, so dragging it to zero silences the game at once
-            // rather than letting a long explosion run on at its old level.
-            for (var i = 0; i < _sources.Length; i++) _sources[i].volume = _clipVolume[i] * _volume;
-        }
     }
 }

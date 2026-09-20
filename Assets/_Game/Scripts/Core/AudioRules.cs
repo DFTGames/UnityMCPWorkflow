@@ -33,6 +33,14 @@ namespace YASS.Core
         /// <summary>The level a muted mixer group is set to, in decibels.</summary>
         public const float MutedDecibels = -80f;
 
+        /// <summary>The mixer groups the Settings screen controls (GDD "Audio Direction", Mixing).</summary>
+        public const string MusicGroup = "Music";
+        public const string SfxGroup = "SFX";
+
+        /// <summary>The exposed mixer parameters the game writes the volumes to.</summary>
+        public const string MusicVolumeParameter = "MusicVolume";
+        public const string SfxVolumeParameter = "SfxVolume";
+
         /// <summary>
         /// Converts a 0..1 volume slider into mixer decibels. Loudness is logarithmic, so a linear slider set to
         /// half must not simply halve the decibels or the top of its travel does almost nothing.

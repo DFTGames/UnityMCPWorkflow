@@ -154,6 +154,20 @@ namespace YASS.Editor
             Canvas.ForceUpdateCanvases();
         }
 
+        /// <summary>
+        /// Lays out every canvas in a scene before it is saved. Any builder that touches a scene with menus in
+        /// it has to do this, not only the one that built them: the saved positions are what a screen shows on
+        /// its first frame.
+        /// </summary>
+        static void LayoutCanvases(Scene scene)
+        {
+            foreach (var root in scene.GetRootGameObjects())
+            {
+                foreach (var canvas in root.GetComponentsInChildren<Canvas>(true))
+                    LayoutNow(canvas.gameObject);
+            }
+        }
+
         public static void Serialize(Object target, Action<SerializedObject> edit)
         {
             var serialized = new SerializedObject(target);
@@ -192,6 +206,7 @@ namespace YASS.Editor
         /// <summary>Saves the built scene, and closes it only if the builder was the one that opened it.</summary>
         public static void SaveAndRelease(Scene scene, string path, bool openedByBuilder)
         {
+            LayoutCanvases(scene);
             EditorSceneManager.MarkSceneDirty(scene);
 
             if (!EditorSceneManager.SaveScene(scene, path))
