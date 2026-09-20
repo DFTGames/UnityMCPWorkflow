@@ -102,6 +102,13 @@ namespace YASS.Core
             LevelIndex++;
         }
 
+        /// <summary>
+        /// Test seam: jumps the run to its last level, so a test can reach the campaign's ending without playing
+        /// all eight of them. It does not invent the levels it skipped, so what each player carries is still
+        /// whatever the run has banked: call it while the level in play has already started.
+        /// </summary>
+        internal void SkipToFinalLevel() => LevelIndex = LevelCount - 1;
+
         /// <summary>The run's totals including the level being played now.</summary>
         public long TotalScore(GameSession session) =>
             CarriedScore + (session?.Score.Score ?? 0);

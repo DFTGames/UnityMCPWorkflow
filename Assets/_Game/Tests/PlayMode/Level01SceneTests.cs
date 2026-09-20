@@ -215,6 +215,12 @@ namespace YASS.Tests.Gameplay
             Assert.That(ShipPosition.y, Is.EqualTo(Runner.Playfield.MinY + 0.5f).Within(0.01f));
         }
 
+        /// <summary>
+        /// How long a boss takes to reach its station and open its core for the first time: it flies in from
+        /// beyond the right edge before it does anything, then holds its armoured phase.
+        /// </summary>
+        const float BossEntryAndFirstCycle = 10f;
+
         [UnityTest]
         public IEnumerator Boss_ClosedCoreArmourAbsorbsShots()
         {
@@ -243,7 +249,7 @@ namespace YASS.Tests.Gameplay
             Runner.StartBossFightNow();
             var boss = Runner.Boss;
             var core = boss.GetComponentInChildren<BossCoreView>();
-            yield return WaitUntil(() => boss.Brain.IsCoreOpen, 6f, "the core to open");
+            yield return WaitUntil(() => boss.Brain.IsCoreOpen, BossEntryAndFirstCycle, "the core to open");
 
             for (var t = 0f; t < 2f && boss.Brain.Health.Current >= boss.Brain.Health.Max; t += Time.deltaTime)
             {
@@ -261,7 +267,7 @@ namespace YASS.Tests.Gameplay
             Runner.SetCommandOverride(0, Idle);
             Runner.StartBossFightNow();
 
-            yield return WaitUntil(() => CountLiveEnemies() >= 3, 1f, "the boss to launch three Darts");
+            yield return WaitUntil(() => CountLiveEnemies() >= 3, 6f, "the boss to launch three Darts");
             foreach (var enemy in Object.FindObjectsByType<EnemyView>())
                 if (enemy.IsAlive) Assert.That(enemy.WaveIndex, Is.EqualTo(-1));
         }
@@ -274,7 +280,7 @@ namespace YASS.Tests.Gameplay
             Runner.SetCommandOverride(0, new PlayerCommand(NVector2.UnitY, false, NVector2.UnitX));
             Runner.StartBossFightNow();
             var boss = Runner.Boss;
-            yield return WaitUntil(() => boss.Brain.IsCoreOpen, 6f, "the core to open");
+            yield return WaitUntil(() => boss.Brain.IsCoreOpen, BossEntryAndFirstCycle, "the core to open");
             Runner.SetCommandOverride(0, Idle);
             Assert.That(Ship.Vitals.Health, Is.EqualTo(100f), "precondition: no damage taken during the fight");
             var before = Session.Score.Score;
@@ -301,7 +307,7 @@ namespace YASS.Tests.Gameplay
             Runner.SetCommandOverride(0, Idle);
             Runner.StartBossFightNow();
             var boss = Runner.Boss;
-            yield return WaitUntil(() => boss.Brain.IsCoreOpen, 6f, "the core to open");
+            yield return WaitUntil(() => boss.Brain.IsCoreOpen, BossEntryAndFirstCycle, "the core to open");
             boss.TakeCoreHit(boss.Brain.Health.Max, 0);
             var health = Ship.Vitals.Health;
 
@@ -360,7 +366,7 @@ namespace YASS.Tests.Gameplay
             Runner.SpawningEnabled = false;
             Runner.StartBossFightNow();
             var boss = Runner.Boss;
-            yield return WaitUntil(() => boss.Brain.IsCoreOpen, 6f, "the core to open");
+            yield return WaitUntil(() => boss.Brain.IsCoreOpen, BossEntryAndFirstCycle, "the core to open");
 
             Runner.SetCommandOverride(0, new PlayerCommand(NVector2.Zero, true, NVector2.UnitY));
             yield return WaitUntil(() => ShipView.TiltDegrees > 30f, 2f, "the ship to tilt up");

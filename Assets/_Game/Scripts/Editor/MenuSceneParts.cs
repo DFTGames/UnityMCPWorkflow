@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEditor.Events;
 using UnityEditor.SceneManagement;
@@ -190,6 +192,28 @@ namespace YASS.Editor
         /// Opens a scene for building. Reports whether the builder opened it, so a scene the user already had
         /// open is left open rather than being saved and closed underneath them.
         /// </summary>
+        /// <summary>
+        /// Every level scene, in order. The campaign has eight of them and they are all built the same way, so a
+        /// builder that only knew about Level 1 would leave the other seven behind on its next run. Matched by
+        /// name rather than by folder, so a future LevelSelect scene is not mistaken for one.
+        /// </summary>
+        public static string[] LevelScenePaths()
+        {
+            var paths = new List<string>();
+            foreach (var guid in AssetDatabase.FindAssets("t:Scene", new[] { "Assets/_Game/Scenes" }))
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                if (Regex.IsMatch(Path.GetFileNameWithoutExtension(path), @"^Level\d\d$")) paths.Add(path);
+            }
+
+            paths.Sort(StringComparer.Ordinal);
+            return paths.ToArray();
+        }
+
+        /// <summary>
+        /// Opens a scene for a builder to work on, or hands back the one the user already has open so their work
+        /// is not thrown away.
+        /// </summary>
         public static Scene OpenForBuilding(string path, out bool openedByBuilder)
         {
             var existing = SceneManager.GetSceneByPath(path);
@@ -203,10 +227,15 @@ namespace YASS.Editor
             return EditorSceneManager.OpenScene(path, OpenSceneMode.Additive);
         }
 
-        /// <summary>Saves the built scene, and closes it only if the builder was the one that opened it.</summary>
-        public static void SaveAndRelease(Scene scene, string path, bool openedByBuilder)
+        /// <summary>
+        /// Saves the built scene, and closes it only if the builder was the one that opened it.
+        /// <paramref name="layout"/> may be turned off by a builder that did not touch any menus: the layout pass
+        /// uses Unity's global canvas rebuild, which reaches into every other loaded scene as well, and a scene
+        /// disturbed that way is saved along with this one the next time play mode starts.
+        /// </summary>
+        public static void SaveAndRelease(Scene scene, string path, bool openedByBuilder, bool layout = true)
         {
-            LayoutCanvases(scene);
+            if (layout) LayoutCanvases(scene);
             EditorSceneManager.MarkSceneDirty(scene);
 
             if (!EditorSceneManager.SaveScene(scene, path))

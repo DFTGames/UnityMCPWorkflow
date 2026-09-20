@@ -26,7 +26,8 @@ updated: 2026-09-20
 | Swarm drone, Gunship, Diver, Mine Layer, Frigate, Sniper | Sprites | `Sprites/Ships/` | AI (Gemini 3.1 Flash) | Prototype |
 | Proximity mine | Sprite | `Sprites/Hazards/Mine.png` | AI (Gemini 3.1 Flash) | Prototype |
 | Sniper warning line and beam | Stretched `UIWhite` sprite driven by `BeamView` | `Prefabs/Sniper.prefab` | Procedural | Prototype |
-| Bosses 2 to 8, level backgrounds 2 to 8 | Sprites | | | Not started |
+| Rock Crusher, Sunforge, Frost Lancer, Dreadnought, Tempest, Singularity Engine, The Overmind | Sprites | `Sprites/Bosses/` | AI (Gemini 3.1 Flash) | Prototype |
+| Backdrops for levels 2 to 8 | Sprites, 2048x1152, unlit, darkening baked in | `Textures/Backgrounds/` | AI (Gemini 3.1 Flash) | Prototype |
 
 All paths are under `Assets/_Game/`.
 
@@ -45,6 +46,7 @@ Pixels per unit is set per sprite so each keeps its intended size on the 10-unit
 | Frigate | 2.0 wide |
 | Sniper | 1.0 wide |
 | Proximity mine | 0.45 across |
+| Bosses | 3.6 to 5.2 wide, growing with the level |
 | Meteors | 1.0 across at scale 1 (scaled per size by the meteor data) |
 | Pickups | 0.55 across |
 | Background | 23.5 x 13.2 (covers 4:3 to 21:9) |

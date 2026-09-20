@@ -271,7 +271,10 @@ namespace YASS.Gameplay
             }
 
             if (_sniper.IsFiring && !_beamWasFiring)
+            {
+                Cue.Play(Sfx.EnemyShot);
                 _runner.FireBeam(origin, aim, definition.BeamLength, definition.BeamHalfWidth, definition.BeamDamage);
+            }
 
             _beamWasFiring = _sniper.IsFiring;
         }

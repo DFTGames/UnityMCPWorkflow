@@ -67,7 +67,6 @@ namespace YASS.Gameplay
         [SerializeField] LevelDefinition level;
         [SerializeField] Projectile enemyProjectilePrefab;
         [SerializeField] MeteorView meteorPrefab;
-        [SerializeField, Tooltip("Enemy the boss launches from its bays.")] EnemyView bossMinionPrefab;
         [SerializeField, Min(0f)] float spawnEdgeMargin = 1f;
 
         [SerializeField, Tooltip("Dropped by Mine Layers.")] MineView minePrefab;
@@ -88,6 +87,7 @@ namespace YASS.Gameplay
         PlayerCommand?[] _commandOverrides;
         Vector2[] _shipTargets;
         NVector2[] _shipMovement;
+        NVector2[] _shipPull;
         IRandomSource _random;
         ObjectPool<Projectile> _playerProjectiles;
         ObjectPool<Projectile> _enemyProjectiles;
@@ -173,6 +173,7 @@ namespace YASS.Gameplay
             _commandOverrides = new PlayerCommand?[players.Length];
             _shipTargets = new Vector2[players.Length];
             _shipMovement = new NVector2[players.Length];
+            _shipPull = new NVector2[players.Length];
 
             _playerProjectiles = CreatePool(playerProjectilePrefab, ProjectilePrewarm);
             _enemyProjectiles = CreatePool(enemyProjectilePrefab, ProjectilePrewarm);
@@ -187,7 +188,12 @@ namespace YASS.Gameplay
             _releasePickup = p => _pickups.Release(p);
             _releaseMine = m => _mines.Release(m);
 
-            RegisterEnemyPool(bossMinionPrefab);
+            // Only the boss this level actually has: prewarming a pool of Darts for a boss that launches
+            // nothing would cost every level eight instances it never uses.
+            var bossMinion = level.BossPrefab != null && level.BossPrefab.Definition != null
+                ? level.BossPrefab.Definition.MinionPrefab
+                : null;
+            if (bossMinion != null) RegisterEnemyPool(bossMinion);
             foreach (var wave in level.Waves)
             foreach (var group in wave.groups)
                 if (group.enemy != null) RegisterEnemyPool(group.enemy);
@@ -225,8 +231,20 @@ namespace YASS.Gameplay
 
                 if (_session.GetPlayer(i).IsGameOver) continue;
                 var next = ShipMotor.Step(shipPosition, _commands[i].Move, playerDefinition.Speed, deltaTime, bounds);
+
+                // The engine follows what the player asked for, so it is read before anything drags the ship:
+                // being pulled by a gravity well is not thrust, and the exhaust must not claim it is.
                 var maxStep = playerDefinition.Speed * deltaTime;
                 _shipMovement[i] = maxStep > 0f ? (next - shipPosition) / maxStep : NVector2.Zero;
+
+                // A pull asked for last step is applied with this one, so the ship is still moved exactly once
+                // per fixed update and still cannot be dragged off the playfield.
+                if (_shipPull[i] != NVector2.Zero)
+                {
+                    next = bounds.Clamp(next + _shipPull[i] * deltaTime);
+                    _shipPull[i] = NVector2.Zero;
+                }
+
                 _shipTargets[i] = next.ToUnity();
                 players[i].MoveTo(_shipTargets[i]);
             }
@@ -422,14 +440,15 @@ namespace YASS.Gameplay
         }
 
         /// <summary>
-        /// The Sniper's beam: a line, not a projectile, so it hits the instant it fires. The warning before it is
-        /// the player's only chance to be somewhere else (GDD "Enemies and Hazards").
+        /// A beam: a line, not a projectile, so it hits the instant it fires. The warning or the sweep before it
+        /// is the player's only chance to be somewhere else (GDD "Enemies and Hazards", "Levels").
+        /// Returns how many players it caught, which is how a sweeping beam knows a burn landed.
         /// </summary>
-        public void FireBeam(Vector2 origin, Vector2 aim, float length, float halfWidth, float damage)
+        public int FireBeam(Vector2 origin, Vector2 aim, float length, float halfWidth, float damage)
         {
-            if (!IsRunning || IsBossDefeated) return;
+            if (!IsRunning || IsBossDefeated) return 0;
 
-            Cue.Play(Sfx.EnemyShot);
+            var hits = 0;
             for (var i = 0; i < players.Length; i++)
             {
                 if (_session.GetPlayer(i).IsGameOver) continue;
@@ -437,14 +456,49 @@ namespace YASS.Gameplay
                         halfWidth, length)) continue;
 
                 ShowPlayerHurt(players[i], _session.ReportPlayerHit(i, damage));
+                hits++;
             }
+
+            return hits;
         }
 
-        /// <summary>A Dart launched from the boss's bays. It belongs to no wave.</summary>
-        public void LaunchBossDart(Vector2 position)
+        /// <summary>An enemy launched by a boss. Like the boss's own shots, it belongs to no wave.</summary>
+        public void LaunchBossMinion(EnemyView prefab, Vector2 position)
         {
-            if (!IsRunning) return;
-            SpawnEnemy(bossMinionPrefab, position, -1);
+            if (!IsRunning || prefab == null) return;
+
+            // A boss the level did not declare can still launch: register its pool the first time it does.
+            if (!_enemyPools.ContainsKey(prefab)) RegisterEnemyPool(prefab);
+            SpawnEnemy(prefab, position, -1);
+        }
+
+        /// <summary>A rock thrown by a boss (the Rock Crusher). It belongs to no wave and does not split on a ram.</summary>
+        public void HurlBossMeteor(MeteorDefinition definition, Vector2 position, Vector2 velocity)
+        {
+            if (!IsRunning || definition == null) return;
+            SpawnMeteor(definition, position, velocity, -1);
+        }
+
+        /// <summary>
+        /// Drags every player towards <paramref name="origin"/> for this step (the Singularity Engine). The pull
+        /// is applied with the ship's own movement so it cannot fight it for the transform, and it fades with
+        /// distance, so the edges of the screen stay a refuge.
+        /// </summary>
+        public void PullPlayers(Vector2 origin, float strength, float radius)
+        {
+            if (!IsRunning || IsBossDefeated) return;
+
+            for (var i = 0; i < players.Length; i++)
+            {
+                if (_session.GetPlayer(i).IsGameOver) continue;
+
+                var toOrigin = origin - players[i].Position;
+                var distance = toOrigin.magnitude;
+                var pull = BossPatterns.PullStrength(distance, radius, strength);
+                if (pull <= 0f || distance < 1e-4f) continue;
+
+                _shipPull[i] += (toOrigin / distance).ToNumerics() * pull;
+            }
         }
 
         // ---- Internals ---------------------------------------------------------------------------------------
@@ -489,7 +543,7 @@ namespace YASS.Gameplay
 
             var centreY = (Playfield.MinY + Playfield.MaxY) * 0.5f;
             _boss.gameObject.SetActive(true);
-            _boss.Init(this, _settings, new Vector2(Playfield.MaxX + BossSpawnOffset, centreY), HiveCarrierSpec.Default);
+            _boss.Init(this, _settings, new Vector2(Playfield.MaxX + BossSpawnOffset, centreY));
             _session.BeginBossFight();
         }
 
@@ -553,6 +607,7 @@ namespace YASS.Gameplay
                 // Input is no longer read, so drop the last command: ships level off and engines idle.
                 Array.Clear(_commands, 0, _commands.Length);
                 Array.Clear(_shipMovement, 0, _shipMovement.Length);
+                Array.Clear(_shipPull, 0, _shipPull.Length);
             }
         }
 
@@ -716,7 +771,6 @@ namespace YASS.Gameplay
             Require(level, nameof(level));
             Require(enemyProjectilePrefab, nameof(enemyProjectilePrefab));
             Require(meteorPrefab, nameof(meteorPrefab));
-            Require(bossMinionPrefab, nameof(bossMinionPrefab));
             Require(pickupPrefab, nameof(pickupPrefab));
             Require(minePrefab, nameof(minePrefab));
 

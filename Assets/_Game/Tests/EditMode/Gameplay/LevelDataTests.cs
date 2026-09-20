@@ -99,17 +99,19 @@ namespace YASS.Tests.Gameplay
         [Test]
         public void HiveCarrier_TuningMatchesGdd()
         {
-            var view = AssetDatabase.LoadAssetAtPath<BossView>("Assets/_Game/Prefabs/HiveCarrier.prefab");
-            var so = new SerializedObject(view);
+            // The tuning lives in the boss's definition now; the prefab only carries where things come out of it.
+            var definition = AssetDatabase.LoadAssetAtPath<BossDefinition>(
+                "Assets/_Game/ScriptableObjects/Bosses/HiveCarrier.asset");
 
-            Assert.That(so.FindProperty("contactDamage").floatValue, Is.EqualTo(40f));
-            Assert.That(so.FindProperty("spreadBulletSpeed").floatValue, Is.EqualTo(6f));
-            Assert.That(so.FindProperty("spreadBulletDamage").floatValue, Is.EqualTo(10f));
-            Assert.That(so.FindProperty("spreadAngle").floatValue, Is.EqualTo(60f));
-            Assert.That(so.FindProperty("entrySpeed").floatValue, Is.EqualTo(2f));
-            Assert.That(so.FindProperty("holdInset").floatValue, Is.EqualTo(3f));
-            Assert.That(so.FindProperty("driftAmplitude").floatValue, Is.EqualTo(2.2f));
-            Assert.That(so.FindProperty("driftPeriod").floatValue, Is.EqualTo(6f));
+            Assert.That(definition, Is.Not.Null);
+            Assert.That(definition.ContactDamage, Is.EqualTo(40f));
+            Assert.That(definition.BulletSpeed, Is.EqualTo(6f));
+            Assert.That(definition.BulletDamage, Is.EqualTo(10f));
+            Assert.That(definition.SpreadAngle, Is.EqualTo(60f));
+            Assert.That(definition.EntrySpeed, Is.EqualTo(2f));
+            Assert.That(definition.HoldInset, Is.EqualTo(3f));
+            Assert.That(definition.DriftAmplitude, Is.EqualTo(2.2f));
+            Assert.That(definition.DriftPeriod, Is.EqualTo(6f));
         }
 
         [Test]
@@ -182,7 +184,13 @@ namespace YASS.Tests.Gameplay
             var view = prefab.GetComponent<BossView>();
 
             Assert.That(prefab.GetComponentsInChildren<EngineExhaust>().Length, Is.EqualTo(2));
-            Assert.That(new SerializedObject(view).FindProperty("launchBays").arraySize, Is.EqualTo(HiveCarrierSpec.Default.DartsPerLaunch));
+
+            // One bay per Dart of a launch, so a launch does not stack three Darts on one another.
+            var darts = 0;
+            foreach (var row in view.Definition.Attacks)
+                if (row.type == BossActionType.LaunchDarts) darts = Mathf.Max(darts, row.count);
+            Assert.That(darts, Is.GreaterThan(0), "the Hive Carrier launches Darts");
+            Assert.That(new SerializedObject(view).FindProperty("launchBays").arraySize, Is.EqualTo(darts));
         }
     }
 }

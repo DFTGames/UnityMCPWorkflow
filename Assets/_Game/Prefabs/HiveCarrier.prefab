@@ -28,7 +28,7 @@ Transform:
   m_GameObject: {fileID: 803851378546705355}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2, y: 0.43, z: 0}
+  m_LocalPosition: {x: 2.0159998, y: -0.70136714, z: 0}
   m_LocalScale: {x: 1.8, y: 1.8, z: 1.8}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2352,8 +2352,8 @@ Transform:
   m_GameObject: {fileID: 5743790558137429089}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.65, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: -0.65015996, y: 0, z: 0}
+  m_LocalScale: {x: 0.9410238, y: 0.9410238, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 8432338374968008912}
@@ -2453,7 +2453,7 @@ CircleCollider2D:
   m_CompositeOperation: 0
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
-  m_Radius: 0.4
+  m_Radius: 0.425
 --- !u!114 &5045485194286384106
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2497,7 +2497,7 @@ Transform:
   m_GameObject: {fileID: 8358130179404472617}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2, y: -0.38, z: 0}
+  m_LocalPosition: {x: 2.0159998, y: 0.70136714, z: 0}
   m_LocalScale: {x: 1.8, y: 1.8, z: 1.8}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4955,7 +4955,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0.95}
+  m_Offset: {x: 0, y: 0.95011866}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
@@ -4965,7 +4965,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 3.6, y: 0.8}
+  m_Size: {x: 3.5993998, y: 0.79987025}
   m_EdgeRadius: 0
 --- !u!61 &2046757145580388537
 BoxCollider2D:
@@ -5001,7 +5001,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0, y: -0.95}
+  m_Offset: {x: 0, y: -0.95011866}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
@@ -5011,7 +5011,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 3.6, y: 0.8}
+  m_Size: {x: 3.5993998, y: 0.79987025}
   m_EdgeRadius: 0
 --- !u!61 &487404635763420008
 BoxCollider2D:
@@ -5047,7 +5047,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0.9, y: 0}
+  m_Offset: {x: 0.90006, y: 0}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
@@ -5057,7 +5057,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 2.2, y: 0.9}
+  m_Size: {x: 2.19996, y: 0.899932}
   m_EdgeRadius: 0
 --- !u!114 &3503565269730651822
 MonoBehaviour:
@@ -5071,21 +5071,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d9930e9dfc80ae74897db8cad011141e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: YASS.Game::YASS.Gameplay.BossView
+  definition: {fileID: 11400000, guid: 8a38536d256cdb043bd6e9e253f97432, type: 2}
   body: {fileID: 2342696541948099844}
   core: {fileID: 5045485194286384106}
   launchBays:
-  - {x: -0.65, y: 0.88}
-  - {x: -0.65, y: -0.84}
-  - {x: -0.65, y: 0}
-  spreadMuzzle: {x: -1.1, y: 0}
-  contactDamage: 40
-  entrySpeed: 2
-  holdInset: 3
-  driftAmplitude: 2.2
-  driftPeriod: 6
-  spreadAngle: 60
-  spreadBulletSpeed: 6
-  spreadBulletDamage: 10
+  - {x: -1.26, y: -0.9351562}
+  - {x: -1.26, y: 0}
+  - {x: -1.26, y: 0.9351562}
+  muzzle: {x: -2.1999998, y: 0}
+  turretMuzzles:
+  - {x: -0.84, y: 1.1845311}
+  - {x: -0.84, y: -1.1845311}
+  - {x: 0.63, y: 0}
+  beam: {fileID: 0}
 --- !u!114 &8172483700183751568
 MonoBehaviour:
   m_ObjectHideFlags: 0

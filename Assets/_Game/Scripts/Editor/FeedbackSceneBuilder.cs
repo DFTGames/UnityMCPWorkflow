@@ -17,20 +17,20 @@ namespace YASS.Editor
     public static class FeedbackSceneBuilder
     {
         const string FeedbackObjectName = "Feedback";
-        const string LevelScenePath = "Assets/_Game/Scenes/Level01.unity";
-
         /// <summary>
         /// What flashes when it is damaged, and which sprite to flash. Naming the renderer matters: left to
         /// find its own, the flash would also whiten the boss's core (the player's one tell for when it can be
         /// hurt) and the player's shield bubble.
+        /// The bosses and the generated enemies are not listed: their own builders wire their flashes, because
+        /// they know which renderer is the hull. Two builders writing the same field is how the eight bosses
+        /// would end up disagreeing with each other.
         /// </summary>
         static readonly (string Prefab, string Renderer)[] FlashPrefabs =
         {
             ("Assets/_Game/Prefabs/PlayerShip.prefab", "Visual"),
             ("Assets/_Game/Prefabs/Dart.prefab", null),
             ("Assets/_Game/Prefabs/Weaver.prefab", null),
-            ("Assets/_Game/Prefabs/Meteor.prefab", null),
-            ("Assets/_Game/Prefabs/HiveCarrier.prefab", "")
+            ("Assets/_Game/Prefabs/Meteor.prefab", null)
         };
 
         [MenuItem("Tools/YASS/Build Feedback Wiring")]
@@ -39,7 +39,7 @@ namespace YASS.Editor
             AddFlashToPrefabs();
 
             AddFeedbackTo(TitleSceneBuilder.ScenePath, withShaker: false, Track.Menu);
-            AddFeedbackTo(LevelScenePath, withShaker: true, Track.Level);
+            foreach (var path in MenuSceneParts.LevelScenePaths()) AddFeedbackTo(path, withShaker: true, Track.Level);
 
             AssetDatabase.SaveAssets();
             Debug.Log("Wired the feedback objects into the scenes and prefabs");

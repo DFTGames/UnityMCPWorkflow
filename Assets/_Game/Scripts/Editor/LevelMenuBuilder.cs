@@ -20,14 +20,18 @@ namespace YASS.Editor
     /// </summary>
     public static class LevelMenuBuilder
     {
-        const string LevelScenePath = "Assets/_Game/Scenes/Level01.unity";
         const string MenusObjectName = "Menus";
         const string CanvasName = "MenuCanvas";
 
         [MenuItem("Tools/YASS/Build Level Menus")]
         public static void Build()
         {
-            var scene = MenuSceneParts.OpenForBuilding(LevelScenePath, out var openedByBuilder);
+            foreach (var path in MenuSceneParts.LevelScenePaths()) BuildInto(path);
+        }
+
+        static void BuildInto(string levelScenePath)
+        {
+            var scene = MenuSceneParts.OpenForBuilding(levelScenePath, out var openedByBuilder);
 
             DestroyExisting(scene, MenusObjectName);
             DestroyExisting(scene, CanvasName);
@@ -66,7 +70,7 @@ namespace YASS.Editor
             });
 
             var runner = FindInRoots<GameRunner>(roots);
-            if (runner == null) Debug.LogError($"No {nameof(GameRunner)} in {LevelScenePath}: the results screens will never appear.");
+            if (runner == null) Debug.LogError($"No {nameof(GameRunner)} in {levelScenePath}: the results screens will never appear.");
 
             MenuSceneParts.Serialize(levelFlow, o =>
             {
@@ -86,8 +90,8 @@ namespace YASS.Editor
             sectorClear.SetActive(false);
             victory.SetActive(false);
 
-            MenuSceneParts.SaveAndRelease(scene, LevelScenePath, openedByBuilder);
-            Debug.Log($"Built the menus in {LevelScenePath}");
+            MenuSceneParts.SaveAndRelease(scene, levelScenePath, openedByBuilder);
+            Debug.Log($"Built the menus in {levelScenePath}");
         }
 
         static T FindInRoots<T>(IEnumerable<GameObject> roots) where T : Component =>

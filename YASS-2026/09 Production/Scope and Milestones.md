@@ -24,7 +24,7 @@ Playable `Prototype` scene: ship movement and twin-stick or mouse firing, Dart a
 | M2: Game flow | Title, difficulty select, pause, settings, credits, game over and sector clear screens | Done |
 | M3: Game feel | Visual effects, sound effects, music, audio mixer | Done (adaptive intensity layers deferred) |
 | M4: Campaign skeleton | Level-to-level progression, carried run state, saved progress, campaign ending, Endless unlock rule | Done |
-| M5: Content | The remaining six enemies, levels 2 to 8 and their bosses | In progress (enemies done) |
+| M5: Content | The remaining six enemies, levels 2 to 8 and their bosses | Done |
 | Later | Endless mode, UGS leaderboards, touch controls | Not started |
 
 Back to [[00 GDD Home]]

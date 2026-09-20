@@ -26,6 +26,7 @@ Replaces the prototype's random spawner. Also the basis for Endless mode later.
 - The first wave starts **1 second** after the level begins.
 - A wave starts **1 second** after the previous wave is **cleared** (every hazard it spawned is destroyed or has left the screen), or 10 seconds after the previous wave started, whichever comes first. The 10-second cap exists so a straggler drifting off-screen cannot stall the level.
 - After the last wave is cleared (or at most 10 seconds after it started), a **3-second** boss warning plays, then the boss enters.
+- A boss does nothing until it has reached its station: its entrance takes a few seconds, and a fight that began while it was still a shape at the edge of the screen would spend its opening attacks where nobody could see them.
 - Defeating the boss wins the level. From that moment the player can no longer be hurt; **2.5 seconds** later (time to collect the boss's drops) the level-clear bonus is awarded ([[Scoring]]) and the Sector Clear screen appears ([[UI Flow and Screens]]).
 
 ## Difficulty
@@ -33,5 +34,12 @@ The difficulty's enemy count multiplier ([[Difficulty and Balancing]]) scales ev
 
 ## Content
 - [[Level 01 - Magenta Nebula]]
+- [[Level 02 - Asteroid Belt]]
+- [[Level 03 - Solar Corona]]
+- [[Level 04 - Ice Rings]]
+- [[Level 05 - Derelict Fleet]]
+- [[Level 06 - Ion Storm]]
+- [[Level 07 - Black Holes Edge]]
+- [[Level 08 - Enemy Homeworld]]
 
 Back to [[00 GDD Home]]

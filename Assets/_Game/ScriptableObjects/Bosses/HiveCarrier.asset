@@ -1,0 +1,73 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc5a4a533f1c6a74e84c1c5c7ac8a974, type: 3}
+  m_Name: HiveCarrier
+  m_EditorClassIdentifier: YASS.Game::YASS.Gameplay.BossDefinition
+  displayName: Hive Carrier
+  levelNumber: 1
+  maxHealth: 200
+  cycleSeconds: 8
+  openSeconds: 4
+  attacks:
+  - type: 0
+    count: 3
+    when: 0
+    firstDelaySeconds: 0
+    intervalSeconds: 0
+    activeAbove: 0
+    activeAtOrBelow: 1
+  - type: 0
+    count: 3
+    when: 0
+    firstDelaySeconds: 2
+    intervalSeconds: 0
+    activeAbove: 0
+    activeAtOrBelow: 0.5
+  - type: 1
+    count: 5
+    when: 1
+    firstDelaySeconds: 0
+    intervalSeconds: 1.5
+    activeAbove: 0.5
+    activeAtOrBelow: 1
+  - type: 1
+    count: 7
+    when: 1
+    firstDelaySeconds: 0
+    intervalSeconds: 1.5
+    activeAbove: 0
+    activeAtOrBelow: 0.5
+  contactDamage: 40
+  entrySpeed: 2
+  holdInset: 3
+  driftAmplitude: 2.2
+  driftPeriod: 6
+  spreadAngle: 60
+  bulletSpeed: 6
+  bulletDamage: 10
+  minionPrefab: {fileID: 2357551711190050276, guid: 85be43d40b4aa19449a6e044da378aa9, type: 3}
+  meteor: {fileID: 0}
+  meteorSpeed: 5
+  sweepFromDegrees: 150
+  sweepToDegrees: 210
+  sweepSeconds: 2.5
+  beamDamageInterval: 0.5
+  beamDamage: 15
+  beamHalfWidth: 0.35
+  beamLength: 40
+  dashWindUpSeconds: 0.7
+  dashSpeed: 22
+  dashReturnSpeed: 7
+  dashOvershoot: 1
+  pullSeconds: 2
+  pullStrength: 4
+  pullRadius: 14

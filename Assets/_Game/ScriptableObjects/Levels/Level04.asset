@@ -1,0 +1,167 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8721408cc9dbdb4d99ae6de728c77d3, type: 3}
+  m_Name: Level04
+  m_EditorClassIdentifier: YASS.Game::YASS.Gameplay.LevelDefinition
+  levelNumber: 4
+  displayName: Ice Rings
+  firstWaveDelay: 1
+  waves:
+  - name: Ice shards
+    groups:
+    - enemy: {fileID: 0}
+      meteor: {fileID: 11400000, guid: 25da93abff4b37445bf8a6edcda05d47, type: 2}
+      count: 5
+      formation: 4
+      entryHeight: 0.5
+      spacing: 0.8
+      startDelay: 0
+  - name: First layer
+    groups:
+    - enemy: {fileID: 2503479913274078029, guid: 8fe989b94ba28334a8b7372697942773, type: 3}
+      meteor: {fileID: 0}
+      count: 1
+      formation: 0
+      entryHeight: 0.6
+      spacing: 0.4
+      startDelay: 0
+    - enemy: {fileID: 2357551711190050276, guid: 85be43d40b4aa19449a6e044da378aa9, type: 3}
+      meteor: {fileID: 0}
+      count: 4
+      formation: 0
+      entryHeight: 0.35
+      spacing: 0.4
+      startDelay: 1.5
+  - name: Drone wedge
+    groups:
+    - enemy: {fileID: 3196254532910195421, guid: 0cfb3cf45527944479608f9a5294dc02, type: 3}
+      meteor: {fileID: 0}
+      count: 8
+      formation: 2
+      entryHeight: 0.5
+      spacing: 0.4
+      startDelay: 0
+  - name: Minefield
+    groups:
+    - enemy: {fileID: 2503479913274078029, guid: 8fe989b94ba28334a8b7372697942773, type: 3}
+      meteor: {fileID: 0}
+      count: 2
+      formation: 3
+      entryHeight: 0.5
+      spacing: 1.5
+      startDelay: 0
+  - name: Divers
+    groups:
+    - enemy: {fileID: 8547655736730960735, guid: 4e35acbb1cd58ff4fb845cf3dbb5409d, type: 3}
+      meteor: {fileID: 0}
+      count: 4
+      formation: 3
+      entryHeight: 0.5
+      spacing: 1
+      startDelay: 0
+  - name: Gunship and mines
+    groups:
+    - enemy: {fileID: 1007864863579275879, guid: 844211037bc271148b92c488d7d50df9, type: 3}
+      meteor: {fileID: 0}
+      count: 1
+      formation: 0
+      entryHeight: 0.65
+      spacing: 0.4
+      startDelay: 0
+    - enemy: {fileID: 2503479913274078029, guid: 8fe989b94ba28334a8b7372697942773, type: 3}
+      meteor: {fileID: 0}
+      count: 2
+      formation: 3
+      entryHeight: 0.35
+      spacing: 1.5
+      startDelay: 1.5
+  - name: Ring debris
+    groups:
+    - enemy: {fileID: 0}
+      meteor: {fileID: 11400000, guid: 5661a67b0c64b3a49bd44830e28dc4ce, type: 2}
+      count: 4
+      formation: 4
+      entryHeight: 0.5
+      spacing: 0.8
+      startDelay: 0
+    - enemy: {fileID: 0}
+      meteor: {fileID: 11400000, guid: 25da93abff4b37445bf8a6edcda05d47, type: 2}
+      count: 3
+      formation: 4
+      entryHeight: 0.5
+      spacing: 0.8
+      startDelay: 1
+  - name: Weaver screen
+    groups:
+    - enemy: {fileID: 6805865718903888221, guid: 96b04dc88081ae046bdd03c373be9400, type: 3}
+      meteor: {fileID: 0}
+      count: 6
+      formation: 3
+      entryHeight: 0.5
+      spacing: 0.7
+      startDelay: 0
+  - name: Mixed
+    groups:
+    - enemy: {fileID: 2503479913274078029, guid: 8fe989b94ba28334a8b7372697942773, type: 3}
+      meteor: {fileID: 0}
+      count: 2
+      formation: 3
+      entryHeight: 0.6
+      spacing: 1.5
+      startDelay: 0
+    - enemy: {fileID: 2357551711190050276, guid: 85be43d40b4aa19449a6e044da378aa9, type: 3}
+      meteor: {fileID: 0}
+      count: 6
+      formation: 0
+      entryHeight: 0.35
+      spacing: 0.4
+      startDelay: 1.5
+    - enemy: {fileID: 3196254532910195421, guid: 0cfb3cf45527944479608f9a5294dc02, type: 3}
+      meteor: {fileID: 0}
+      count: 4
+      formation: 0
+      entryHeight: 0.5
+      spacing: 0.4
+      startDelay: 3
+  - name: Dive storm
+    groups:
+    - enemy: {fileID: 8547655736730960735, guid: 4e35acbb1cd58ff4fb845cf3dbb5409d, type: 3}
+      meteor: {fileID: 0}
+      count: 5
+      formation: 3
+      entryHeight: 0.5
+      spacing: 0.8
+      startDelay: 0
+  - name: Final rush
+    groups:
+    - enemy: {fileID: 1007864863579275879, guid: 844211037bc271148b92c488d7d50df9, type: 3}
+      meteor: {fileID: 0}
+      count: 2
+      formation: 3
+      entryHeight: 0.5
+      spacing: 1.2
+      startDelay: 0
+    - enemy: {fileID: 2503479913274078029, guid: 8fe989b94ba28334a8b7372697942773, type: 3}
+      meteor: {fileID: 0}
+      count: 3
+      formation: 3
+      entryHeight: 0.4
+      spacing: 1.2
+      startDelay: 1.5
+    - enemy: {fileID: 3196254532910195421, guid: 0cfb3cf45527944479608f9a5294dc02, type: 3}
+      meteor: {fileID: 0}
+      count: 8
+      formation: 2
+      entryHeight: 0.5
+      spacing: 0.4
+      startDelay: 3
+  bossPrefab: {fileID: 3981504014752012208, guid: f4e7e5d1a10697c478c60afb2cf5e62e, type: 3}

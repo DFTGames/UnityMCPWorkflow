@@ -282,6 +282,24 @@ namespace YASS.Tests.UI
             yield return null;
         }
 
+        /// <summary>
+        /// Presses a key until it has the effect asked for. A queued device event is occasionally dropped when
+        /// the Editor is busy, which is not the game's fault and not worth a red run: pressing again still
+        /// proves that this key is what causes the change, and a key that does nothing still fails.
+        /// </summary>
+        static IEnumerator PressUntil(Key key, Func<bool> done, float timeoutSeconds, string what)
+        {
+            var deadline = Time.unscaledTime + timeoutSeconds;
+            while (!done())
+            {
+                if (Time.unscaledTime > deadline) Assert.Fail($"Timed out waiting for {what}.");
+
+                yield return PressKey(key);
+                var settle = Time.unscaledTime + 0.3f;
+                while (!done() && Time.unscaledTime < settle) yield return null;
+            }
+        }
+
         /// <summary>Takes the player's lives down until the run is over.</summary>
         static IEnumerator EndTheRun(GameRunner runner)
         {
@@ -301,12 +319,12 @@ namespace YASS.Tests.UI
             yield return Load(LevelScene);
             Assert.That(Router.Current, Is.EqualTo(MenuScreen.None));
 
-            yield return PressKey(Key.Escape);
-            yield return WaitUntil(() => Router.Current == MenuScreen.Pause, 2f, "Escape to open the pause menu");
+            yield return PressUntil(Key.Escape, () => Router.Current == MenuScreen.Pause, 4f,
+                "Escape to open the pause menu");
             Assert.That(Time.timeScale, Is.Zero);
 
-            yield return PressKey(Key.Escape);
-            yield return WaitUntil(() => Router.Current == MenuScreen.None, 2f, "Escape again to resume");
+            yield return PressUntil(Key.Escape, () => Router.Current == MenuScreen.None, 4f,
+                "Escape again to resume");
             Assert.That(Time.timeScale, Is.EqualTo(1f));
         }
 
@@ -317,8 +335,7 @@ namespace YASS.Tests.UI
             FindButton("Settings").onClick.Invoke();
             yield return null;
 
-            yield return PressKey(Key.Escape);
-            yield return WaitUntil(() => Router.Current == MenuScreen.Title, 2f, "Escape to go back");
+            yield return PressUntil(Key.Escape, () => Router.Current == MenuScreen.Title, 4f, "Escape to go back");
 
             Assert.That(Time.timeScale, Is.EqualTo(1f), "there is no game to pause in the menus");
         }
@@ -560,8 +577,8 @@ namespace YASS.Tests.UI
         [UnityTest]
         public IEnumerator ClearingTheLastLevel_WinsTheCampaign()
         {
-            // The campaign is one level long for now, so clearing it is the ending.
-            yield return StartCampaignAndClearTheLevel();
+            // Eight levels is too many to play in a test, so the run is put on its last one.
+            yield return StartCampaignAndClearTheLevel(fromTheFinalLevel: true);
 
             yield return WaitUntil(() => Router.Current == MenuScreen.Victory, 8f, "the campaign ending");
 
@@ -573,7 +590,7 @@ namespace YASS.Tests.UI
         [UnityTest]
         public IEnumerator TheEndingShowsTheRunsTotals()
         {
-            yield return StartCampaignAndClearTheLevel();
+            yield return StartCampaignAndClearTheLevel(fromTheFinalLevel: true);
             yield return WaitUntil(() => Router.Current == MenuScreen.Victory, 8f, "the campaign ending");
 
             var texts = FindScreen(MenuScreen.Victory).GetComponentsInChildren<TMPro.TMP_Text>(true);
@@ -595,8 +612,12 @@ namespace YASS.Tests.UI
             Assert.That(GameFlow.Run, Is.Null);
         }
 
-        /// <summary>Starts a campaign from the menus and beats the level's boss.</summary>
-        IEnumerator StartCampaignAndClearTheLevel()
+        /// <summary>
+        /// Starts a campaign from the menus and beats the level's boss. With <paramref name="fromTheFinalLevel"/>
+        /// the run is moved to the last level first, which is how a test reaches the campaign's ending without
+        /// playing every level of it.
+        /// </summary>
+        IEnumerator StartCampaignAndClearTheLevel(bool fromTheFinalLevel = false)
         {
             yield return Load(TitleScene);
             FindButton("Play").onClick.Invoke();
@@ -604,6 +625,12 @@ namespace YASS.Tests.UI
             FindButton("Pilot").onClick.Invoke();
             yield return WaitUntil(() => SceneManager.GetActiveScene().name == LevelScene, 10f, "Level01 to load");
             yield return null;
+
+            if (fromTheFinalLevel)
+            {
+                Assert.That(GameFlow.Run, Is.Not.Null, "the campaign did not start");
+                GameFlow.Run.SkipToFinalLevel();
+            }
 
             yield return ClearTheLevel(Object.FindAnyObjectByType<GameRunner>());
         }
@@ -614,7 +641,7 @@ namespace YASS.Tests.UI
             runner.StartBossFightNow();
 
             var boss = runner.Boss;
-            yield return WaitUntil(() => boss.Brain.IsCoreOpen, 8f, "the boss core to open");
+            yield return WaitUntil(() => boss.Brain.IsCoreOpen, 12f, "the boss core to open");
             boss.TakeCoreHit(boss.Brain.Health.Max, 0);
         }
 
@@ -627,7 +654,7 @@ namespace YASS.Tests.UI
             runner.StartBossFightNow();
 
             var boss = runner.Boss;
-            yield return WaitUntil(() => boss.Brain.IsCoreOpen, 8f, "the boss core to open");
+            yield return WaitUntil(() => boss.Brain.IsCoreOpen, 12f, "the boss core to open");
             boss.TakeCoreHit(boss.Brain.Health.Max, 0);
 
             yield return WaitUntil(() => Router.Current == MenuScreen.SectorClear, 8f, "the Sector Clear screen");

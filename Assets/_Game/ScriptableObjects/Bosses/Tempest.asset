@@ -1,0 +1,66 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc5a4a533f1c6a74e84c1c5c7ac8a974, type: 3}
+  m_Name: Tempest
+  m_EditorClassIdentifier: YASS.Game::YASS.Gameplay.BossDefinition
+  displayName: Tempest
+  levelNumber: 6
+  maxHealth: 500
+  cycleSeconds: 9
+  openSeconds: 3.5
+  attacks:
+  - type: 3
+    count: 1
+    when: 0
+    firstDelaySeconds: 0.4
+    intervalSeconds: 2.6
+    activeAbove: 0
+    activeAtOrBelow: 1
+  - type: 1
+    count: 5
+    when: 1
+    firstDelaySeconds: 0
+    intervalSeconds: 1.2
+    activeAbove: 0.5
+    activeAtOrBelow: 1
+  - type: 1
+    count: 9
+    when: 1
+    firstDelaySeconds: 0
+    intervalSeconds: 1.2
+    activeAbove: 0
+    activeAtOrBelow: 0.5
+  contactDamage: 40
+  entrySpeed: 2
+  holdInset: 3
+  driftAmplitude: 3.2
+  driftPeriod: 4.5
+  spreadAngle: 90
+  bulletSpeed: 7
+  bulletDamage: 10
+  minionPrefab: {fileID: 0}
+  meteor: {fileID: 0}
+  meteorSpeed: 5
+  sweepFromDegrees: 200
+  sweepToDegrees: 160
+  sweepSeconds: 1.6
+  beamDamageInterval: 0.5
+  beamDamage: 12
+  beamHalfWidth: 0.25
+  beamLength: 40
+  dashWindUpSeconds: 0.7
+  dashSpeed: 22
+  dashReturnSpeed: 7
+  dashOvershoot: 1
+  pullSeconds: 2
+  pullStrength: 4
+  pullRadius: 14

@@ -33,6 +33,13 @@ Each page has a `status` property: `draft` (being written), `review` (ready for 
 ## 4. Content
 - [[Levels]]
   - [[Level 01 - Magenta Nebula]]
+  - [[Level 02 - Asteroid Belt]]
+  - [[Level 03 - Solar Corona]]
+  - [[Level 04 - Ice Rings]]
+  - [[Level 05 - Derelict Fleet]]
+  - [[Level 06 - Ion Storm]]
+  - [[Level 07 - Black Holes Edge]]
+  - [[Level 08 - Enemy Homeworld]]
   - [[Hive Carrier]]
 - [[Enemies and Hazards]]
 - [[Items and Pickups]]
