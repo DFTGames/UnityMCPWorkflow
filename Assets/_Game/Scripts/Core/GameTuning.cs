@@ -21,6 +21,12 @@ namespace YASS.Core
 
         public const float GamepadAimDeadZone = 0.3f;
 
+        /// <summary>
+        /// Side-scroller firing arc: shots (and the ship's tilt) stay within this many degrees of straight ahead,
+        /// either way. Aiming further round is clamped, not ignored (GDD "Controls", Aim tilt).
+        /// </summary>
+        public const float FiringArcDegrees = 35f;
+
         /// <summary>Provisional: after a boss collision hurts a player, further boss contact is ignored this long.</summary>
         public const float BossContactCooldownSeconds = 1f;
 

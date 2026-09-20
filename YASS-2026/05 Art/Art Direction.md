@@ -3,7 +3,7 @@ tags:
   - gdd
   - art
 status: review
-updated: 2026-09-19
+updated: 2026-09-20
 ---
 
 # Art Direction
@@ -18,6 +18,7 @@ updated: 2026-09-19
 - Exhaust particles simulate in the ship's **local space**, so the flame stays attached to the ship without trailing artefacts.
 - The player's exhaust is **dynamic**: idle at rest and stronger (more, faster, larger particles) the faster the ship is actually moving, easing smoothly between the two. A ship pushed against a screen edge is not moving, so its engine idles. Enemy exhaust holds a steady level.
 - Engines draw behind every gameplay sprite, so exhaust never covers bullets.
+- The player's exhaust tilts with the ship's aim tilt ([[Controls]]); because it is in local space, a fast aim change swings the whole plume rather than letting it trail. Revisit in playtesting if it reads badly.
 - Colours: player orange-yellow; Dart orange-red; Weaver pink-violet.
 
 ## Carried over from the original

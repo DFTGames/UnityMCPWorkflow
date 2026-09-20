@@ -11,23 +11,31 @@ namespace YASS.Gameplay
     public sealed class PlayerShipView : MonoBehaviour
     {
         [SerializeField] Rigidbody2D body;
+        [SerializeField, Tooltip("Sprite and engine. Rotated for the aim tilt; the collider on the root stays level.")]
+        Transform visual;
         [SerializeField] SpriteRenderer shipRenderer;
         [SerializeField] SpriteRenderer shieldRenderer;
         [SerializeField] EngineExhaust engine;
         [SerializeField, Min(0f), Tooltip("Shots spawn this far from the ship's centre, in the aim direction.")]
         float muzzleDistance = 0.55f;
         [SerializeField, Min(0.1f)] float blinksPerSecond = 10f;
+        [SerializeField, Min(0.1f), Tooltip("How quickly the tilt follows the aim, per second.")]
+        float tiltResponsiveness = 12f;
 
         GameRunner _runner;
 
         public int PlayerIndex { get; private set; }
         public EngineExhaust Engine => engine;
+
+        /// <summary>Current visual tilt in degrees (positive = nose up).</summary>
+        public float TiltDegrees { get; private set; }
         public Vector2 Position => body.position;
 
         void Reset()
         {
             body = GetComponent<Rigidbody2D>();
-            shipRenderer = GetComponent<SpriteRenderer>();
+            visual = transform.Find("Visual");
+            shipRenderer = visual != null ? visual.GetComponent<SpriteRenderer>() : null;
         }
 
         public void Init(GameRunner runner, int playerIndex)
@@ -54,6 +62,23 @@ namespace YASS.Gameplay
         public void DriveEngine(System.Numerics.Vector2 movement, float deltaTime)
         {
             if (engine != null) engine.Drive(movement, deltaTime);
+        }
+
+        /// <summary>
+        /// Tilts the visuals towards the aim while firing, easing back to level otherwise (GDD "Controls"). The arc
+        /// is <see cref="GameTuning.FiringArcDegrees"/>, the same value the weapon clamps to, so the ship always
+        /// points where its shots go; it is deliberately not a per-instance setting.
+        /// </summary>
+        public void PresentAim(bool firing, System.Numerics.Vector2 aim, float deltaTime)
+        {
+            if (visual == null) return;
+
+            var target = ShipTilt.TargetDegrees(firing, aim, GameTuning.FiringArcDegrees);
+            var next = ShipTilt.Step(TiltDegrees, target, tiltResponsiveness, deltaTime);
+            if (next == TiltDegrees) return; // settled: no transform write
+
+            TiltDegrees = next;
+            visual.localRotation = Quaternion.Euler(0f, 0f, TiltDegrees);
         }
 
         public void SetAlive(bool alive) => gameObject.SetActive(alive);

@@ -3,7 +3,7 @@ tags:
   - gdd
   - gameplay
 status: approved
-updated: 2026-09-19
+updated: 2026-09-20
 ---
 
 # Mechanics
@@ -14,7 +14,7 @@ updated: 2026-09-19
 Horizontal side-scrolling. The player is kept within the visible playfield.
 
 ## Movement and aiming
-Twin-stick: move freely, aim and fire in any direction independently. See [[Controls]].
+Twin-stick: move freely, and aim independently of movement. Firing is limited to a forward arc (35 degrees either way), as a side-scroller should be; see [[Controls]].
 
 ## Lives and health
 - The player starts with a number of lives (hearts) set by difficulty, and a **health bar of 100** for each life.

@@ -37,7 +37,7 @@ namespace YASS.Gameplay
 
         [SerializeField, Min(1)] int levelNumber = 1;
         [SerializeField] string displayName = "Magenta Nebula";
-        [SerializeField, Min(0f)] float firstWaveDelay = 2f;
+        [SerializeField, Min(0f)] float firstWaveDelay = 1f;
         [SerializeField] Wave[] waves = Array.Empty<Wave>();
         [SerializeField] BossView bossPrefab;
 

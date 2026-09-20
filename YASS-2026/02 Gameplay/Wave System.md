@@ -3,7 +3,7 @@ tags:
   - gdd
   - gameplay
 status: approved
-updated: 2026-09-19
+updated: 2026-09-20
 ---
 
 # Wave System
@@ -22,9 +22,10 @@ Replaces the prototype's random spawner. Also the basis for Endless mode later.
 - Line, Staggered and Scatter groups with more than one member need a spacing above zero, or members would stack.
 
 ## Pacing
-- The first wave starts **2 seconds** after the level begins.
-- A wave starts 3 seconds after the previous wave is **cleared** (every hazard it spawned is destroyed or has left the screen), or 20 seconds after the previous wave started, whichever comes first.
-- After the last wave is cleared (or at most 20 seconds after it started, so a stray hazard cannot hold the level), a **3-second** boss warning plays, then the boss enters.
+**Rule: the player is never left with an empty screen.** Gaps between waves exist to let a kill land and the screen settle, not to make the player wait. Any gap long enough to notice as waiting is a bug in the pacing, not a difficulty setting.
+- The first wave starts **1 second** after the level begins.
+- A wave starts **1 second** after the previous wave is **cleared** (every hazard it spawned is destroyed or has left the screen), or 10 seconds after the previous wave started, whichever comes first. The 10-second cap exists so a straggler drifting off-screen cannot stall the level.
+- After the last wave is cleared (or at most 10 seconds after it started), a **3-second** boss warning plays, then the boss enters.
 - Defeating the boss wins the level. From that moment the player can no longer be hurt; **2.5 seconds** later (time to collect the boss's drops) the level-clear bonus is awarded ([[Scoring]]) and the Sector Clear screen appears ([[UI Flow and Screens]]).
 
 ## Difficulty

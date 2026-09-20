@@ -345,7 +345,73 @@ namespace YASS.Tests.Gameplay
             yield return WaitUntil(() => _runner.IsSectorClear, 4f, "the sector to be cleared");
         }
 
+        [UnityTest]
+        public IEnumerator Ship_TiltsTowardsTheAimWhileFiringAndLevelsOff()
+        {
+            _runner.SpawningEnabled = false;
+            var visual = ShipView.transform.Find("Visual");
+            Assert.That(ShipView.TiltDegrees, Is.EqualTo(0f));
+
+            _runner.SetCommandOverride(0, new PlayerCommand(NVector2.Zero, true, NVector2.UnitY));
+            yield return WaitUntil(() => ShipView.TiltDegrees > 30f, 2f, "the ship to tilt up");
+            Assert.That(Mathf.DeltaAngle(0f, visual.localEulerAngles.z), Is.EqualTo(ShipView.TiltDegrees).Within(0.5f));
+
+            _runner.SetCommandOverride(0, new PlayerCommand(NVector2.Zero, true, -NVector2.UnitY));
+            yield return WaitUntil(() => ShipView.TiltDegrees < -30f, 2f, "the ship to tilt down");
+            Assert.That(Mathf.DeltaAngle(0f, visual.localEulerAngles.z), Is.EqualTo(ShipView.TiltDegrees).Within(0.5f));
+
+            _runner.SetCommandOverride(0, Idle);
+            yield return WaitUntil(() => Mathf.Abs(ShipView.TiltDegrees) < 0.5f, 2f, "the ship to level off");
+        }
+
+        [UnityTest]
+        public IEnumerator AimingBackwards_StillFiresForward()
+        {
+            _runner.SpawningEnabled = false;
+            // The ship starts against the left edge, where anything "behind" it would be off the playfield and a
+            // backwards shot would despawn before reaching it: move out first so the rear target is truly in range.
+            yield return MoveShipAwayFromTheLeftEdge();
+
+            var behindPosition = ShipPosition + new Vector2(-3f, 0f);
+            Assert.That(_runner.Playfield.Contains(behindPosition.ToNumerics()), Is.True,
+                "the rear target must sit inside the playfield for this test to mean anything");
+            var behind = SpawnEnemy("Dart", behindPosition);
+            var ahead = SpawnEnemy("Dart", ShipPosition + new Vector2(5f, 0f));
+            behind.enabled = false; // hold it still behind the ship
+            _runner.SetCommandOverride(0, new PlayerCommand(NVector2.Zero, true, -NVector2.UnitX));
+
+            yield return WaitUntil(() => !ahead.IsAlive, 3f, "the Dart ahead to be shot down");
+
+            Assert.That(behind.IsAlive, Is.True, "a side-scroller never fires behind the ship");
+            Assert.That(ShipView.TiltDegrees, Is.EqualTo(0f).Within(0.5f), "aiming straight back keeps the ship level");
+        }
+
+        [UnityTest]
+        public IEnumerator SectorClear_WhileFiring_LetsTheShipLevelOff()
+        {
+            _runner.SpawningEnabled = false;
+            _runner.StartBossFightNow();
+            var boss = _runner.Boss;
+            yield return WaitUntil(() => boss.Brain.IsCoreOpen, 6f, "the core to open");
+
+            _runner.SetCommandOverride(0, new PlayerCommand(NVector2.Zero, true, NVector2.UnitY));
+            yield return WaitUntil(() => ShipView.TiltDegrees > 30f, 2f, "the ship to tilt up");
+            boss.TakeCoreHit(boss.Brain.Health.Max, 0);
+
+            yield return WaitUntil(() => _runner.IsSectorClear, 4f, "the sector to be cleared");
+            yield return WaitUntil(() => Mathf.Abs(ShipView.TiltDegrees) < 0.5f, 2f, "the ship to level off after the clear");
+        }
+
         // ---- Helpers ----
+
+        /// <summary>Flies the ship right until it has clear space behind it, then stops.</summary>
+        IEnumerator MoveShipAwayFromTheLeftEdge()
+        {
+            var target = _runner.Playfield.MinX + 4f;
+            _runner.SetCommandOverride(0, new PlayerCommand(NVector2.UnitX, false, NVector2.UnitX));
+            yield return WaitUntil(() => ShipPosition.x >= target, 4f, "the ship to fly clear of the left edge");
+            _runner.SetCommandOverride(0, Idle);
+        }
 
         void AimAt(Vector3 target)
         {

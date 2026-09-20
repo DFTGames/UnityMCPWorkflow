@@ -167,8 +167,17 @@ namespace YASS.Core
     /// </summary>
     public sealed class WaveDirector
     {
-        public const float GapAfterClear = 3f;
-        public const float MaxWaveDuration = 20f;
+        /// <summary>
+        /// Breathing space between a cleared wave and the next. Kept short on purpose: an empty screen is dead
+        /// time, and the player should never be sitting still waiting for something to shoot (GDD "Wave System").
+        /// </summary>
+        public const float GapAfterClear = 1f;
+
+        /// <summary>
+        /// A wave never holds the level longer than this, however many stragglers are still drifting off-screen.
+        /// </summary>
+        public const float MaxWaveDuration = 10f;
+
         public const float BossWarningDuration = 3f;
 
         /// <summary>Seconds between the boss's defeat and Sector Clear (time to collect its drops).</summary>
@@ -196,7 +205,7 @@ namespace YASS.Core
         public int CurrentWave => _nextWave - 1;
 
         public WaveDirector(IReadOnlyList<IReadOnlyList<SpawnGroupSpec>> waves, float countMultiplier,
-            float initialDelay = 2f)
+            float initialDelay = 1f)
         {
             if (waves == null) throw new ArgumentNullException(nameof(waves));
             if (initialDelay < 0f) throw new ArgumentOutOfRangeException(nameof(initialDelay));

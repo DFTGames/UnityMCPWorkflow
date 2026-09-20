@@ -182,7 +182,8 @@ namespace YASS.Tests.Core
 
             Assert.That(shots.Count, Is.EqualTo(1));
             Assert.That(shots[0].PlayerIndex, Is.EqualTo(1));
-            AssertVector(Vector2.UnitY, shots[0].Direction);
+            // Aiming straight up fires at the edge of the forward arc, 35 degrees (GDD "Controls", Firing arc).
+            Assert.That(AngleDegrees(shots[0].Direction), Is.EqualTo(35f).Within(1e-3f));
         }
 
         [Test]

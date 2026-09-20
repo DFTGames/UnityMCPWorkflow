@@ -30,10 +30,11 @@ namespace YASS.Tests.Core
     {
         public const float Tolerance = 1e-5f;
 
-        public static void AssertVector(Vector2 expected, Vector2 actual, float tolerance = Tolerance)
+        public static void AssertVector(Vector2 expected, Vector2 actual, float tolerance = Tolerance, string message = null)
         {
-            Assert.That(actual.X, Is.EqualTo(expected.X).Within(tolerance), "X");
-            Assert.That(actual.Y, Is.EqualTo(expected.Y).Within(tolerance), "Y");
+            var suffix = message == null ? "" : ": " + message;
+            Assert.That(actual.X, Is.EqualTo(expected.X).Within(tolerance), "X" + suffix);
+            Assert.That(actual.Y, Is.EqualTo(expected.Y).Within(tolerance), "Y" + suffix);
         }
 
         public static float AngleDegrees(Vector2 v) => (float)(System.Math.Atan2(v.Y, v.X) * 180.0 / System.Math.PI);

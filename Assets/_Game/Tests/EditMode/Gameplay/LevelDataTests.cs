@@ -69,6 +69,13 @@ namespace YASS.Tests.Gameplay
         }
 
         [Test]
+        public void Level01_StartsPromptly()
+        {
+            // GDD "Wave System", Pacing: the level opens with action, not with the player sitting still.
+            Assert.That(LoadLevel().FirstWaveDelay, Is.LessThanOrEqualTo(1.5f));
+        }
+
+        [Test]
         public void Level01_SpecsConvertForTheDirector()
         {
             var specs = LoadLevel().ToSpecs();

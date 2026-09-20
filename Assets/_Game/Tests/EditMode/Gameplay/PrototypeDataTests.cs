@@ -116,7 +116,7 @@ namespace YASS.Tests.Gameplay
             Assert.That(Mathf.Sign(engine.transform.localPosition.x), Is.EqualTo(rearSign), "engine sits at the rear");
 
             var engineRenderer = engine.GetComponent<ParticleSystemRenderer>();
-            Assert.That(engineRenderer.sortingOrder, Is.LessThan(prefab.GetComponent<SpriteRenderer>().sortingOrder));
+            Assert.That(engineRenderer.sortingOrder, Is.LessThan(ShipSprite(prefab).sortingOrder));
             Assert.That(engineRenderer.sharedMaterial.name, Is.EqualTo("EngineExhaust"));
         }
 
@@ -154,6 +154,33 @@ namespace YASS.Tests.Gameplay
             {
                 Object.DestroyImmediate(instance);
             }
+        }
+
+        /// <summary>The player ship keeps its sprite on a "Visual" child (tilted for aiming); enemies on the root.</summary>
+        static SpriteRenderer ShipSprite(GameObject prefab)
+        {
+            var visual = prefab.transform.Find("Visual");
+            return visual != null ? visual.GetComponent<SpriteRenderer>() : prefab.GetComponent<SpriteRenderer>();
+        }
+
+        [Test]
+        public void PlayerShip_TiltsItsVisualsButNotItsHitbox()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Game/Prefabs/PlayerShip.prefab");
+            var visual = prefab.transform.Find("Visual");
+            Assert.That(visual, Is.Not.Null);
+
+            var view = new SerializedObject(prefab.GetComponent<PlayerShipView>());
+            Assert.That(view.FindProperty("visual").objectReferenceValue, Is.SameAs(visual));
+            Assert.That(view.FindProperty("shipRenderer").objectReferenceValue, Is.SameAs(visual.GetComponent<SpriteRenderer>()));
+            Assert.That(prefab.GetComponent<SpriteRenderer>(), Is.Null, "the sprite moved to Visual");
+            Assert.That(prefab.GetComponent<CapsuleCollider2D>(), Is.Not.Null, "the hitbox stays on the root");
+            Assert.That(visual.GetComponentInChildren<EngineExhaust>(), Is.Not.Null, "the engine tilts with the ship");
+            Assert.That(visual.GetComponentsInChildren<Collider2D>(), Is.Empty, "nothing under Visual may collide");
+            Assert.That(prefab.transform.Find("Shield"), Is.Not.Null, "the shield bubble stays on the root, untilted");
+            // The tilt limit is not serialised: the view reads GameTuning.FiringArcDegrees so the visible nose and
+            // the shot direction cannot drift apart (GDD "Controls", Firing arc and aim tilt).
+            Assert.That(view.FindProperty("maxTiltDegrees"), Is.Null, "the arc must have a single source of truth");
         }
 
         [Test]

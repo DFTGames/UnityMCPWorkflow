@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Numerics;
 using NUnit.Framework;
 using YASS.Core;
+using static YASS.Tests.Core.TestUtil;
 
 namespace YASS.Tests.Core
 {
@@ -230,6 +231,46 @@ namespace YASS.Tests.Core
 
             Assert.That(shots.Count, Is.EqualTo(1));
             Assert.That(shots[0].PlayerIndex, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void Tick_ClampsFiringToTheForwardArc()
+        {
+            var ship = Create();
+            var shots = new List<ShotSpec>();
+
+            // Aiming straight back: a side-scroller still fires forward (GDD "Controls", Aim tilt).
+            ship.Tick(0.02f, new PlayerCommand(Vector2.Zero, true, -Vector2.UnitX), shots);
+
+            Assert.That(shots.Count, Is.EqualTo(1));
+            Assert.That(shots[0].Direction.X, Is.GreaterThan(0f));
+            AssertVector(Vector2.UnitX, shots[0].Direction, 1e-4f);
+        }
+
+        [Test]
+        public void Tick_SteepAimFiresAtTheArcEdge()
+        {
+            var ship = Create();
+            var shots = new List<ShotSpec>();
+
+            ship.Tick(0.02f, new PlayerCommand(Vector2.Zero, true, Vector2.UnitY), shots);
+
+            // 35 degrees, the arc edge: pinned literally so a regression in the clamp cannot hide here.
+            Assert.That(AngleDegrees(shots[0].Direction), Is.EqualTo(35f).Within(1e-3f));
+            Assert.That(shots[0].Direction.Length(), Is.EqualTo(1f).Within(1e-5f));
+        }
+
+        [Test]
+        public void Tick_FiringWithNoAimShootsStraightAhead()
+        {
+            var ship = Create();
+            var shots = new List<ShotSpec>();
+
+            // "Fire" with a dead stick still shoots: forward is the only sensible nose direction (GDD "Controls").
+            ship.Tick(0.02f, new PlayerCommand(Vector2.Zero, true, Vector2.Zero), shots);
+
+            Assert.That(shots.Count, Is.EqualTo(1));
+            AssertVector(Vector2.UnitX, shots[0].Direction);
         }
 
         [Test]

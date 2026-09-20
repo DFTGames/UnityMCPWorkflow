@@ -3,7 +3,7 @@ tags:
   - gdd
   - gameplay
 status: approved
-updated: 2026-09-19
+updated: 2026-09-20
 ---
 
 # Controls
@@ -26,6 +26,13 @@ updated: 2026-09-19
 | Restart (game-over screen) | Enter or R | A / Cross (south button) | Tap (to be added with touch controls) |
 
 If the right stick is deflected while the trigger is held, the shot follows the stick.
+
+## Firing arc and aim tilt
+This is a side-scroller, so the ship fires **within a forward arc of 35 degrees either way**, never behind itself (free 360-degree aiming belongs to top-down games).
+- **Shots travel along the ship's nose:** the aim is clamped into the arc, and the ship's visible tilt is that same angle, so what the ship points at is what it hits.
+- **Aiming outside the arc** clamps to its edge; aiming behind is mirrored onto the forward half (up-and-back fires up-and-forward, straight back fires straight ahead).
+- The visuals (sprite and engine exhaust) ease into the tilt and back to level when firing stops. The hitbox never rotates.
+- The level 5 spread fans +/-20 degrees around that direction, so its outer shots can sit outside the arc. _Provisional._
 
 ## Feel and responsiveness
 _To be tuned in playtesting._

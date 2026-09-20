@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: YASS.Game::YASS.Gameplay.LevelDefinition
   levelNumber: 1
   displayName: Magenta Nebula
-  firstWaveDelay: 2
+  firstWaveDelay: 1
   waves:
   - name: Introduction
     groups:

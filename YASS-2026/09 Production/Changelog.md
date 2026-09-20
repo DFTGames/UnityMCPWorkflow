@@ -3,14 +3,20 @@ tags:
   - gdd
   - production
 status: draft
-updated: 2026-09-19
+updated: 2026-09-20
 ---
 
 # Changelog
 
 %% Newest first. Record significant design decisions and which pages changed. %%
 
+## 2026-09-20
+- Firing limited to the forward arc (35 degrees either way) to match the ship's tilt: 360-degree aiming was top-down behaviour, wrong for a side-scroller. Pages updated: Controls, Mechanics.
+- Wave pacing tightened: first wave after 1 s (was 2 s), 1 s between a cleared wave and the next (was 3 s), and a wave can hold the level for at most 10 s (was 20 s). New rule: the player is never left waiting on an empty screen. Pages updated: Wave System.
+- Firing arc code review: the arc has a single source of truth (the rules constant, no longer a per-prefab tilt setting), so the ship's nose and its shots cannot drift apart; firing with no aim shoots straight ahead; the spread's overshoot outside the arc is now an open question. Pages updated: Controls, Open Questions.
+
 ## 2026-09-19
+- Aim tilt: the player ship's visuals tilt towards the aim while firing (up to 35 degrees, hitbox unchanged). Pages updated: Controls, Open Questions.
 - M1 code review: added the Scatter formation (meteor fields now scale with difficulty); the boss arrives at most 20 s after the last wave starts; the player cannot be hurt once the boss is defeated; the boss's armour stops piercing shots; recorded the boss's movement values, the 2 s first-wave delay, the 3 s warning and the 2.5 s Sector Clear delay. Pages updated: Wave System, Hive Carrier, Level 01 - Magenta Nebula, Technical Design, Open Questions.
 - Approved next feature set: wave system, Level 1 (11 waves) and the Hive Carrier boss; game flow with title, difficulty select, pause, settings (music and SFX volume, screen shake, fullscreen), credits, game over and sector clear screens; visual effects, sound effects and music. New pages: Wave System, Level 01 - Magenta Nebula, Hive Carrier. Pages updated: UI Flow and Screens, Audio Direction, Art Direction, Levels, Scope and Milestones, GDD Home.
 - Art review fixes: engine size now scales correctly; the player's engine follows actual movement (idles when pinned at an edge); engines draw behind all gameplay sprites; gameplay sprites packed into an atlas; background upscaled to 2048x1152, darkened in the texture and drawn unlit. Pages updated: Art Direction, Asset List.

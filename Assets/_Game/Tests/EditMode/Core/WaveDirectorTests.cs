@@ -181,7 +181,16 @@ namespace YASS.Tests.Core
         }
 
         [Test]
-        public void NextWave_StartsThreeSecondsAfterClear()
+        public void Pacing_NeverLeavesThePlayerWaiting()
+        {
+            // GDD "Wave System", Pacing: gaps are breathing space, not waiting. Worst case counts, so the cap on
+            // how long one wave can hold the level is pinned here too.
+            Assert.That(WaveDirector.GapAfterClear, Is.LessThanOrEqualTo(1.5f), "gap between waves");
+            Assert.That(WaveDirector.MaxWaveDuration, Is.LessThanOrEqualTo(10f), "longest a wave can hold the level");
+        }
+
+        [Test]
+        public void NextWave_StartsAfterTheGapFollowingAClear()
         {
             var director = Director(1f, new[] { Group(2, Formation.Column) }, new[] { Group(1) });
             var spawns = new List<WaveSpawnRequest>();

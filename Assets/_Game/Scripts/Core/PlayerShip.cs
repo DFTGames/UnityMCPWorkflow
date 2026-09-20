@@ -99,8 +99,12 @@ namespace YASS.Core
             Vitals.Tick(deltaTime);
             Shield.Tick(deltaTime);
 
+            // Side-scroller: the weapon fires along the ship's nose, inside the forward arc, never behind it.
             var firing = !IsGameOver && command.Fire;
-            Weapon.Tick(deltaTime, firing, command.AimDirection, PlayerIndex, shots);
+            var direction = firing
+                ? FiringArc.Clamp(command.AimDirection, GameTuning.FiringArcDegrees)
+                : command.AimDirection;
+            Weapon.Tick(deltaTime, firing, direction, PlayerIndex, shots);
         }
     }
 }

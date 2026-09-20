@@ -238,6 +238,7 @@ namespace YASS.Gameplay
                 if (_session.GetPlayer(i).IsGameOver) continue;
                 players[i].Present(_session.GetPlayer(i));
                 players[i].DriveEngine(_shipMovement[i], Time.deltaTime);
+                players[i].PresentAim(_commands[i].Fire, _commands[i].AimDirection, Time.deltaTime);
             }
 
             if (!IsRunning && _endTime >= 0f && Time.time - _endTime >= restartDelay && AnyRestartPressed())
@@ -444,7 +445,13 @@ namespace YASS.Gameplay
                 if (_session.GetPlayer(i).IsGameOver && players[i].gameObject.activeSelf)
                     players[i].SetAlive(false);
 
-            if (_endTime < 0f && (_session.IsGameOver || _sectorClear)) _endTime = Time.time;
+            if (_endTime < 0f && (_session.IsGameOver || _sectorClear))
+            {
+                _endTime = Time.time;
+                // Input is no longer read, so drop the last command: ships level off and engines idle.
+                Array.Clear(_commands, 0, _commands.Length);
+                Array.Clear(_shipMovement, 0, _shipMovement.Length);
+            }
         }
 
         /// <summary>The Sector Clear delay after the boss has passed: award each player's level-clear bonus.</summary>
