@@ -15,6 +15,8 @@ MonoBehaviour:
   displayName: Dreadnought
   levelNumber: 5
   maxHealth: 460
+  hullDamageMultiplier: 0.5
+  coreDamageMultiplier: 1
   cycleSeconds: 10
   openSeconds: 4
   attacks:

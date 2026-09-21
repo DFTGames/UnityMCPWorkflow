@@ -3,7 +3,7 @@ tags:
   - gdd
   - content
 status: approved
-updated: 2026-09-19
+updated: 2026-09-20
 ---
 
 # Hive Carrier
@@ -12,7 +12,7 @@ Boss of [[Level 01 - Magenta Nebula]].
 
 ## Behaviour
 - Appears 3 units beyond the right edge at mid-height, flies in at 2 units/s, then holds 3 units in from the right edge, drifting up and down by 2.2 units over a 6-second cycle.
-- **Armoured hull:** takes no damage and stops every shot, including the piercing centre shot of weapon level 5. Only the **core** can be damaged.
+- **Armoured hull:** takes **half damage** and stops every shot, including the piercing centre shot of weapon level 5. The **core** takes full damage while it is open, so it is the target worth aiming for rather than the only one that counts.
 - **Core cycle:** the core opens for **4 seconds** in every **8**.
   - While **closed**: launches **3 Darts** from its bays.
   - While **open**: fires a **5-bullet aimed spread** every **1.5 seconds**.
@@ -30,6 +30,6 @@ Boss of [[Level 01 - Magenta Nebula]].
 
 Ramming follows the boss rules in [[Mechanics]]. Because the ship can stay overlapping the boss, after a boss collision hurts the player (or hits the shield) further boss contact is ignored for **1 second**. _Provisional._
 
-The armour is three colliders around the core, so shots aimed at the open core always reach it. Darts launched from the bays belong to no wave.
+The armour is three colliders around the core, so shots aimed at the open core always reach it. A shot into a **closed** core hits the shutters over it and counts as a hull hit. Darts launched from the bays belong to no wave.
 
 Back to [[00 GDD Home]]

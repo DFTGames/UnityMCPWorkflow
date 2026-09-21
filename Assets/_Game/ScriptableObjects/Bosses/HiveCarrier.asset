@@ -15,6 +15,8 @@ MonoBehaviour:
   displayName: Hive Carrier
   levelNumber: 1
   maxHealth: 200
+  hullDamageMultiplier: 0.5
+  coreDamageMultiplier: 1
   cycleSeconds: 8
   openSeconds: 4
   attacks:

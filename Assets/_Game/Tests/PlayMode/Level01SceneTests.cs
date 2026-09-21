@@ -221,8 +221,11 @@ namespace YASS.Tests.Gameplay
         /// </summary>
         const float BossEntryAndFirstCycle = 10f;
 
+        /// <summary>What one player shot does before the target's own multipliers (GDD "Mechanics").</summary>
+        const float PlayerShotDamage = 1f;
+
         [UnityTest]
-        public IEnumerator Boss_ClosedCoreArmourAbsorbsShots()
+        public IEnumerator Boss_HullTakesHalfDamage()
         {
             Runner.SpawningEnabled = false;
             Runner.SetCommandOverride(0, Idle);
@@ -232,14 +235,17 @@ namespace YASS.Tests.Gameplay
 
             // Aim above the core, at the upper armour, while the boss flies in: during the entry it only moves
             // horizontally, so aimed shots land (once it drifts vertically they would trail behind it).
-            while (!boss.Brain.IsCoreOpen && boss.ArmourHits == 0)
+            while (!boss.Brain.IsCoreOpen && boss.ArmourHits < 5)
             {
                 AimAt(core.transform.position + Vector3.up * 1.0f);
                 yield return null;
             }
 
-            Assert.That(boss.ArmourHits, Is.GreaterThan(0), "shots reached the armour");
-            Assert.That(boss.Brain.Health.Current, Is.EqualTo(boss.Brain.Health.Max));
+            Assert.That(boss.ArmourHits, Is.GreaterThan(0), "shots reached the hull");
+
+            // Shooting a boss anywhere is worth doing, but the hull is worth half (GDD "Levels").
+            var expected = boss.ArmourHits * PlayerShotDamage * boss.Definition.HullDamageMultiplier;
+            Assert.That(boss.Brain.Health.Max - boss.Brain.Health.Current, Is.EqualTo(expected).Within(0.01f));
         }
 
         [UnityTest]

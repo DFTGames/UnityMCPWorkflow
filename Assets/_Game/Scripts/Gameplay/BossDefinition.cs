@@ -35,6 +35,10 @@ namespace YASS.Gameplay
 
         [Header("Rules")]
         [SerializeField, Min(1f)] float maxHealth = 200f;
+        [SerializeField, Range(0f, 1f), Tooltip("What a shot into the armoured hull is worth, as a fraction.")]
+        float hullDamageMultiplier = 0.5f;
+        [SerializeField, Range(0.1f, 4f), Tooltip("What a shot into the open core is worth, as a fraction.")]
+        float coreDamageMultiplier = 1f;
         [SerializeField, Min(0.2f), Tooltip("One full closed-then-open cycle.")] float cycleSeconds = 8f;
         [SerializeField, Min(0.1f), Tooltip("How much of the cycle the core is open and damageable.")]
         float openSeconds = 4f;
@@ -84,6 +88,8 @@ namespace YASS.Gameplay
         public string DisplayName => displayName;
         public int LevelNumber => levelNumber;
         public float MaxHealth => maxHealth;
+        public float HullDamageMultiplier => hullDamageMultiplier;
+        public float CoreDamageMultiplier => coreDamageMultiplier;
         public float ContactDamage => contactDamage;
         public float EntrySpeed => entrySpeed;
         public float HoldInset => holdInset;
@@ -130,7 +136,8 @@ namespace YASS.Gameplay
                     row.activeAbove, row.activeAtOrBelow);
             }
 
-            return new BossSpec(displayName, maxHealth, cycleSeconds, openSeconds, list);
+            return new BossSpec(displayName, maxHealth, cycleSeconds, openSeconds, list, hullDamageMultiplier,
+                coreDamageMultiplier);
         }
 
         /// <summary>Returns a description of the first problem found, or null when the boss is usable.</summary>
@@ -138,6 +145,8 @@ namespace YASS.Gameplay
         {
             if (openSeconds >= cycleSeconds) return "the core is open for the whole cycle, so it is never armoured";
             if (attacks.Length == 0) return "no attacks";
+            if (hullDamageMultiplier > coreDamageMultiplier)
+                return "its hull is a better target than its core, so there is no reason to wait for the core";
 
             for (var i = 0; i < attacks.Length; i++)
             {

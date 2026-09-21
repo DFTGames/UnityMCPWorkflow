@@ -114,16 +114,31 @@ namespace YASS.Core
         public float OpenSeconds { get; }
         public IReadOnlyList<BossAttack> Attacks { get; }
 
+        /// <summary>
+        /// What a shot into the hull is worth, as a fraction of its damage. Shooting a boss anywhere has to be
+        /// worth doing, or the fight is a long wait for the core to open; hitting the core is what a good player
+        /// is rewarded for, not what an average one is required to do.
+        /// </summary>
+        public float HullDamageMultiplier { get; }
+
+        /// <summary>What a shot into the open core is worth, as a fraction of its damage.</summary>
+        public float CoreDamageMultiplier { get; }
+
         public float ClosedSeconds => CycleSeconds - OpenSeconds;
 
         public BossSpec(string name, float maxHealth, float cycleSeconds, float openSeconds,
-            IReadOnlyList<BossAttack> attacks)
+            IReadOnlyList<BossAttack> attacks, float hullDamageMultiplier = 0.5f, float coreDamageMultiplier = 1f)
         {
             if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("A boss needs a name.", nameof(name));
             if (maxHealth <= 0f) throw new ArgumentOutOfRangeException(nameof(maxHealth));
             if (openSeconds <= 0f || openSeconds >= cycleSeconds) throw new ArgumentOutOfRangeException(nameof(openSeconds));
             if (attacks == null) throw new ArgumentNullException(nameof(attacks));
             if (attacks.Count == 0) throw new ArgumentException("A boss with no attacks is scenery.", nameof(attacks));
+            if (hullDamageMultiplier < 0f) throw new ArgumentOutOfRangeException(nameof(hullDamageMultiplier));
+            if (coreDamageMultiplier <= 0f) throw new ArgumentOutOfRangeException(nameof(coreDamageMultiplier));
+            if (hullDamageMultiplier > coreDamageMultiplier)
+                throw new ArgumentOutOfRangeException(nameof(hullDamageMultiplier),
+                    "The core has to be the better target, or there is no reason to wait for it to open.");
 
             foreach (var attack in attacks)
                 if (attack == null) throw new ArgumentNullException(nameof(attacks));
@@ -133,6 +148,8 @@ namespace YASS.Core
             CycleSeconds = cycleSeconds;
             OpenSeconds = openSeconds;
             Attacks = attacks;
+            HullDamageMultiplier = hullDamageMultiplier;
+            CoreDamageMultiplier = coreDamageMultiplier;
         }
     }
 
@@ -208,8 +225,27 @@ namespace YASS.Core
             }
         }
 
-        /// <summary>Damage to the core. Ignored while closed. Returns true only for the killing hit.</summary>
-        public bool TakeCoreHit(float damage) => IsCoreOpen && Health.TakeDamage(damage);
+        /// <summary>
+        /// Damage to the core, which is worth full value while it is open. A shot into a closed core hits the
+        /// shutters over it, so it counts as a hull hit rather than being thrown away. Returns true only for the
+        /// killing hit.
+        /// </summary>
+        public bool TakeCoreHit(float damage) =>
+            IsCoreOpen ? TakeDamage(damage * _spec.CoreDamageMultiplier) : TakeHullHit(damage);
+
+        /// <summary>
+        /// Damage to the armoured hull, which is worth a fraction of its value (GDD "Levels"). Returns true only
+        /// for the killing hit.
+        /// </summary>
+        public bool TakeHullHit(float damage) => TakeDamage(damage * _spec.HullDamageMultiplier);
+
+        bool TakeDamage(float damage)
+        {
+            if (IsDefeated) return false;
+            if (damage <= 0f) return false;
+
+            return Health.TakeDamage(damage);
+        }
 
         void BeginPhase()
         {

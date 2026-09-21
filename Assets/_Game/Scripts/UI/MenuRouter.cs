@@ -29,10 +29,26 @@ namespace YASS.UI
         GameObject _lastSelected;
         bool _selectionIsOurs;
         bool _timeScaleHeld;
+        bool _holdsInput;
+
+        /// <summary>
+        /// How many routers are currently using the menu action map. The actions asset is a shared project
+        /// asset, not a copy per scene, so a router that switched it off on its way out would take the input with
+        /// it: loading the next level runs the new router's OnEnable before the old one's OnDisable, which left
+        /// the player with no way to pause.
+        /// </summary>
+        static int _inputHolders;
 
         public MenuStack Stack { get; private set; }
 
         public MenuScreen Current => Stack.Current;
+
+        /// <summary>Test seam: whether pause and back are actually listening.</summary>
+        internal bool InputEnabled => _map != null && _map.enabled;
+
+        /// <summary>Statics survive a domain reload, which this project disables; start each run from zero.</summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStatics() => _inputHolders = 0;
 
 
         void Awake()
@@ -56,9 +72,27 @@ namespace YASS.UI
             Refresh();
         }
 
-        void OnEnable() => _map?.Enable();
+        void OnEnable()
+        {
+            if (_map == null || _holdsInput) return;
 
-        void OnDisable() => _map?.Disable();
+            _holdsInput = true;
+            _inputHolders++;
+            _map.Enable();
+        }
+
+        void OnDisable()
+        {
+            if (_map == null || !_holdsInput) return;
+
+            _holdsInput = false;
+            // Only the last one out turns the lights off.
+            if (--_inputHolders <= 0)
+            {
+                _inputHolders = 0;
+                _map.Disable();
+            }
+        }
 
         // Loading another scene while paused would carry timeScale 0 into it, freezing the game for good.
         void OnDestroy() => ReleaseTimeScale();

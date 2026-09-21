@@ -15,6 +15,8 @@ MonoBehaviour:
   displayName: Singularity Engine
   levelNumber: 7
   maxHealth: 560
+  hullDamageMultiplier: 0.5
+  coreDamageMultiplier: 1
   cycleSeconds: 10
   openSeconds: 4
   attacks:

@@ -46,6 +46,8 @@ namespace YASS.Tests.Gameplay
 
             Assert.That(definition.LevelNumber, Is.EqualTo(level));
             Assert.That(definition.MaxHealth, Is.EqualTo(health));
+            Assert.That(definition.HullDamageMultiplier, Is.EqualTo(0.5f), "half damage to the hull (GDD Levels)");
+            Assert.That(definition.CoreDamageMultiplier, Is.EqualTo(1f), "and full damage to the open core");
             Assert.That(Has(definition, signature), Is.True, $"{name} has lost its signature move");
             Assert.That(definition.Validate(), Is.Null, $"{name} is not usable: {definition.Validate()}");
         }

@@ -56,6 +56,10 @@ namespace YASS.Editor
             public int Level;
             public float WorldWidth = 4.2f;
             public float Health;
+
+            /// <summary>What a hull hit and a core hit are worth (GDD "Levels": half and full by default).</summary>
+            public float HullDamage = 0.5f;
+            public float CoreDamage = 1f;
             public float CycleSeconds = 8f;
             public float OpenSeconds = 4f;
             public float ContactDamage = 40f;
@@ -305,6 +309,8 @@ namespace YASS.Editor
             Find("displayName").stringValue = spec.DisplayName;
             Find("levelNumber").intValue = spec.Level;
             Number("maxHealth", spec.Health);
+            Number("hullDamageMultiplier", spec.HullDamage);
+            Number("coreDamageMultiplier", spec.CoreDamage);
             Number("entrySpeed", spec.EntrySpeed);
             Number("beamDamageInterval", spec.BeamDamageInterval);
             Number("beamLength", spec.BeamLength);

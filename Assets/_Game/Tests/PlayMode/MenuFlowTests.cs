@@ -27,6 +27,9 @@ namespace YASS.Tests.UI
 
         bool _previousRunInBackground;
         InputSettings.BackgroundBehavior _previousBackgroundBehavior;
+#if UNITY_EDITOR
+        InputSettings.EditorInputBehaviorInPlayMode _previousEditorInput;
+#endif
 
         /// <summary>An in-memory store, so tests never touch the player's own saved settings.</summary>
         sealed class MemoryStore : ISettingsStore
@@ -54,6 +57,15 @@ namespace YASS.Tests.UI
             _previousBackgroundBehavior = InputSystem.settings.backgroundBehavior;
             InputSystem.settings.backgroundBehavior = InputSettings.BackgroundBehavior.IgnoreFocus;
 
+#if UNITY_EDITOR
+            // Keeping the devices alive is not enough: while the Game view does not have focus the Editor still
+            // decides where their input goes, and by default it goes to the Editor rather than to the game. A
+            // run started from a menu item never has that focus.
+            _previousEditorInput = InputSystem.settings.editorInputBehaviorInPlayMode;
+            InputSystem.settings.editorInputBehaviorInPlayMode =
+                InputSettings.EditorInputBehaviorInPlayMode.AllDeviceInputAlwaysGoesToGameView;
+#endif
+
             GameFlow.UseSettings(new SettingsService(new MemoryStore()));
             GameFlow.UseProgress(new CampaignProgress(new MemoryStore()));
             GameFlow.ResetForTests();
@@ -65,6 +77,9 @@ namespace YASS.Tests.UI
             Time.timeScale = 1f;
             Application.runInBackground = _previousRunInBackground;
             InputSystem.settings.backgroundBehavior = _previousBackgroundBehavior;
+#if UNITY_EDITOR
+            InputSystem.settings.editorInputBehaviorInPlayMode = _previousEditorInput;
+#endif
             GameFlow.UseSettings(null);
             GameFlow.UseProgress(null);
             GameFlow.ResetForTests();
@@ -270,6 +285,9 @@ namespace YASS.Tests.UI
             var keyboard = Keyboard.current;
             Assert.That(keyboard, Is.Not.Null, "no keyboard device in the test run");
 
+            // A device the Input System reset on losing focus swallows queued events silently.
+            if (!keyboard.enabled) InputSystem.EnableDevice(keyboard);
+
             // Queue the press and let the player loop process it: the Input System updates early in the frame,
             // so the router's Update sees WasPressedThisFrame. Calling InputSystem.Update() by hand here would
             // consume the press in a frame the router has already run.
@@ -292,7 +310,13 @@ namespace YASS.Tests.UI
             var deadline = Time.unscaledTime + timeoutSeconds;
             while (!done())
             {
-                if (Time.unscaledTime > deadline) Assert.Fail($"Timed out waiting for {what}.");
+                if (Time.unscaledTime > deadline)
+                {
+                    var keyboard = Keyboard.current;
+                    Assert.Fail($"Timed out waiting for {what}. keyboard={(keyboard == null ? "none" : keyboard.name)}, " +
+                                $"enabled={keyboard?.enabled}, router listening={Router.InputEnabled}, " +
+                                $"screen={Router.Current}, focus={Application.isFocused}");
+                }
 
                 yield return PressKey(key);
                 var settle = Time.unscaledTime + 0.3f;
@@ -319,6 +343,7 @@ namespace YASS.Tests.UI
             yield return Load(LevelScene);
             Assert.That(Router.Current, Is.EqualTo(MenuScreen.None));
 
+            Assert.That(Router.InputEnabled, Is.True, "the router is not listening for pause at all");
             yield return PressUntil(Key.Escape, () => Router.Current == MenuScreen.Pause, 4f,
                 "Escape to open the pause menu");
             Assert.That(Time.timeScale, Is.Zero);
@@ -335,9 +360,27 @@ namespace YASS.Tests.UI
             FindButton("Settings").onClick.Invoke();
             yield return null;
 
+            Assert.That(Router.InputEnabled, Is.True, "the router is not listening for back at all");
             yield return PressUntil(Key.Escape, () => Router.Current == MenuScreen.Title, 4f, "Escape to go back");
 
             Assert.That(Time.timeScale, Is.EqualTo(1f), "there is no game to pause in the menus");
+        }
+
+        [UnityTest]
+        public IEnumerator PauseStillWorksAfterMovingBetweenScenes()
+        {
+            // The menu actions are one shared project asset, not a copy per scene. A router that switched it off
+            // on its way out took pause with it: the next scene's router had already enabled it, so the level
+            // after a scene change had no way to pause at all.
+            yield return Load(TitleScene);
+            Assert.That(Router.InputEnabled, Is.True, "the title's own input");
+
+            yield return Load(LevelScene);
+            Assert.That(Router.InputEnabled, Is.True, "pause is still listening after a scene change");
+
+            yield return Load(TitleScene);
+            yield return Load(LevelScene);
+            Assert.That(Router.InputEnabled, Is.True, "and after another one");
         }
 
         [UnityTest]

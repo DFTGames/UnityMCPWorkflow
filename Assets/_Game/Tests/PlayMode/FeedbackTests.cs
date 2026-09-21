@@ -450,9 +450,13 @@ namespace YASS.Tests.Feedback
             boss.TakeCoreHit(10f, 0);
             yield return null;
 
-            Assert.That(boss.Brain.Health.Current, Is.EqualTo(health), "a closed core takes no damage");
+            // The shot still counts, at the hull's rate: what must not happen is it reading as a hit on the core,
+            // which would teach the player the opposite of the boss's one mechanic.
+            var hull = 10f * boss.Definition.HullDamageMultiplier;
+            Assert.That(health - boss.Brain.Health.Current, Is.EqualTo(hull).Within(1e-3f),
+                "a closed core is worth a hull hit, no more");
             Assert.That(Audio.PlayCount(Sfx.SmallExplosion), Is.EqualTo(explosions),
-                "and must not sound as though it did");
+                "and must not sound as though the core had been hit");
         }
 
         [UnityTest]

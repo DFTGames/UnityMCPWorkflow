@@ -89,17 +89,50 @@ namespace YASS.Tests.Core
         }
 
         [Test]
-        public void CoreTakesDamageOnlyWhileOpen()
+        public void TheOpenCoreIsWorthTwiceTheHull()
         {
+            // Shooting a boss anywhere is worth doing; shooting the core while it is open is worth twice as
+            // much (GDD "Levels"). Both fractions are its own data.
             var brain = new BossBrain(HiveCarrier());
-            Run(brain, 1f);
+            Run(brain, 1f); // armoured
+
+            brain.TakeHullHit(10f);
+            Assert.That(brain.Health.Current, Is.EqualTo(195f), "the hull takes half");
 
             Assert.That(brain.TakeCoreHit(10f), Is.False);
-            Assert.That(brain.Health.Current, Is.EqualTo(200f));
+            Assert.That(brain.Health.Current, Is.EqualTo(190f), "and a shut core is shutters, worth the same");
 
-            Run(brain, 3.1f);
+            Run(brain, 3.1f); // open
             brain.TakeCoreHit(10f);
-            Assert.That(brain.Health.Current, Is.EqualTo(190f));
+            Assert.That(brain.Health.Current, Is.EqualTo(180f), "the open core takes full damage");
+        }
+
+        [Test]
+        public void TheDamageSplitIsPerBoss()
+        {
+            var armoured = new BossSpec("Armoured", 100f, 8f, 4f, new[]
+            {
+                new BossAttack(BossActionType.FireSpread, 1, BossPhase.Vulnerable)
+            }, hullDamageMultiplier: 0.1f, coreDamageMultiplier: 2f);
+            var brain = new BossBrain(armoured);
+
+            brain.TakeHullHit(10f);
+            Assert.That(brain.Health.Current, Is.EqualTo(99f).Within(1e-4f), "a tenth of it");
+
+            Run(brain, 4.1f);
+            brain.TakeCoreHit(10f);
+            Assert.That(brain.Health.Current, Is.EqualTo(79f).Within(1e-4f), "and double at the core");
+        }
+
+        [Test]
+        public void AHullHitCanFinishABoss()
+        {
+            var brain = new BossBrain(HiveCarrier());
+
+            Assert.That(brain.TakeHullHit(399f), Is.False, "399 halves to 199.5, which leaves it standing");
+            Assert.That(brain.TakeHullHit(10f), Is.True, "and the next one ends it");
+            Assert.That(brain.IsDefeated, Is.True);
+            Assert.That(brain.TakeHullHit(10f), Is.False, "a boss is only defeated once");
         }
 
         [Test]
@@ -205,6 +238,12 @@ namespace YASS.Tests.Core
             Assert.Throws<ArgumentException>(() => new BossSpec(" ", 100f, 8f, 4f, attacks));
             Assert.Throws<ArgumentOutOfRangeException>(() => new BossSpec("X", 0f, 8f, 4f, attacks));
             Assert.Throws<ArgumentOutOfRangeException>(() => new BossSpec("X", 100f, 4f, 4f, attacks));
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                new BossSpec("X", 100f, 8f, 4f, attacks, hullDamageMultiplier: -1f));
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                new BossSpec("X", 100f, 8f, 4f, attacks, coreDamageMultiplier: 0f));
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                new BossSpec("X", 100f, 8f, 4f, attacks, hullDamageMultiplier: 1.5f, coreDamageMultiplier: 1f));
             Assert.Throws<ArgumentException>(() => new BossSpec("X", 100f, 8f, 4f, Array.Empty<BossAttack>()));
             Assert.Throws<ArgumentOutOfRangeException>(() => new BossAttack(BossActionType.FireSpread, 0, BossPhase.Any));
             Assert.Throws<ArgumentOutOfRangeException>(() =>

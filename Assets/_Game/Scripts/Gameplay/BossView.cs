@@ -48,7 +48,7 @@ namespace YASS.Gameplay
         /// <summary>The hull is armour: every shot that hits it stops, piercing or not.</summary>
         public bool BlocksPiercing => true;
 
-        /// <summary>Test seam: number of shots the armour has absorbed.</summary>
+        /// <summary>Test seam: number of shots that have landed on the hull.</summary>
         internal int ArmourHits { get; private set; }
 
         /// <summary>Test seam: whether it is mid-dash (null when this boss never dashes).</summary>
@@ -129,20 +129,31 @@ namespace YASS.Gameplay
                 beam.Hide();
         }
 
-        /// <summary>Hull hits: the armour absorbs the shot with no damage (the projectile is used up).</summary>
+        /// <summary>
+        /// Hull hits. The armour takes a fraction of the damage (its definition decides how much), so shooting a
+        /// boss anywhere is worth doing and the fight is not a wait for the core to open. The projectile is used
+        /// up either way.
+        /// </summary>
         public void TakeHit(float damage, int playerIndex, Vector2 hitPoint)
         {
             if (!IsAlive) return;
 
             ArmourHits++;
-            if (_flash != null) _flash.Flash(); // armour absorbs the shot, but the hit still reads
+            if (_brain.TakeHullHit(damage))
+            {
+                Defeated(playerIndex);
+                return;
+            }
+
+            if (_flash != null) _flash.Flash(); // the armour holding is still a hit, and has to read as one
         }
 
         public void TakeCoreHit(float damage, int playerIndex)
         {
             if (!IsAlive) return;
 
-            // A closed core absorbs the shot like armour. Showing a damage explosion here would teach the player
+            // A closed core is shutters over the core: the shot counts as a hull hit, so it is worth the same as
+            // hitting the boss anywhere else and no more. Showing a damage explosion here would teach the player
             // the opposite of the boss's one mechanic.
             if (!_brain.IsCoreOpen)
             {
@@ -157,6 +168,11 @@ namespace YASS.Gameplay
                 return;
             }
 
+            Defeated(playerIndex);
+        }
+
+        void Defeated(int playerIndex)
+        {
             IsAlive = false;
             _runner.OnBossDefeated(this, playerIndex);
         }
