@@ -40,14 +40,32 @@ namespace YASS.Gameplay
         [SerializeField, Min(0f)] float firstWaveDelay = 1f;
         [SerializeField] Wave[] waves = Array.Empty<Wave>();
         [SerializeField] BossView bossPrefab;
+        [SerializeField, Tooltip("The level's sky. Its own scene has this already; Endless borrows it per cycle.")]
+        Sprite backdrop;
 
         public int LevelNumber => levelNumber;
         public string DisplayName => displayName;
         public float FirstWaveDelay => firstWaveDelay;
         public IReadOnlyList<Wave> Waves => waves;
         public BossView BossPrefab => bossPrefab;
+        public Sprite Backdrop => backdrop;
 
         public Group GetGroup(int waveIndex, int groupIndex) => waves[waveIndex].groups[groupIndex];
+
+        /// <summary>One wave of this level as rules-layer specs, for a mode that mixes levels together.</summary>
+        public SpawnGroupSpec[] WaveToSpecs(int waveIndex)
+        {
+            var groups = waves[waveIndex].groups ?? Array.Empty<Group>();
+            var specs = new SpawnGroupSpec[groups.Length];
+            for (var g = 0; g < groups.Length; g++)
+            {
+                var group = groups[g];
+                specs[g] = new SpawnGroupSpec(group.count, group.formation, group.entryHeight, group.spacing,
+                    group.startDelay);
+            }
+
+            return specs;
+        }
 
         /// <summary>The wave script as rules-layer specs, in the same order as <see cref="Waves"/>.</summary>
         public SpawnGroupSpec[][] ToSpecs()

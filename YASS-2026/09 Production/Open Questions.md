@@ -24,6 +24,8 @@ updated: 2026-09-20
 - [ ] The Dreadnought's turrets are a volley from three fixed muzzles, not separate destructible parts as [[Levels]] describes. Build destructible turrets, or reword the design?
 - [ ] Every level uses the Level 1 music. Eight per-level themes, or a smaller set shared between settings?
 - [ ] Boss health runs 200 to 700 across the campaign, and the wave scripts get longer rather than faster. Confirm the curve in playtesting.
+- [ ] Endless has no grace period at a cycle boundary: the campaign makes the player untouchable from a boss's defeat until Sector Clear, but in Endless the dead boss's bullets still in the air can take a life while the next cycle starts. Deliberate, or should the boundary be safe?
+- [ ] Endless draws its waves from the levels up to its cycle number plus one, so by cycle 7 everything is in the pool and later cycles differ only by the speed and count multipliers, which cap at cycle 11. Does a long run need another source of escalation, or is the score multiplier enough?
 - [ ] Enemy and boss health, speed and damage values.
 - [ ] Gameplay colour palette: the menus now have one ([[Art Direction]]); should the ships and hazards be bound to it too?
 - [ ] Sound effects list.

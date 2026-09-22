@@ -49,7 +49,12 @@ namespace YASS.Tests.Feedback
             _previousRunInBackground = Application.runInBackground;
             Application.runInBackground = true;
             RunContext.Clear();
-            GameFlow.UseSettings(new SettingsService(new MemoryStore()));
+            // Deliberately not the defaults, and not full volume: a test that expects 0 dB cannot tell a group
+            // the game set from one nothing has touched, since an untouched group is already at 0 dB.
+            var store = new MemoryStore();
+            store.SetFloat(SettingsService.MusicVolumeKey, 0.35f);
+            store.SetFloat(SettingsService.SfxVolumeKey, 0.6f);
+            GameFlow.UseSettings(new SettingsService(store));
 
             yield return SceneManager.LoadSceneAsync(LevelScene, LoadSceneMode.Single);
             yield return null;
@@ -254,6 +259,74 @@ namespace YASS.Tests.Feedback
             yield return new WaitForSecondsRealtime(0.3f);
 
             Assert.That(source.time, Is.GreaterThan(before), "a pause must not silence the music");
+        }
+
+        [Test]
+        public void TheSavedVolumes_AreOnTheMixerBeforeAnythingIsTouched()
+        {
+            // A guard against anything later leaving the mixer on a level of its own: the scene was loaded with
+            // these settings in the store and nothing here touches them. It does not prove the start-up bug is
+            // fixed, and cannot: the write sticks in a play session that is already running, which is why the
+            // old code passed this too. TheSavedVolumes_ArePutBackWhenTheMixerLosesThem is the one that bites.
+            var volumes = Object.FindAnyObjectByType<MixerVolumes>();
+            Assert.That(volumes, Is.Not.Null, "the scene has no mixer volumes");
+
+            var saved = GameFlow.Settings.Settings;
+            Assert.That(volumes.TryGetDecibels(AudioRules.MusicVolumeParameter, out var music), Is.True);
+            Assert.That(volumes.TryGetDecibels(AudioRules.SfxVolumeParameter, out var sfx), Is.True);
+
+            Assert.That(music, Is.EqualTo(AudioRules.ToDecibels(saved.MusicVolume)).Within(0.05f),
+                $"music should start at the saved {saved.MusicVolume:0.00}, not wherever the mixer was left");
+            Assert.That(sfx, Is.EqualTo(AudioRules.ToDecibels(saved.SfxVolume)).Within(0.05f),
+                $"sound effects should start at the saved {saved.SfxVolume:0.00}");
+        }
+
+        [UnityTest]
+        public IEnumerator TheSavedVolumes_ArePutBackWhenTheMixerLosesThem()
+        {
+            // The real bug behind this test: the write made as the first scene of a session wakes is discarded by
+            // the audio system, so the game opened at full volume and stayed there until the player touched a
+            // slider. A test cannot recreate that start-up moment, so it does what the audio system did, by hand:
+            // it knocks both groups back to 0 dB behind the component's back, and the settings must return.
+            var volumes = Object.FindAnyObjectByType<MixerVolumes>();
+            Assert.That(volumes, Is.Not.Null, "the scene has no mixer volumes");
+
+            var saved = GameFlow.Settings.Settings;
+            volumes.SetDecibels(AudioRules.MusicVolumeParameter, 0f);
+            volumes.SetDecibels(AudioRules.SfxVolumeParameter, 0f);
+            yield return null;
+
+            Assert.That(volumes.TryGetDecibels(AudioRules.MusicVolumeParameter, out var music), Is.True);
+            Assert.That(volumes.TryGetDecibels(AudioRules.SfxVolumeParameter, out var sfx), Is.True);
+
+            Assert.That(music, Is.EqualTo(AudioRules.ToDecibels(saved.MusicVolume)).Within(0.05f),
+                "a lost music volume has to come back without the player going to the Settings screen");
+            Assert.That(sfx, Is.EqualTo(AudioRules.ToDecibels(saved.SfxVolume)).Within(0.05f),
+                "a lost effects volume has to come back too");
+        }
+
+        [UnityTest]
+        public IEnumerator TheSavedVolumes_ArePutBackWhileTheGameIsPaused()
+        {
+            // A menu covering a level holds the game at timeScale 0, and the Settings screen is reached from
+            // there: a correction that ran on scaled time would never arrive while the player was looking at it.
+            var volumes = Object.FindAnyObjectByType<MixerVolumes>();
+            var saved = GameFlow.Settings.Settings;
+
+            Time.timeScale = 0f;
+            try
+            {
+                volumes.SetDecibels(AudioRules.MusicVolumeParameter, 0f);
+                yield return null;
+
+                Assert.That(volumes.TryGetDecibels(AudioRules.MusicVolumeParameter, out var music), Is.True);
+                Assert.That(music, Is.EqualTo(AudioRules.ToDecibels(saved.MusicVolume)).Within(0.05f),
+                    "a paused game still has to hold the player's volume");
+            }
+            finally
+            {
+                Time.timeScale = 1f;
+            }
         }
 
         [UnityTest]

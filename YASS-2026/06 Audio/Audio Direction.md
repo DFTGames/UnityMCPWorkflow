@@ -3,7 +3,7 @@ tags:
   - gdd
   - audio
 status: approved
-updated: 2026-09-20
+updated: 2026-09-22
 ---
 
 # Audio Direction
@@ -43,6 +43,8 @@ Menu theme, Level 1 track, boss theme. Tracks crossfade on scene and boss transi
 An audio mixer with **Music** and **SFX** groups, whose volumes the Settings screen controls. Repeated sounds (shots) are rate-limited so they do not stack into noise.
 
 **As built.** `Assets/_Game/Audio/YASS.mixer` has the Music and SFX groups under Master, with their volumes exposed as `MusicVolume` and `SfxVolume`. The Settings sliders are linear but loudness is not, so each value is converted to decibels (half the slider is about -6 dB, and zero is silence rather than a quiet hum) and written to the group. Both sliders now do what they say.
+
+The saved volumes are in force from the moment the game opens, not from the moment the player visits the Settings screen. That takes a little care: the write made as the first scene wakes is discarded by the audio system, so the game reads the groups back every frame and writes again whenever they do not hold what the settings asked for.
 
 Effect voices feed the SFX group and carry only their clip's own trim from the sound bank, so the volume is applied once. Repeats are limited per sound (shots 60 ms, explosions 40 ms, player and shield hits 100 ms) with a small repeating pitch variation so a stream of shots is not one flat note. Twelve voices play at once; when they are all busy the one closest to finishing is reused, so a four-second boss explosion survives the shots fired over it.
 

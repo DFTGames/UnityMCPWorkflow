@@ -193,17 +193,18 @@ namespace YASS.Editor
         /// open is left open rather than being saved and closed underneath them.
         /// </summary>
         /// <summary>
-        /// Every level scene, in order. The campaign has eight of them and they are all built the same way, so a
-        /// builder that only knew about Level 1 would leave the other seven behind on its next run. Matched by
-        /// name rather than by folder, so a future LevelSelect scene is not mistaken for one.
+        /// Every scene the game is played in: the eight campaign levels and Endless. They are all built the same
+        /// way, so a builder that only knew about Level 1 would leave the rest behind on its next run, and one
+        /// that knew only about the levels would let Endless drift. Matched by name rather than by folder, so a
+        /// future LevelSelect scene is not mistaken for one.
         /// </summary>
-        public static string[] LevelScenePaths()
+        public static string[] PlayableScenePaths()
         {
             var paths = new List<string>();
             foreach (var guid in AssetDatabase.FindAssets("t:Scene", new[] { "Assets/_Game/Scenes" }))
             {
                 var path = AssetDatabase.GUIDToAssetPath(guid);
-                if (Regex.IsMatch(Path.GetFileNameWithoutExtension(path), @"^Level\d\d$")) paths.Add(path);
+                if (Regex.IsMatch(Path.GetFileNameWithoutExtension(path), @"^(Level\d\d|Endless)$")) paths.Add(path);
             }
 
             paths.Sort(StringComparer.Ordinal);

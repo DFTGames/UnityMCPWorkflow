@@ -172,3 +172,4 @@ MonoBehaviour:
       spacing: 0.4
       startDelay: 3
   bossPrefab: {fileID: 5830118121467345117, guid: 7cd9df96230e9c745bc4df1f165343c0, type: 3}
+  backdrop: {fileID: 21300000, guid: 3f0767ff2fd12f34f96ec2a904057158, type: 3}

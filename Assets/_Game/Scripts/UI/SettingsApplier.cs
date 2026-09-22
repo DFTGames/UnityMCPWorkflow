@@ -17,6 +17,14 @@ namespace YASS.UI
 
         SettingsService _settings;
 
+        /// <summary>
+        /// Domain reloading is off in this project, so without this the second play session would start with
+        /// the first one's flag still set: the saved fullscreen setting would never be applied, and worse, the
+        /// Game view's state would be written over it (see GameFlow and CameraShaker, which do the same).
+        /// </summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStatics() => _fullscreenApplied = false;
+
         void OnEnable()
         {
             _settings = GameFlow.Settings;
@@ -25,8 +33,10 @@ namespace YASS.UI
             // used Alt+Enter or the window chrome, so adopt what it actually is instead of snapping it back.
             if (GameFlow.SupportsFullscreen)
             {
-                if (_fullscreenApplied) _settings.SetFullscreen(Screen.fullScreen);
-                else _fullscreenApplied = true;
+                if (SettingsService.ShouldAdoptTheWindow(_fullscreenApplied, Application.isEditor))
+                    _settings.SetFullscreen(Screen.fullScreen);
+
+                _fullscreenApplied = true;
             }
 
             _settings.Changed += Apply;

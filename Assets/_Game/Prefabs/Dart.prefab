@@ -176,6 +176,7 @@ MonoBehaviour:
   definition: {fileID: 11400000, guid: 32bbc7224a5c30945a9e059811b42d04, type: 2}
   body: {fileID: 8191679619442834026}
   muzzleOffset: {x: -0.4, y: 0}
+  beam: {fileID: 0}
 --- !u!114 &6098009600319150154
 MonoBehaviour:
   m_ObjectHideFlags: 0

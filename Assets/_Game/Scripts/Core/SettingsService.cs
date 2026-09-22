@@ -47,6 +47,16 @@ namespace YASS.Core
         /// <summary>Re-announces the current settings, so a listener that just woke up can apply them.</summary>
         public void Apply() => Changed?.Invoke(Settings);
 
+        /// <summary>
+        /// Whether the window's current state should be taken as the player's wish, rather than the saved
+        /// setting being applied to it. Once per session the saved setting wins; after that the window is the
+        /// player's, who may have used Alt+Enter or the window chrome. Never in the editor, where the window
+        /// belongs to the Editor rather than to the game and adopting it would overwrite the saved choice
+        /// with the Game view's state.
+        /// </summary>
+        public static bool ShouldAdoptTheWindow(bool appliedThisSession, bool inEditor) =>
+            appliedThisSession && !inEditor;
+
         public void SetMusicVolume(float value) => Set(Settings.WithMusicVolume(value));
         public void SetSfxVolume(float value) => Set(Settings.WithSfxVolume(value));
         public void SetScreenShake(bool value) => Set(Settings.WithScreenShake(value));

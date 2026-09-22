@@ -14,6 +14,9 @@ namespace YASS.UI
         public const string TitleScene = "Title";
         public const string FirstLevelScene = "Level01";
 
+        /// <summary>Endless is one scene that keeps going, not a list of them (GDD "Core Loop", Endless mode).</summary>
+        public const string EndlessScene = "Endless";
+
         const string CampaignPath = "Campaign"; // in Resources, so the flow needs no scene reference
 
         static SettingsService _settings;
@@ -79,6 +82,19 @@ namespace YASS.UI
             Settings.Flush(); // last chance to save before the level takes over
 
             SceneManager.LoadScene(campaign.SceneFor(0));
+        }
+
+        /// <summary>
+        /// Starts an Endless run (GDD "Core Loop", Endless mode). It has no campaign behind it: there is one
+        /// scene, and it keeps going until the player does not.
+        /// </summary>
+        public static void StartEndless(Difficulty difficulty)
+        {
+            RunContext.Clear();
+            RunContext.Configure(difficulty, GameMode.Endless);
+            Settings.Flush();
+
+            SceneManager.LoadScene(EndlessScene);
         }
 
         /// <summary>

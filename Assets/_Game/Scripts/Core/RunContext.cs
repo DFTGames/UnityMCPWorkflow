@@ -1,5 +1,12 @@
 namespace YASS.Core
 {
+    /// <summary>Which mode a run is being played in (GDD "Core Loop").</summary>
+    public enum GameMode
+    {
+        Campaign = 0,
+        Endless = 1
+    }
+
     /// <summary>
     /// What a level needs to know about the run it belongs to, chosen before the level scene loads.
     /// </summary>
@@ -15,12 +22,16 @@ namespace YASS.Core
         /// <summary>True once a difficulty has been chosen for this run.</summary>
         public static bool IsConfigured { get; private set; }
 
+        /// <summary>Which mode this run is; a scene opened on its own is a campaign level.</summary>
+        public static GameMode Mode { get; private set; } = GameMode.Campaign;
+
         /// <summary>The campaign in progress, or null when a level is being played on its own.</summary>
         public static CampaignRun Campaign { get; private set; }
 
-        public static void Configure(Difficulty difficulty)
+        public static void Configure(Difficulty difficulty, GameMode mode = GameMode.Campaign)
         {
             Difficulty = difficulty;
+            Mode = mode;
             IsConfigured = true;
         }
 
@@ -35,6 +46,7 @@ namespace YASS.Core
         public static void Clear()
         {
             Difficulty = Difficulty.Pilot;
+            Mode = GameMode.Campaign;
             IsConfigured = false;
             Campaign = null;
         }

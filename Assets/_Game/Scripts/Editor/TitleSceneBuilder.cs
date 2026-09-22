@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using YASS.Core;
+using YASS.Feedback;
 using YASS.UI;
 
 namespace YASS.Editor
@@ -74,6 +75,11 @@ namespace YASS.Editor
             credits.SetActive(false);
 
             MenuSceneParts.SaveAndRelease(scene, ScenePath, true);
+
+            // This builder starts from an empty scene, so anything another builder had added is gone. The
+            // feedback objects (the menu music and the UI sounds) go straight back, rather than waiting for
+            // somebody to remember that "Build Title Scene" silently means "and rebuild the feedback wiring".
+            FeedbackSceneBuilder.AddFeedbackTo(ScenePath, withShaker: false, Track.Menu);
             AddToBuildSettings();
             Debug.Log($"Built {ScenePath}");
         }
@@ -136,11 +142,13 @@ namespace YASS.Editor
             var cadet = CreateChoice(column, "Cadet", "Cadet", "Five lives, gentler waves. Learn the sector.");
             var pilot = CreateChoice(column, "Pilot", "Pilot", "Three lives. The intended fight.");
             var ace = CreateChoice(column, "Ace", "Ace", "Two lives, heavier waves, double score.");
-            var endless = CreateChoice(column, "Endless", "Endless (locked)", "Finish the campaign to unlock.");
+            var endless = CreateChoice(column, "Endless", "Endless (locked)",
+                "Cycles of ten waves and a boss, faster every time. Finish the campaign to unlock.");
 
             UnityEventTools.AddPersistentListener(cadet.onClick, menu.ChooseCadet);
             UnityEventTools.AddPersistentListener(pilot.onClick, menu.ChoosePilot);
             UnityEventTools.AddPersistentListener(ace.onClick, menu.ChooseAce);
+            UnityEventTools.AddPersistentListener(endless.onClick, menu.ToggleEndless);
 
             var back = MenuUiFactory.CreateButton("Back", column, "Back");
             UnityEventTools.AddPersistentListener(back.onClick, router.Back);

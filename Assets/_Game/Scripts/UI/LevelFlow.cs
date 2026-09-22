@@ -45,7 +45,14 @@ namespace YASS.UI
 
         void ShowGameOver()
         {
-            if (gameOver != null) gameOver.Fill(runner.Session.Score);
+            if (gameOver != null)
+            {
+                gameOver.Fill(runner.Session.Score);
+
+                // How far an Endless run got is half its result; the campaign has nothing to add here.
+                var run = runner.EndlessRun;
+                gameOver.SetNote(run != null ? $"Reached cycle {run.Cycle}" : null);
+            }
 
             Cue.Play(Sfx.GameOver);
             router.ShowResult(MenuScreen.GameOver);

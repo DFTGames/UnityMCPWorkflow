@@ -46,6 +46,21 @@ namespace YASS.Core
             ScoreMultiplier = scoreMultiplier;
         }
 
+        /// <summary>
+        /// The same difficulty with its enemies faster and more numerous, for a mode that escalates on top of it
+        /// (GDD "Core Loop", Endless mode: "Difficulty modifiers apply on top"). Everything else, including what
+        /// the player can take and what the score is worth, is the difficulty's own.
+        /// </summary>
+        public DifficultySettings Escalated(float enemySpeed, float enemyCount)
+        {
+            if (enemySpeed <= 0f) throw new ArgumentOutOfRangeException(nameof(enemySpeed));
+            if (enemyCount <= 0f) throw new ArgumentOutOfRangeException(nameof(enemyCount));
+
+            return new DifficultySettings(Difficulty, StartingLives, HealthPerLife, DamageTakenMultiplier,
+                EnemySpeedMultiplier * enemySpeed, EnemyCountMultiplier * enemyCount, EnemyFireRateMultiplier,
+                PickupDropChanceMultiplier, ScoreMultiplier);
+        }
+
         public static DifficultySettings For(Difficulty difficulty)
         {
             switch (difficulty)

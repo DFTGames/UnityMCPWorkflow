@@ -343,6 +343,8 @@ namespace YASS.Editor
                 BuildScene(level, definition);
             }
 
+            SetLevelOneBackdrop();
+
             UpdateCampaign(levels);
             UpdateBuildSettings(levels);
 
@@ -366,6 +368,7 @@ namespace YASS.Editor
             Find(serialized, "displayName").stringValue = level.Setting;
             Find(serialized, "firstWaveDelay").floatValue = 1f;
             Find(serialized, "bossPrefab").objectReferenceValue = LoadBoss(level.Boss);
+            Find(serialized, "backdrop").objectReferenceValue = LoadBackdrop(level.Backdrop);
 
             var waves = Find(serialized, "waves");
             waves.arraySize = level.Waves.Length;
@@ -519,6 +522,31 @@ namespace YASS.Editor
                 if (!ours.Contains(existing.path)) scenes.Add(existing);
 
             EditorBuildSettings.scenes = scenes.ToArray();
+        }
+
+        /// <summary>
+        /// Level 1 is hand-built, so this builder leaves it alone, but its definition still has to name its sky:
+        /// Endless borrows each level's backdrop for a cycle and cannot go and look in the scene for it.
+        /// </summary>
+        static void SetLevelOneBackdrop()
+        {
+            var definition = AssetDatabase.LoadAssetAtPath<LevelDefinition>($"{LevelFolder}/Level01.asset");
+            if (definition == null) return;
+
+            var serialized = new SerializedObject(definition);
+            var backdrop = Find(serialized, "backdrop");
+            if (backdrop.objectReferenceValue != null) return;
+
+            backdrop.objectReferenceValue = LoadBackdrop("NebulaBackground");
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(definition);
+        }
+
+        static Sprite LoadBackdrop(string name)
+        {
+            var sprite = AssetDatabase.LoadAssetAtPath<Sprite>($"{BackdropFolder}/{name}.png");
+            if (sprite == null) Debug.LogWarning($"{nameof(LevelBuilder)}: no backdrop '{name}'.");
+            return sprite;
         }
 
         static SerializedProperty Find(SerializedObject serialized, string field)

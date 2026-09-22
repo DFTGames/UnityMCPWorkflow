@@ -213,5 +213,23 @@ namespace YASS.Tests.Core
         {
             Assert.Throws<System.ArgumentNullException>(() => new SettingsService(null));
         }
+
+        [Test]
+        public void TheSavedFullscreen_WinsOnceASession()
+        {
+            // The first scene of a session applies what was saved; a later scene adopts the window instead,
+            // because by then the player may have changed it themselves with Alt+Enter or the window chrome.
+            Assert.That(SettingsService.ShouldAdoptTheWindow(false, false), Is.False);
+            Assert.That(SettingsService.ShouldAdoptTheWindow(true, false), Is.True);
+        }
+
+        [Test]
+        public void TheEditorsWindow_IsNeverAdopted()
+        {
+            // In the Editor the window is the Editor's, not the game's, so adopting it would write the Game
+            // view's state over the player's saved choice. This is a real setting, kept in real PlayerPrefs.
+            Assert.That(SettingsService.ShouldAdoptTheWindow(true, true), Is.False);
+            Assert.That(SettingsService.ShouldAdoptTheWindow(false, true), Is.False);
+        }
     }
 }

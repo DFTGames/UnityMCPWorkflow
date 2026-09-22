@@ -122,6 +122,25 @@ namespace YASS.Tests.Core
         }
 
         [Test]
+        public void AGroupIsSet_OnlyWhenItReadsBackWhatWasAsked()
+        {
+            // A group hands back the decibels it was given, so a gap wider than rounding means the write was
+            // dropped. That is how the game notices the one the audio system throws away at start-up.
+            Assert.That(AudioRules.IsSetTo(-15.5f, -15.5f), Is.True);
+            Assert.That(AudioRules.IsSetTo(-15.5f, -15.5f + AudioRules.DecibelTolerance / 2f), Is.True);
+            Assert.That(AudioRules.IsSetTo(-15.5f, 0f), Is.False, "full volume is not a quiet setting");
+            Assert.That(AudioRules.IsSetTo(AudioRules.MutedDecibels, 0f), Is.False, "muted is not full volume");
+        }
+
+        [Test]
+        public void AGroupIsNotSet_JustOutsideTheTolerance()
+        {
+            // Without this the tolerance could be widened to anything and every other case would still pass.
+            Assert.That(AudioRules.IsSetTo(-15.5f, -15.5f + AudioRules.DecibelTolerance * 2f), Is.False);
+            Assert.That(AudioRules.IsSetTo(-15.5f, -15.5f - AudioRules.DecibelTolerance * 2f), Is.False);
+        }
+
+        [Test]
         public void RepeatedShots_AreSpacedOut()
         {
             // Level 5 fires about 11 times a second; without this the shots stack into noise.

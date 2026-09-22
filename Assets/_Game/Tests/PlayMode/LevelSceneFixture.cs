@@ -18,8 +18,10 @@ namespace YASS.Tests.Gameplay
     /// </summary>
     public abstract class LevelSceneFixture
     {
-        protected const string SceneName = "Level01";
         protected const string PrefabDir = "Assets/_Game/Prefabs/";
+
+        /// <summary>The scene these tests play. Endless has its own, built from this one.</summary>
+        protected virtual string SceneName => "Level01";
 
         protected static readonly PlayerCommand Idle = new PlayerCommand(NVector2.Zero, false, NVector2.UnitX);
         protected static readonly PlayerCommand FireForward = new PlayerCommand(NVector2.Zero, true, NVector2.UnitX);

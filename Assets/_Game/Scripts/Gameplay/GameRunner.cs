@@ -15,11 +15,15 @@ namespace YASS.Gameplay
         public readonly float BossHealthFraction;
         public readonly bool BossActive;
 
-        public LevelHudState(bool bossWarning, bool bossActive, float bossHealthFraction)
+        /// <summary>The Endless cycle being played, or 0 in the campaign.</summary>
+        public readonly int Cycle;
+
+        public LevelHudState(bool bossWarning, bool bossActive, float bossHealthFraction, int cycle = 0)
         {
             BossWarning = bossWarning;
             BossActive = bossActive;
             BossHealthFraction = bossHealthFraction;
+            Cycle = cycle;
         }
     }
 
@@ -71,6 +75,14 @@ namespace YASS.Gameplay
 
         [SerializeField, Tooltip("Dropped by Mine Layers.")] MineView minePrefab;
 
+        [Header("Endless")]
+        [SerializeField, Tooltip("Assigned on the Endless scene only. A scene that has this is an Endless run.")]
+        EndlessDefinition endless;
+        [SerializeField, Tooltip("The scene's backdrop, which Endless changes every cycle.")]
+        SpriteRenderer backdrop;
+        [SerializeField, Min(0f), Tooltip("Endless only: the pause before a cycle's first wave.")]
+        float endlessFirstWaveDelay = 1f;
+
         [Header("Pickups and flow")]
         [SerializeField] PickupView pickupPrefab;
         [SerializeField, Min(0f)] float pickupDriftSpeed = 2f;
@@ -82,6 +94,10 @@ namespace YASS.Gameplay
 
         GameSession _session;
         DifficultySettings _settings;
+
+        /// <summary>The settings hazards are spawned with: the difficulty, escalated by the Endless cycle.</summary>
+        DifficultySettings _spawnSettings;
+        EndlessDirector _endless;
         WaveDirector _director;
         PlayerCommand[] _commands;
         PlayerCommand?[] _commandOverrides;
@@ -100,11 +116,18 @@ namespace YASS.Gameplay
         BossView _boss;
         bool _bossSpawned;
         bool _bossDefeated;
+        bool _cycleTurning;
         float _endTime = -1f;
         bool _sectorClear;
 
         public GameSession Session => _session;
         public WaveDirector Director => _director;
+
+        /// <summary>True when this scene is an Endless run rather than a campaign level.</summary>
+        public bool IsEndless => _endless != null;
+
+        /// <summary>The Endless run in progress, or null in the campaign.</summary>
+        public EndlessRun EndlessRun => _endless?.Run;
         public LevelDefinition Level => level;
         public BossView Boss => _boss;
         public Playfield Playfield { get; private set; }
@@ -137,7 +160,8 @@ namespace YASS.Gameplay
         public LevelHudState HudState => new LevelHudState(
             IsRunning && _director.Phase == LevelPhase.BossWarning,
             BossInPlay,
-            BossInPlay ? _boss.Brain.Health.Current / _boss.Brain.Health.Max : 0f);
+            BossInPlay ? _boss.Brain.Health.Current / _boss.Brain.Health.Max : 0f,
+            _endless != null ? _endless.Run.Cycle : 0);
 
         /// <summary>Test seam: while set, replaces the input device for that player.</summary>
         internal void SetCommandOverride(int playerIndex, PlayerCommand? command) => _commandOverrides[playerIndex] = command;
@@ -165,9 +189,15 @@ namespace YASS.Gameplay
             // A run started from the menus carries its difficulty; opening the scene directly uses the field.
             Difficulty = RunContext.IsConfigured ? RunContext.Difficulty : difficulty;
             _settings = DifficultySettings.For(Difficulty);
+            _spawnSettings = _settings;
             _random = new SystemRandomSource(randomSeed != 0 ? randomSeed : Environment.TickCount);
             _session = new GameSession(_settings, _random, players.Length);
-            _director = new WaveDirector(level.ToSpecs(), _settings.EnemyCountMultiplier, level.FirstWaveDelay);
+
+            // A scene that carries an Endless definition is an Endless run; one that carries a level is a
+            // campaign level. The scene says what it is, so opening either directly still plays.
+            if (endless != null) _endless = new EndlessDirector(endless, Difficulty, _random);
+            else _director = new WaveDirector(level.ToSpecs(), _settings.EnemyCountMultiplier, level.FirstWaveDelay);
+
             RestoreCampaignProgress();
             _commands = new PlayerCommand[players.Length];
             _commandOverrides = new PlayerCommand?[players.Length];
@@ -188,6 +218,16 @@ namespace YASS.Gameplay
             _releasePickup = p => _pickups.Release(p);
             _releaseMine = m => _mines.Release(m);
 
+            if (_endless != null) RegisterEndlessPools();
+            else RegisterLevelPools();
+
+            UpdatePlayfield();
+            for (var i = 0; i < players.Length; i++) players[i].Init(this, i);
+        }
+
+        /// <summary>The enemies and boss of one campaign level, and whatever that boss launches.</summary>
+        void RegisterLevelPools()
+        {
             // Only the boss this level actually has: prewarming a pool of Darts for a boss that launches
             // nothing would cost every level eight instances it never uses.
             var bossMinion = level.BossPrefab != null && level.BossPrefab.Definition != null
@@ -201,9 +241,68 @@ namespace YASS.Gameplay
             // Created up front (inactive) so its particle systems do not hitch the boss's entrance.
             _boss = Instantiate(level.BossPrefab, spawnRoot);
             _boss.gameObject.SetActive(false);
+        }
 
-            UpdatePlayfield();
-            for (var i = 0; i < players.Length; i++) players[i].Init(this, i);
+        /// <summary>
+        /// Everything any cycle could ask for. Endless draws its waves and its boss fresh each cycle, so the
+        /// pools have to cover the whole campaign rather than one level's worth.
+        /// </summary>
+        void RegisterEndlessPools()
+        {
+            foreach (var enemy in _endless.AllEnemies()) RegisterEnemyPool(enemy);
+            foreach (var boss in _endless.AllBosses())
+                if (boss.Definition != null && boss.Definition.MinionPrefab != null)
+                    RegisterEnemyPool(boss.Definition.MinionPrefab);
+
+            BeginEndlessCycle(advance: false);
+        }
+
+        /// <summary>
+        /// Starts a cycle: its ten waves, its boss and its sky (GDD "Core Loop", Endless mode). Called once at
+        /// the start of the run and again each time a boss goes down. The run's cycle number moves here rather
+        /// than when the boss dies, so it always names the cycle actually being played.
+        /// </summary>
+        void BeginEndlessCycle(bool advance)
+        {
+            if (advance) _endless.CompleteCycle();
+
+            // Hazards still on screen belong to the cycle that is over. Their release callbacks read the
+            // director at the time they fire, and both cycles number their waves 0 to 9, so a straggler would
+            // otherwise tell the new script that one of its waves had been cleared.
+            DisownLiveHazards();
+
+            var specs = _endless.BeginCycle();
+            var run = _endless.Run;
+
+            _spawnSettings = _settings.Escalated(run.EnemySpeedMultiplier, run.EnemyCountMultiplier);
+            _director = new WaveDirector(specs, _spawnSettings.EnemyCountMultiplier, endlessFirstWaveDelay);
+            _session.SetEndlessMultiplier(run.ScoreMultiplier);
+
+            if (backdrop != null && _endless.Backdrop != null) backdrop.sprite = _endless.Backdrop;
+
+            // The boss warning switched the music over; the waves of the next cycle are not a boss fight.
+            MusicPlayer.PlayIfPresent(Track.Level);
+
+            // Each cycle brings its own boss, built inactive now so its entrance does not hitch later.
+            if (_boss != null) Destroy(_boss.gameObject);
+            _boss = Instantiate(_endless.BossPrefab, spawnRoot);
+            _boss.gameObject.SetActive(false);
+            _bossSpawned = false;
+            _bossDefeated = false;
+        }
+
+        /// <summary>
+        /// Takes the leftovers of a finished cycle out of the wave accounting: they still fly, still hurt and
+        /// still score, but they no longer belong to a wave (GDD "Wave System": a wave is cleared when the
+        /// hazards it spawned are gone).
+        /// </summary>
+        void DisownLiveHazards()
+        {
+            foreach (var enemy in FindObjectsByType<EnemyView>(FindObjectsSortMode.None))
+                if (enemy.IsAlive) enemy.WaveIndex = -1;
+
+            foreach (var meteor in FindObjectsByType<MeteorView>(FindObjectsSortMode.None))
+                if (meteor.IsAlive) meteor.WaveIndex = -1;
         }
 
         void OnDestroy()
@@ -219,6 +318,13 @@ namespace YASS.Gameplay
         void FixedUpdate()
         {
             UpdatePlayfield();
+
+            if (_cycleTurning)
+            {
+                _cycleTurning = false;
+                BeginEndlessCycle(advance: true);
+            }
+
             CheckEndOfRun();
             if (!IsRunning) return;
 
@@ -327,14 +433,34 @@ namespace YASS.Gameplay
 
         public void OnBossDefeated(BossView boss, int playerIndex)
         {
-            _session.ReportBossDefeated(playerIndex, level.LevelNumber);
+            _session.ReportBossDefeated(playerIndex, BossLevelNumber(boss));
             foreach (var pickup in PickupDropper.BossDrops) SpawnPickup(pickup, boss.Position);
-            _director.NotifyBossDefeated();
-            _bossDefeated = true;
 
             Cue.Spawn(Effect.BossExplosion, boss.Position, Sfx.BossExplosion);
             Cue.Shake(ScreenShake.BossDefeatedTrauma);
             boss.Despawn();
+
+            if (_endless != null)
+            {
+                // Endless has no Sector Clear: the next cycle starts where this one ended, faster and fuller.
+                // This is reached from a trigger callback, so the work itself waits for the next fixed step:
+                // destroying and building a boss in the middle of physics is how a frame hitches.
+                _boss = null; // despawned above; the next cycle builds its own
+                _cycleTurning = true;
+                return;
+            }
+
+            _director.NotifyBossDefeated();
+            _bossDefeated = true;
+        }
+
+        /// <summary>What a boss is worth: its own level's number, whichever mode it turns up in (GDD "Scoring").</summary>
+        int BossLevelNumber(BossView boss)
+        {
+            if (boss != null && boss.Definition != null) return boss.Definition.LevelNumber;
+
+            // Endless has no level of its own to fall back on; a boss without a definition is an authoring error.
+            return level != null ? level.LevelNumber : 1;
         }
 
         /// <summary>Returns true when the projectile was used up (hit or absorbed); false lets it fly on.</summary>
@@ -519,7 +645,9 @@ namespace YASS.Gameplay
 
         void SpawnFromWave(WaveSpawnRequest request)
         {
-            var group = level.GetGroup(request.WaveIndex, request.GroupIndex);
+            var group = _endless != null
+                ? _endless.GroupFor(request.WaveIndex, request.GroupIndex)
+                : level.GetGroup(request.WaveIndex, request.GroupIndex);
             var margin = SpawnMarginFor(group.enemy);
             var position = new Vector2(Playfield.MaxX + spawnEdgeMargin + request.XOffset,
                 Playfield.Inset(margin).YAt(request.NormalisedY));
@@ -531,7 +659,8 @@ namespace YASS.Gameplay
             else
             {
                 var definition = group.meteor;
-                var vertical = (_random.NextFloat() * 2f - 1f) * definition.MaxVerticalSpeed * _settings.EnemySpeedMultiplier;
+                var vertical = (_random.NextFloat() * 2f - 1f) * definition.MaxVerticalSpeed *
+                               _spawnSettings.EnemySpeedMultiplier;
                 SpawnMeteor(definition, position, new Vector2(-RandomSpeed(definition), vertical), request.WaveIndex);
             }
         }
@@ -543,14 +672,16 @@ namespace YASS.Gameplay
 
             var centreY = (Playfield.MinY + Playfield.MaxY) * 0.5f;
             _boss.gameObject.SetActive(true);
-            _boss.Init(this, _settings, new Vector2(Playfield.MaxX + BossSpawnOffset, centreY));
+            // The boss escalates with everything else: an Endless cycle's "+10% enemy speed" is not a rule
+            // about small ships (GDD "Core Loop", Endless mode).
+            _boss.Init(this, _spawnSettings, new Vector2(Playfield.MaxX + BossSpawnOffset, centreY));
             _session.BeginBossFight();
         }
 
         void SpawnEnemy(EnemyView prefab, Vector2 position, int waveIndex)
         {
             var enemy = _enemyPools[prefab].Get();
-            enemy.Init(this, _settings, position, _enemyReleasers[prefab]);
+            enemy.Init(this, _spawnSettings, position, _enemyReleasers[prefab]);
             enemy.WaveIndex = waveIndex;
         }
 
@@ -708,7 +839,8 @@ namespace YASS.Gameplay
         }
 
         float RandomSpeed(MeteorDefinition definition) =>
-            Mathf.Lerp(definition.MinSpeed, definition.MaxSpeed, _random.NextFloat()) * _settings.EnemySpeedMultiplier;
+            Mathf.Lerp(definition.MinSpeed, definition.MaxSpeed, _random.NextFloat()) *
+            _spawnSettings.EnemySpeedMultiplier;
 
         void SpawnMeteor(MeteorDefinition definition, Vector2 position, Vector2 velocity, int waveIndex)
         {
@@ -768,14 +900,25 @@ namespace YASS.Gameplay
             Require(spawnRoot, nameof(spawnRoot));
             Require(playerDefinition, nameof(playerDefinition));
             Require(playerProjectilePrefab, nameof(playerProjectilePrefab));
-            Require(level, nameof(level));
+            if (endless == null) Require(level, nameof(level));
+            else if (endless.Validate() is string endlessProblem) Fail($"Endless: {endlessProblem}.");
+
+            if (endless != null && level != null)
+                Fail("a scene is either a campaign level or an Endless run, not both.");
+
+            // The flow layer says which mode it started; the scene says which it is. If they disagree, one of
+            // them is wrong and the run would quietly be the wrong game.
+            if (RunContext.IsConfigured && (RunContext.Mode == GameMode.Endless) != (endless != null))
+                Fail($"this scene is {(endless != null ? "an Endless run" : "a campaign level")}, " +
+                     $"but a {RunContext.Mode} run was started.");
             Require(enemyProjectilePrefab, nameof(enemyProjectilePrefab));
             Require(meteorPrefab, nameof(meteorPrefab));
             Require(pickupPrefab, nameof(pickupPrefab));
             Require(minePrefab, nameof(minePrefab));
 
             if (worldCamera != null && !worldCamera.orthographic) Fail("the world camera must be orthographic.");
-            if (level != null && level.Validate() is string problem) Fail($"level '{level.name}': {problem}.");
+            if (endless == null && level != null && level.Validate() is string problem)
+                Fail($"level '{level.name}': {problem}.");
 
             if (players.Length < 1 || players.Length > 4) Fail("there must be between 1 and 4 players.");
             if (inputs.Length != players.Length) Fail("there must be one input reader per player.");

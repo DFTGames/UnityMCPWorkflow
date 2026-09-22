@@ -39,7 +39,7 @@ namespace YASS.Editor
             AddFlashToPrefabs();
 
             AddFeedbackTo(TitleSceneBuilder.ScenePath, withShaker: false, Track.Menu);
-            foreach (var path in MenuSceneParts.LevelScenePaths()) AddFeedbackTo(path, withShaker: true, Track.Level);
+            foreach (var path in MenuSceneParts.PlayableScenePaths()) AddFeedbackTo(path, withShaker: true, Track.Level);
 
             AssetDatabase.SaveAssets();
             Debug.Log("Wired the feedback objects into the scenes and prefabs");
@@ -163,7 +163,12 @@ namespace YASS.Editor
             else Debug.LogError($"No camera in {scene.path}: the scene has nowhere to hear from.");
         }
 
-        static void AddFeedbackTo(string scenePath, bool withShaker, Track music)
+        /// <summary>
+        /// Puts the feedback objects into one scene. Public so that a builder which rebuilds a scene from
+        /// nothing can restore them in the same run: the title scene lost its music this way once, and a scene
+        /// that is silent looks exactly like a scene that is fine.
+        /// </summary>
+        public static void AddFeedbackTo(string scenePath, bool withShaker, Track music)
         {
             var scene = MenuSceneParts.OpenForBuilding(scenePath, out var openedByBuilder);
 

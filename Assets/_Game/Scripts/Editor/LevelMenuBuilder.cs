@@ -26,7 +26,7 @@ namespace YASS.Editor
         [MenuItem("Tools/YASS/Build Level Menus")]
         public static void Build()
         {
-            foreach (var path in MenuSceneParts.LevelScenePaths()) BuildInto(path);
+            foreach (var path in MenuSceneParts.PlayableScenePaths()) BuildInto(path);
         }
 
         static void BuildInto(string levelScenePath)
@@ -171,6 +171,10 @@ namespace YASS.Editor
             var column = MenuUiFactory.CreateColumn("Column", panel);
 
             MenuUiFactory.CreateText("Heading", column, "Game Over", MenuUiFactory.HeadingFontSize, MenuUiFactory.Accent);
+
+            // What the mode has to say for itself, above the totals: how far an Endless run got. The campaign
+            // leaves it empty, and an empty note hides itself.
+            var note = MenuUiFactory.CreateText("Note", column, "", MenuUiFactory.BodyFontSize, MenuUiFactory.Secondary);
             var score = MenuUiFactory.CreateText("Score", column, "Score 0", MenuUiFactory.BodyFontSize, MenuUiFactory.Text);
             var kills = MenuUiFactory.CreateText("Kills", column, "Kills 0", MenuUiFactory.BodyFontSize, MenuUiFactory.Text);
             var chain = MenuUiFactory.CreateText("Chain", column, "Best chain x1.0", MenuUiFactory.BodyFontSize,
@@ -188,7 +192,10 @@ namespace YASS.Editor
                 MenuSceneParts.Find(o, "scoreText").objectReferenceValue = score;
                 MenuSceneParts.Find(o, "killsText").objectReferenceValue = kills;
                 MenuSceneParts.Find(o, "chainText").objectReferenceValue = chain;
+                MenuSceneParts.Find(o, "noteText").objectReferenceValue = note;
             });
+
+            note.gameObject.SetActive(false); // nothing to say until a mode says it
 
             first = retry;
             return panel.gameObject;

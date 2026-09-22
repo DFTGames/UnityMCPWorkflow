@@ -33,6 +33,12 @@ namespace YASS.Core
         /// <summary>The level a muted mixer group is set to, in decibels.</summary>
         public const float MutedDecibels = -80f;
 
+        /// <summary>
+        /// How far a group may read back from the level it was asked for and still count as set. Wide enough
+        /// for rounding, narrow enough that a level left over from somewhere else is never mistaken for ours.
+        /// </summary>
+        public const float DecibelTolerance = 0.01f;
+
         /// <summary>The mixer groups the Settings screen controls (GDD "Audio Direction", Mixing).</summary>
         public const string MusicGroup = "Music";
         public const string SfxGroup = "SFX";
@@ -52,6 +58,13 @@ namespace YASS.Core
             var clamped = MathF.Min(volume, 1f);
             return MathF.Max(MutedDecibels, 20f * MathF.Log10(clamped));
         }
+
+        /// <summary>
+        /// Whether a group is at the level it was asked for, within <see cref="DecibelTolerance"/>. A level
+        /// comes back as it was set, so a wider gap than that means the request never landed.
+        /// </summary>
+        public static bool IsSetTo(float requestedDecibels, float actualDecibels) =>
+            MathF.Abs(requestedDecibels - actualDecibels) <= DecibelTolerance;
 
         /// <summary>
         /// How soon the same sound may play again. Shots fire many times a second and would stack into noise,

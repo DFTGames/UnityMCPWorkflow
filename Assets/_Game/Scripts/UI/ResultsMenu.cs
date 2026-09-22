@@ -17,6 +17,8 @@ namespace YASS.UI
         [SerializeField] TMP_Text killsText;
         [SerializeField] TMP_Text chainText;
         [SerializeField] TMP_Text clearBonusText;
+        [SerializeField, Tooltip("A line above the totals, for what the mode itself has to report.")]
+        TMP_Text noteText;
 
         [Header("Labels")]
         [SerializeField] string scorePrefix = "Score ";
@@ -30,6 +32,18 @@ namespace YASS.UI
         /// </summary>
         public void Fill(ScoreKeeper score) =>
             Fill(score.Score, score.Kills, score.BestChainSteps, score.BonusPoints);
+
+        /// <summary>
+        /// A line the mode wants on the panel, such as how far an Endless run got. Null or empty hides it, so a
+        /// campaign panel shows nothing extra.
+        /// </summary>
+        public void SetNote(string note)
+        {
+            if (noteText == null) return;
+
+            noteText.text = note ?? string.Empty;
+            noteText.gameObject.SetActive(!string.IsNullOrEmpty(note));
+        }
 
         /// <summary>Shows a whole campaign run's figures, which span several levels.</summary>
         public void Fill(long score, int kills, int bestChainSteps, long bonuses)

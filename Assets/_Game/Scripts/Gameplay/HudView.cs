@@ -15,6 +15,7 @@ namespace YASS.Gameplay
         const string LivesPrefix = "Lives ";
         const string WeaponPrefix = "Weapon Lv ";
         const string KillsPrefix = "Kills ";
+        const string CyclePrefix = "Cycle ";
         const float WarningBlinksPerSecond = 3f;
 
         [SerializeField, Min(0)] int playerIndex;
@@ -24,6 +25,9 @@ namespace YASS.Gameplay
         [SerializeField] TMP_Text chainText;
         [SerializeField] TMP_Text killsText;
         [SerializeField] Image healthFill;
+
+        [SerializeField, Tooltip("Endless only: which cycle the run is on. Hidden in the campaign.")]
+        TMP_Text cycleText;
 
         [Header("Boss")]
         [SerializeField] TMP_Text bossWarning;
@@ -37,6 +41,7 @@ namespace YASS.Gameplay
         int? _weapon;
         int? _chainSteps;
         int? _kills;
+        int? _cycle;
         float? _health;
         float? _bossHealth;
         bool? _bossBarShown;
@@ -56,6 +61,14 @@ namespace YASS.Gameplay
             {
                 _chainSteps = score.ChainSteps;
                 chainText.SetCharArray(_buffer, 0, NumberFormatter.WriteMultiplier(score.ChainMultiplier, _buffer));
+            }
+
+            // Endless counts its cycles where the campaign has nothing to say; the label is simply absent there.
+            if (cycleText != null && level.Cycle != _cycle)
+            {
+                _cycle = level.Cycle;
+                cycleText.gameObject.SetActive(level.Cycle > 0);
+                if (level.Cycle > 0) SetNumber(cycleText, CyclePrefix, level.Cycle);
             }
 
             var health = player.Vitals.HealthFraction;
