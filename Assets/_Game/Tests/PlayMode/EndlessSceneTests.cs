@@ -9,12 +9,12 @@ using Object = UnityEngine.Object;
 namespace YASS.Tests.Gameplay
 {
     /// <summary>
-    /// Endless mode played in its own scene (GDD "Core Loop", Endless mode): cycles of ten waves and a boss,
+    /// Endless mode (GDD "Core Loop", Endless mode): cycles of ten waves and a boss,
     /// each one faster, fuller and worth more, with no Sector Clear between them and no way to win.
     /// </summary>
     public class EndlessSceneTests : LevelSceneFixture
     {
-        protected override string SceneName => "Endless";
+        protected override void ConfigureRun() => RunContext.Configure(Difficulty.Pilot, GameMode.Endless);
 
         /// <summary>Beats the cycle's boss, and returns once the next cycle has started.</summary>
         IEnumerator ClearTheCycle()
@@ -33,7 +33,7 @@ namespace YASS.Tests.Gameplay
         [Test]
         public void ItStartsAsAnEndlessRunOnCycleOne()
         {
-            Assert.That(Runner.IsEndless, Is.True, "the Endless scene is not set up as one");
+            Assert.That(Runner.IsEndless, Is.True, "the run was not started as an Endless one");
             Assert.That(Runner.EndlessRun, Is.Not.Null);
             Assert.That(Runner.EndlessRun.Cycle, Is.EqualTo(1));
             Assert.That(Runner.IsRunning, Is.True);
@@ -95,27 +95,103 @@ namespace YASS.Tests.Gameplay
                 "an enemy spawned in cycle 2 is faster, or the escalation never reached it");
         }
 
+        static SkyView Sky => Object.FindAnyObjectByType<SkyView>();
+
         [UnityTest]
-        public IEnumerator ACycleWearsItsOwnSky()
+        public IEnumerator TheSkyDoesNotChangeWhenACycleTurns()
         {
+            // The sky used to move on to the next level's backdrop the instant a boss died, which put a hard
+            // cut at the busiest moment of the run and made a long run look like a playlist of levels. An
+            // Endless run is one journey: nothing the player does may swap the sky between two frames.
             Runner.SpawningEnabled = false;
             Runner.SetCommandOverride(0, Idle);
 
-            var backdrop = GameObject.Find("Background").GetComponent<SpriteRenderer>();
-            var first = backdrop.sprite;
-            Assert.That(first, Is.Not.Null);
+            var sky = Sky;
+            var showing = sky.GetComponent<SpriteRenderer>();
+            var before = showing.sprite;
+            var beforeIndex = sky.Cycle.Showing;
+            Assert.That(before, Is.Not.Null);
 
             yield return ClearTheCycle();
 
-            Assert.That(backdrop.sprite, Is.Not.Null);
-            Assert.That(backdrop.sprite, Is.Not.EqualTo(first), "cycle 2 moves on to the next level's setting");
+            Assert.That(showing.sprite, Is.EqualTo(before), "the sky cut to another one when the cycle turned");
+            Assert.That(sky.Cycle.Showing, Is.EqualTo(beforeIndex), "the cycle moved the sky along");
+        }
+
+        [UnityTest]
+        public IEnumerator ARunHoldsOnlyTheSkyItIsShowing()
+        {
+            // Holding the whole ring because a definition referenced it is what this replaced. A run keeps the
+            // sky on screen, takes the next one shortly before its dissolve, and gives the old one back when
+            // that dissolve ends. Counts here are the cache's, including anything still on its way in.
+            Runner.SpawningEnabled = false;
+            Runner.SetCommandOverride(0, Idle);
+            yield return null;
+
+            var sky = Sky;
+            var ring = sky.Cycle.SkyCount;
+            Assert.That(ring, Is.GreaterThan(2), "this test means nothing on a ring of two");
+
+            // Settled, well before the next dissolve: one sky and nothing else.
+            Assert.That(sky.CacheCount, Is.EqualTo(1), "a settled run should hold exactly the sky on screen");
+            Assert.That(sky.ArrivingAlpha, Is.EqualTo(0f).Within(0.01f), "the run did not open settled");
+
+            // Halfway through a dissolve both are unavoidably needed, and no more.
+            sky.Tick(sky.HoldSeconds + sky.FadeSeconds / 2f);
+            yield return null;
+            Assert.That(sky.CacheCount, Is.EqualTo(2), "a dissolve needs both of its skies");
+
+            // Once it finishes, the sky that was left goes back and the run settles on one again.
+            sky.Tick(sky.FadeSeconds);
+            yield return null;
+            Assert.That(sky.CacheCount, Is.EqualTo(1),
+                "the sky the ring has finished leaving was never given back");
+
+            // A whole lap does not accumulate.
+            for (var i = 0; i < ring + 1; i++)
+            {
+                sky.Tick(sky.HoldSeconds + sky.FadeSeconds);
+                yield return null;
+            }
+
+            Assert.That(sky.CacheCount, Is.EqualTo(1), "the ring leaks a sky every lap");
+        }
+
+        [UnityTest]
+        public IEnumerator TheSkyDriftsThroughItsRing()
+        {
+            Runner.SpawningEnabled = false;
+            Runner.SetCommandOverride(0, Idle);
+            yield return null;
+
+            var sky = Sky;
+            Assert.That(sky, Is.Not.Null, "the level scene has no sky view");
+            Assert.That(sky.Cycle, Is.Not.Null, "the run never started the sky drifting");
+            Assert.That(sky.Cycle.SkyCount, Is.GreaterThanOrEqualTo(2), "a ring needs more than one sky");
+
+            var showing = sky.GetComponent<SpriteRenderer>();
+            var first = showing.sprite;
+            var arriving = sky.Cycle.Arriving;
+
+            // Driven by hand rather than waited out: a sky is held for over a minute on purpose.
+            sky.Tick(sky.HoldSeconds + sky.FadeSeconds / 2f);
+
+            Assert.That(sky.ArrivingAlpha, Is.GreaterThan(0.2f).And.LessThan(0.8f),
+                "halfway through a dissolve both skies should be on screen");
+            Assert.That(showing.sprite, Is.EqualTo(first), "the sky being left stays until the dissolve ends");
+
+            sky.Tick(sky.FadeSeconds);
+
+            Assert.That(sky.Cycle.Showing, Is.EqualTo(arriving), "the dissolve never finished");
+            Assert.That(showing.sprite, Is.Not.EqualTo(first), "the next sky is on screen now");
+            Assert.That(sky.ArrivingAlpha, Is.EqualTo(0f).Within(0.01f), "and it is whole, not still arriving");
         }
 
         [UnityTest]
         public IEnumerator TheHudCountsTheCycle()
         {
             // The counter is a serialised reference, so the code being right is not enough: the scene has to
-            // carry the label, and only the Endless scene has any use for one.
+            // carry the label, and only an Endless run has any use for one.
             Runner.SpawningEnabled = false;
             Runner.SetCommandOverride(0, Idle);
 

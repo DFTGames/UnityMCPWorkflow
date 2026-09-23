@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using YASS.Core;
+using YASS.Gameplay;
 
 namespace YASS.UI
 {
@@ -12,10 +13,12 @@ namespace YASS.UI
     public static class GameFlow
     {
         public const string TitleScene = "Title";
-        public const string FirstLevelScene = "Level01";
 
-        /// <summary>Endless is one scene that keeps going, not a list of them (GDD "Core Loop", Endless mode).</summary>
-        public const string EndlessScene = "Endless";
+        /// <summary>
+        /// The one scene the game is played in. Every campaign level and an Endless run all play here: which
+        /// one it is comes from <see cref="RunContext"/> and the campaign's data, not from the scene.
+        /// </summary>
+        public const string LevelScene = "Level";
 
         const string CampaignPath = "Campaign"; // in Resources, so the flow needs no scene reference
 
@@ -81,7 +84,7 @@ namespace YASS.UI
             RunContext.Begin(campaign.NewRun(difficulty));
             Settings.Flush(); // last chance to save before the level takes over
 
-            SceneManager.LoadScene(campaign.SceneFor(0));
+            SceneManager.LoadScene(LevelScene);
         }
 
         /// <summary>
@@ -94,7 +97,7 @@ namespace YASS.UI
             RunContext.Configure(difficulty, GameMode.Endless);
             Settings.Flush();
 
-            SceneManager.LoadScene(EndlessScene);
+            SceneManager.LoadScene(LevelScene);
         }
 
         /// <summary>
@@ -106,11 +109,10 @@ namespace YASS.UI
             var run = RunContext.Campaign;
             var campaign = Campaign;
             if (run == null || campaign == null || run.IsComplete) return false;
+            if (campaign.LevelFor(run.LevelIndex) == null) return false;
 
-            var scene = campaign.SceneFor(run.LevelIndex);
-            if (scene == null) return false;
-
-            SceneManager.LoadScene(scene);
+            // The same scene again: the run has moved on, so it loads the next level's data.
+            SceneManager.LoadScene(LevelScene);
             return true;
         }
 

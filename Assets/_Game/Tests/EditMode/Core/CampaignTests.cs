@@ -219,5 +219,17 @@ namespace YASS.Tests.Core
             Assert.Throws<ArgumentOutOfRangeException>(() => progress.RecordLevelCleared(Difficulty.Pilot, 0, 8));
             Assert.Throws<ArgumentOutOfRangeException>(() => progress.RecordLevelCleared(Difficulty.Pilot, 9, 8));
         }
+
+        [Test]
+        public void ARunMovedOnWithoutPlaying_CarriesNothing()
+        {
+            // The test seam jumps to the last level without completing any, so there is nothing banked.
+            // Handing back the empty value here would start that player with no lives and no health.
+            var run = new CampaignRun(Difficulty.Pilot, 8);
+            run.SkipToFinalLevel();
+
+            Assert.That(run.LevelNumber, Is.EqualTo(8));
+            Assert.That(run.CarryFor(0), Is.Null, "a level nobody played cannot have banked a carry");
+        }
     }
 }

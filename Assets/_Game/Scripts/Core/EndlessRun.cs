@@ -62,12 +62,6 @@ namespace YASS.Core
         /// <summary>Uncapped, so a long run is worth playing for (GDD "Scoring").</summary>
         public float ScoreMultiplier => 1f + ScoreStepPerCycle * CompletedCycles;
 
-        /// <summary>
-        /// The level whose setting this cycle wears, looping after the last one
-        /// (GDD: "the background moves on to the next level's setting every cycle").
-        /// </summary>
-        public int SettingIndex => (Cycle - 1) % LevelCount;
-
         /// <summary>The boss is over; the next cycle begins.</summary>
         public void CompleteCycle() => Cycle++;
 

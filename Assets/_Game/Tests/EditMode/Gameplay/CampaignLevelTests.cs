@@ -74,25 +74,60 @@ namespace YASS.Tests.Gameplay
         [Test]
         public void TheCampaignListsEveryLevelInOrder()
         {
-            var campaign = AssetDatabase.LoadAssetAtPath<Object>("Assets/_Game/Resources/Campaign.asset");
+            var campaign = AssetDatabase.LoadAssetAtPath<Campaign>("Assets/_Game/Resources/Campaign.asset");
             Assert.That(campaign, Is.Not.Null);
+            Assert.That(campaign.LevelCount, Is.EqualTo(8));
+            Assert.That(campaign.Validate(), Is.Null);
 
-            var scenes = new SerializedObject(campaign).FindProperty("levelScenes");
-            Assert.That(scenes.arraySize, Is.EqualTo(8));
+            // A level is data, so the campaign holds the definitions themselves rather than scene names.
             for (var i = 0; i < 8; i++)
-                Assert.That(scenes.GetArrayElementAtIndex(i).stringValue, Is.EqualTo($"Level{i + 1:00}"));
+                Assert.That(campaign.LevelFor(i), Is.EqualTo(Load(i + 1)),
+                    $"the campaign's level {i + 1} is not Level{i + 1:00}");
         }
 
         [Test]
-        public void EveryLevelSceneIsInTheBuild()
+        public void EveryLevel_HasItsOwnSky()
         {
+            // One scene plays them all, so this is the only thing that paints a level's backdrop. A level
+            // without one opens on a blank sky and nothing says why.
+            for (var number = 1; number <= 8; number++)
+            {
+                var path = Load(number).BackdropPath;
+                Assert.That(path, Is.Not.Null.And.Not.Empty, $"Level{number:00} has no backdrop");
+                Assert.That(Resources.Load<Sprite>(path), Is.Not.Null,
+                    $"Level{number:00}'s backdrop is not at Resources/{path}");
+            }
+        }
+
+        [Test]
+        public void EndlessDrawsFrom_TheSameLevelsAsTheCampaign()
+        {
+            // Two lists of the same eight levels, and nothing else keeps them in step: a ninth level added to
+            // the campaign would silently be one Endless could never draw.
+            var campaign = AssetDatabase.LoadAssetAtPath<Campaign>("Assets/_Game/Resources/Campaign.asset");
+            var endless = AssetDatabase.LoadAssetAtPath<EndlessDefinition>(
+                "Assets/_Game/ScriptableObjects/Levels/Endless.asset");
+
+            Assert.That(campaign, Is.Not.Null);
+            Assert.That(endless, Is.Not.Null);
+            Assert.That(endless.LevelCount, Is.EqualTo(campaign.LevelCount),
+                "Endless and the campaign disagree about how many levels there are");
+
+            for (var i = 0; i < campaign.LevelCount; i++)
+                Assert.That(endless.Level(i), Is.EqualTo(campaign.LevelFor(i)),
+                    $"Endless draws a different level {i + 1} from the campaign's");
+        }
+
+        [Test]
+        public void TheGameIsPlayedInOneScene()
+        {
+            // Eight near-identical scenes were kept in step by a builder; now the level is chosen from data.
             var paths = new List<string>();
             foreach (var scene in EditorBuildSettings.scenes)
                 if (scene.enabled) paths.Add(scene.path);
 
-            for (var number = 1; number <= 8; number++)
-                Assert.That(paths, Has.Member($"{SceneFolder}Level{number:00}.unity"),
-                    $"Level{number:00} is not in the build, so the campaign cannot load it");
+            Assert.That(paths, Is.EqualTo(new[] { $"{SceneFolder}Title.unity", $"{SceneFolder}Level.unity" }),
+                "the build should be the title and the one level scene, in that order");
         }
 
         /// <summary>

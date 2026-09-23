@@ -20,7 +20,7 @@ namespace YASS.Tests.Feedback
     /// </summary>
     public class FeedbackTests
     {
-        const string LevelScene = "Level01";
+        const string LevelScene = "Level";
 
         bool _previousRunInBackground;
         GameRunner _runner;

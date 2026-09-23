@@ -12,8 +12,7 @@ namespace YASS.Tests.Gameplay
     /// <summary>
     /// Every scene the player can be in has to carry its own sound (GDD "Audio Direction"). A scene that has
     /// lost its feedback objects looks exactly like one that is fine until somebody notices the silence, which
-    /// is how the title screen's music went missing: the title builder rebuilds the scene from nothing, and
-    /// whatever another builder had added to it goes with it.
+    /// is how the title screen's music once went missing.
     /// </summary>
     public class SceneAudioTests
     {
@@ -66,15 +65,7 @@ namespace YASS.Tests.Gameplay
         }
 
         [TestCase("Title")]
-        [TestCase("Level01")]
-        [TestCase("Level02")]
-        [TestCase("Level03")]
-        [TestCase("Level04")]
-        [TestCase("Level05")]
-        [TestCase("Level06")]
-        [TestCase("Level07")]
-        [TestCase("Level08")]
-        [TestCase("Endless")]
+        [TestCase("Level")]
         public void EveryPlayableScene_CanBeHeard(string name)
         {
             InScene(name, scene =>
@@ -99,9 +90,7 @@ namespace YASS.Tests.Gameplay
         /// window setting ignored, looking exactly like a scene that is fine (see the audio above).
         /// </summary>
         [TestCase("Title")]
-        [TestCase("Level01")]
-        [TestCase("Level08")]
-        [TestCase("Endless")]
+        [TestCase("Level")]
         public void EveryPlayableScene_AppliesTheSavedSettings(string name)
         {
             InScene(name, scene => Require<SettingsApplier>(scene, name, "saved settings would be ignored"));
@@ -109,9 +98,7 @@ namespace YASS.Tests.Gameplay
 
         /// <summary>The title plays the menu theme; a level or an Endless run plays the level theme.</summary>
         [TestCase("Title", Track.Menu)]
-        [TestCase("Level01", Track.Level)]
-        [TestCase("Level08", Track.Level)]
-        [TestCase("Endless", Track.Level)]
+        [TestCase("Level", Track.Level)]
         public void EveryPlayableScene_StartsItsOwnTrack(string name, Track expected)
         {
             InScene(name, scene =>

@@ -68,7 +68,11 @@ namespace YASS.Gameplay
         [SerializeField] Projectile playerProjectilePrefab;
 
         [Header("Level")]
-        [SerializeField] LevelDefinition level;
+        [SerializeField, Tooltip("The campaign's levels in order. Which one plays comes from the run.")]
+        Campaign campaign;
+
+        [SerializeField, Tooltip("Played when the scene is opened directly, outside a run started from the menus.")]
+        LevelDefinition level;
         [SerializeField] Projectile enemyProjectilePrefab;
         [SerializeField] MeteorView meteorPrefab;
         [SerializeField, Min(0f)] float spawnEdgeMargin = 1f;
@@ -76,10 +80,13 @@ namespace YASS.Gameplay
         [SerializeField, Tooltip("Dropped by Mine Layers.")] MineView minePrefab;
 
         [Header("Endless")]
-        [SerializeField, Tooltip("Assigned on the Endless scene only. A scene that has this is an Endless run.")]
+        [SerializeField, Tooltip("What an Endless run is made of. The run says whether this scene is one.")]
         EndlessDefinition endless;
-        [SerializeField, Tooltip("The scene's backdrop, which Endless changes every cycle.")]
-        SpriteRenderer backdrop;
+
+        [SerializeField, Tooltip("Which mode to play when the scene is opened directly, outside a run.")]
+        GameMode modeWhenPlayedDirectly = GameMode.Campaign;
+        [SerializeField, Tooltip("Paints the sky: a campaign level's own backdrop, or the ring an Endless run drifts through.")]
+        SkyView sky;
         [SerializeField, Min(0f), Tooltip("Endless only: the pause before a cycle's first wave.")]
         float endlessFirstWaveDelay = 1f;
 
@@ -117,18 +124,31 @@ namespace YASS.Gameplay
         bool _bossSpawned;
         bool _bossDefeated;
         bool _cycleTurning;
+        LevelDefinition _level;
+
+        /// <summary>
+        /// What this level is holding in memory. Assets are loaded by path when they are needed and given
+        /// back when they are not, rather than referenced from the scene, which would make the scene's
+        /// dependency graph the whole game (see <see cref="ContentCache"/>).
+        /// </summary>
+        readonly ContentCache _content = new ContentCache();
+
+        /// <summary>Test seam: what this level is holding in memory right now.</summary>
+        internal ContentCache Content => _content;
         float _endTime = -1f;
         bool _sectorClear;
 
         public GameSession Session => _session;
+
+        /// <summary>Which game this is: a campaign level or an Endless run (GDD "Core Loop").</summary>
+        public GameMode Mode { get; private set; }
         public WaveDirector Director => _director;
 
-        /// <summary>True when this scene is an Endless run rather than a campaign level.</summary>
+        /// <summary>True when this is an Endless run rather than a campaign level.</summary>
         public bool IsEndless => _endless != null;
 
         /// <summary>The Endless run in progress, or null in the campaign.</summary>
         public EndlessRun EndlessRun => _endless?.Run;
-        public LevelDefinition Level => level;
         public BossView Boss => _boss;
         public Playfield Playfield { get; private set; }
         public int PlayerCount => players.Length;
@@ -180,23 +200,26 @@ namespace YASS.Gameplay
 
         void Awake()
         {
+            // A run started from the menus carries its difficulty and its mode; opening the scene directly
+            // uses the fields, so the level is still playable on its own in the Editor. Resolved before the
+            // check below, which needs to know which game this is before it can say what is missing.
+            Difficulty = RunContext.IsConfigured ? RunContext.Difficulty : difficulty;
+            Mode = RunContext.IsConfigured ? RunContext.Mode : modeWhenPlayedDirectly;
+            _level = ResolveLevel();
+
             if (!HasValidSetup())
             {
                 enabled = false;
                 return;
             }
-
-            // A run started from the menus carries its difficulty; opening the scene directly uses the field.
-            Difficulty = RunContext.IsConfigured ? RunContext.Difficulty : difficulty;
             _settings = DifficultySettings.For(Difficulty);
             _spawnSettings = _settings;
             _random = new SystemRandomSource(randomSeed != 0 ? randomSeed : Environment.TickCount);
             _session = new GameSession(_settings, _random, players.Length);
 
-            // A scene that carries an Endless definition is an Endless run; one that carries a level is a
-            // campaign level. The scene says what it is, so opening either directly still plays.
-            if (endless != null) _endless = new EndlessDirector(endless, Difficulty, _random);
-            else _director = new WaveDirector(level.ToSpecs(), _settings.EnemyCountMultiplier, level.FirstWaveDelay);
+            // One scene plays every level and Endless too, so the run says which game this is, not the scene.
+            if (Mode == GameMode.Endless) _endless = new EndlessDirector(endless, Difficulty, _random);
+            else _director = new WaveDirector(_level.ToSpecs(), _settings.EnemyCountMultiplier, _level.FirstWaveDelay);
 
             RestoreCampaignProgress();
             _commands = new PlayerCommand[players.Length];
@@ -228,18 +251,22 @@ namespace YASS.Gameplay
         /// <summary>The enemies and boss of one campaign level, and whatever that boss launches.</summary>
         void RegisterLevelPools()
         {
+            // One scene plays every level, so the backdrop comes from the level's own data rather than from
+            // whichever sprite a scene happened to be saved with, and only this level's is held.
+            if (sky != null) sky.Show(_content, _level.BackdropPath);
+
             // Only the boss this level actually has: prewarming a pool of Darts for a boss that launches
             // nothing would cost every level eight instances it never uses.
-            var bossMinion = level.BossPrefab != null && level.BossPrefab.Definition != null
-                ? level.BossPrefab.Definition.MinionPrefab
+            var bossMinion = _level.BossPrefab != null && _level.BossPrefab.Definition != null
+                ? _level.BossPrefab.Definition.MinionPrefab
                 : null;
             if (bossMinion != null) RegisterEnemyPool(bossMinion);
-            foreach (var wave in level.Waves)
+            foreach (var wave in _level.Waves)
             foreach (var group in wave.groups)
                 if (group.enemy != null) RegisterEnemyPool(group.enemy);
 
             // Created up front (inactive) so its particle systems do not hitch the boss's entrance.
-            _boss = Instantiate(level.BossPrefab, spawnRoot);
+            _boss = Instantiate(_level.BossPrefab, spawnRoot);
             _boss.gameObject.SetActive(false);
         }
 
@@ -255,6 +282,11 @@ namespace YASS.Gameplay
                     RegisterEnemyPool(boss.Definition.MinionPrefab);
 
             BeginEndlessCycle(advance: false);
+
+            // Opened on any of the skies, so two runs do not begin under the same one. Only the sky showing
+            // and the one arriving are ever held, not the whole ring.
+            if (sky != null)
+                sky.Begin(_content, endless.SkyPaths, (int)(_random.NextFloat() * endless.SkyPaths.Count));
         }
 
         /// <summary>
@@ -278,7 +310,9 @@ namespace YASS.Gameplay
             _director = new WaveDirector(specs, _spawnSettings.EnemyCountMultiplier, endlessFirstWaveDelay);
             _session.SetEndlessMultiplier(run.ScoreMultiplier);
 
-            if (backdrop != null && _endless.Backdrop != null) backdrop.sprite = _endless.Backdrop;
+            // The sky is deliberately not touched here. It drifts on its own clock (see SkyView and SkyCycle):
+            // changing it with the cycle put a hard cut at the moment a boss died, which is the busiest moment
+            // of the run and the one place a seam is certain to be seen.
 
             // The boss warning switched the music over; the waves of the next cycle are not a boss fight.
             MusicPlayer.PlayIfPresent(Track.Level);
@@ -313,6 +347,10 @@ namespace YASS.Gameplay
             _pickups?.Dispose();
             _mines?.Dispose();
             foreach (var pool in _enemyPools.Values) pool.Dispose();
+
+            // Leaving the level: nothing it was holding is wanted any more. The next level asks for its own.
+            if (sky != null) sky.ReleaseAll();
+            _content.Clear();
         }
 
         void FixedUpdate()
@@ -322,8 +360,15 @@ namespace YASS.Gameplay
             if (_cycleTurning)
             {
                 _cycleTurning = false;
-                BeginEndlessCycle(advance: true);
+
+                // Not if the run ended in the same batch of collisions that killed the boss: a new cycle would
+                // raise the cycle count and restart the level music behind the Game Over screen.
+                if (IsRunning) BeginEndlessCycle(advance: true);
             }
+
+            // Before the end-of-run check: the sky keeps drifting under the Game Over screen, which would
+            // otherwise freeze mid-dissolve behind it.
+            if (sky != null) sky.Tick(Time.fixedDeltaTime);
 
             CheckEndOfRun();
             if (!IsRunning) return;
@@ -459,8 +504,9 @@ namespace YASS.Gameplay
         {
             if (boss != null && boss.Definition != null) return boss.Definition.LevelNumber;
 
-            // Endless has no level of its own to fall back on; a boss without a definition is an authoring error.
-            return level != null ? level.LevelNumber : 1;
+            // In Endless the level is only the scene's fallback, so a boss met there is worth its own number
+            // or one; a boss without a definition is an authoring error.
+            return _level != null ? _level.LevelNumber : 1;
         }
 
         /// <summary>Returns true when the projectile was used up (hit or absorbed); false lets it fly on.</summary>
@@ -647,7 +693,7 @@ namespace YASS.Gameplay
         {
             var group = _endless != null
                 ? _endless.GroupFor(request.WaveIndex, request.GroupIndex)
-                : level.GetGroup(request.WaveIndex, request.GroupIndex);
+                : _level.GetGroup(request.WaveIndex, request.GroupIndex);
             var margin = SpawnMarginFor(group.enemy);
             var position = new Vector2(Playfield.MaxX + spawnEdgeMargin + request.XOffset,
                 Playfield.Inset(margin).YAt(request.NormalisedY));
@@ -880,6 +926,23 @@ namespace YASS.Gameplay
             return pool;
         }
 
+        /// <summary>
+        /// Which level to play. A run started from the menus says where it has got to and the campaign says
+        /// what that step is; a scene opened directly in the Editor falls back to its own field, so a level is
+        /// still playable on its own without going through the title screen.
+        /// </summary>
+        LevelDefinition ResolveLevel()
+        {
+            // No run: the scene was opened directly in the Editor, so its own field is the answer.
+            var run = RunContext.Campaign;
+            if (run == null) return level;
+
+            // A run in progress must get the level it has reached or nothing at all. Falling back here would
+            // quietly replay level 1 for the rest of the campaign, which is the failure the old model could
+            // not have: loading a scene by a name that did not exist was loud.
+            return campaign != null ? campaign.LevelFor(run.LevelIndex) : null;
+        }
+
         bool HasValidSetup()
         {
             var valid = true;
@@ -900,25 +963,27 @@ namespace YASS.Gameplay
             Require(spawnRoot, nameof(spawnRoot));
             Require(playerDefinition, nameof(playerDefinition));
             Require(playerProjectilePrefab, nameof(playerProjectilePrefab));
-            if (endless == null) Require(level, nameof(level));
-            else if (endless.Validate() is string endlessProblem) Fail($"Endless: {endlessProblem}.");
-
-            if (endless != null && level != null)
-                Fail("a scene is either a campaign level or an Endless run, not both.");
-
-            // The flow layer says which mode it started; the scene says which it is. If they disagree, one of
-            // them is wrong and the run would quietly be the wrong game.
-            if (RunContext.IsConfigured && (RunContext.Mode == GameMode.Endless) != (endless != null))
-                Fail($"this scene is {(endless != null ? "an Endless run" : "a campaign level")}, " +
-                     $"but a {RunContext.Mode} run was started.");
+            Require(sky, nameof(sky)); // one scene, so the backdrop is painted rather than saved with it
+            if (Mode == GameMode.Endless)
+            {
+                if (endless == null) Fail("an Endless run was started but 'endless' is not assigned.");
+                else if (endless.Validate() is string endlessProblem) Fail($"Endless: {endlessProblem}.");
+            }
+            else if (_level == null)
+            {
+                var run = RunContext.Campaign;
+                if (run == null) Fail("no level to play: 'level' is not assigned.");
+                else if (campaign == null) Fail("a campaign run is in progress but 'campaign' is not assigned.");
+                else Fail($"the campaign has no level {run.LevelNumber} to play.");
+            }
             Require(enemyProjectilePrefab, nameof(enemyProjectilePrefab));
             Require(meteorPrefab, nameof(meteorPrefab));
             Require(pickupPrefab, nameof(pickupPrefab));
             Require(minePrefab, nameof(minePrefab));
 
             if (worldCamera != null && !worldCamera.orthographic) Fail("the world camera must be orthographic.");
-            if (endless == null && level != null && level.Validate() is string problem)
-                Fail($"level '{level.name}': {problem}.");
+            if (Mode != GameMode.Endless && _level != null && _level.Validate() is string problem)
+                Fail($"level '{_level.name}': {problem}.");
 
             if (players.Length < 1 || players.Length > 4) Fail("there must be between 1 and 4 players.");
             if (inputs.Length != players.Length) Fail("there must be one input reader per player.");

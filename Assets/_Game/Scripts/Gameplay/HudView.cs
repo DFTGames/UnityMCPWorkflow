@@ -63,7 +63,7 @@ namespace YASS.Gameplay
                 chainText.SetCharArray(_buffer, 0, NumberFormatter.WriteMultiplier(score.ChainMultiplier, _buffer));
             }
 
-            // Endless counts its cycles where the campaign has nothing to say; the label is simply absent there.
+            // Endless counts its cycles where the campaign has nothing to say, so the label is hidden there.
             if (cycleText != null && level.Cycle != _cycle)
             {
                 _cycle = level.Cycle;

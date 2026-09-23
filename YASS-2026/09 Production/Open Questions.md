@@ -26,6 +26,7 @@ updated: 2026-09-20
 - [ ] Boss health runs 200 to 700 across the campaign, and the wave scripts get longer rather than faster. Confirm the curve in playtesting.
 - [ ] Endless has no grace period at a cycle boundary: the campaign makes the player untouchable from a boss's defeat until Sector Clear, but in Endless the dead boss's bullets still in the air can take a life while the next cycle starts. Deliberate, or should the boundary be safe?
 - [ ] Endless draws its waves from the levels up to its cycle number plus one, so by cycle 7 everything is in the pool and later cycles differ only by the speed and count multipliers, which cap at cycle 11. Does a long run need another source of escalation, or is the score multiplier enough?
+- [ ] Boss and enemy prefabs are still held by reference, so an Endless cycle keeps every boss and enemy in the campaign resident rather than the ones it drew. The backdrops and skies were moved behind `Resources` paths (see Technical Design); the prefabs have not been, and Endless is where it would pay.
 - [ ] Enemy and boss health, speed and damage values.
 - [ ] Gameplay colour palette: the menus now have one ([[Art Direction]]); should the ships and hazards be bound to it too?
 - [ ] Sound effects list.

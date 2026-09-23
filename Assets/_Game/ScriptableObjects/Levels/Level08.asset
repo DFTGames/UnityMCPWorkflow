@@ -218,4 +218,4 @@ MonoBehaviour:
       spacing: 0.8
       startDelay: 2.5
   bossPrefab: {fileID: 5991788776133521844, guid: a1d1f483a73616a4aacf7a61bfbc1967, type: 3}
-  backdrop: {fileID: 21300000, guid: 6bd8cc3d8260b1f4d94b53e937ab74c4, type: 3}
+  backdropPath: Backgrounds/HomeworldBackground

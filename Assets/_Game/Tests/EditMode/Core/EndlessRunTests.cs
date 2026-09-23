@@ -69,19 +69,6 @@ namespace YASS.Tests.Core
         }
 
         [Test]
-        public void TheSettingWalksTheCampaignAndLoops()
-        {
-            var run = Run();
-
-            Assert.That(run.SettingIndex, Is.EqualTo(0), "cycle 1 wears level 1's setting");
-            for (var i = 0; i < 7; i++) run.CompleteCycle();
-            Assert.That(run.SettingIndex, Is.EqualTo(7), "cycle 8 wears level 8's");
-
-            run.CompleteCycle();
-            Assert.That(run.SettingIndex, Is.EqualTo(0), "and cycle 9 starts round again");
-        }
-
-        [Test]
         public void EarlyCyclesDrawFromEarlyLevelsOnly()
         {
             // Cycle 1 draws from levels 1 and 2: an Endless run has to open at something like the campaign's

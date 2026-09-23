@@ -123,6 +123,9 @@ namespace YASS.Tests.Gameplay
                 var so = new SerializedObject(level);
                 so.FindProperty("bossPrefab").objectReferenceValue =
                     AssetDatabase.LoadAssetAtPath<BossView>("Assets/_Game/Prefabs/HiveCarrier.prefab");
+
+                // Complete but for the fault under test: a level with no backdrop is rejected in its own right.
+                so.FindProperty("backdropPath").stringValue = "Backgrounds/NebulaBackground";
                 var waves = so.FindProperty("waves");
                 waves.arraySize = 1;
                 var groups = waves.GetArrayElementAtIndex(0).FindPropertyRelative("groups");

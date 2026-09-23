@@ -3,7 +3,7 @@ tags:
   - gdd
   - content
 status: draft
-updated: 2026-09-20
+updated: 2026-09-22
 ---
 
 # Level 06 - Ion Storm
@@ -11,8 +11,8 @@ updated: 2026-09-20
 Setting: a charged storm of violet gas and static (see [[Art Direction]]). Length: about 4 minutes. Enemies: Dart, Weaver, Swarm drone, Gunship, Diver, Mine Layer, Frigate, Sniper; splitting and solid meteors. Boss: **Tempest** (below).
 
 ## Waves
-Counts are for Pilot; the enemy count multiplier scales each group ([[Wave System]]). Built by
-`Tools/YASS/Build Levels`: change a wave there and rebuild rather than editing the asset by hand.
+Counts are for Pilot; the enemy count multiplier scales each group ([[Wave System]]). The level is
+a `LevelDefinition` asset: change a wave by editing it in the Inspector.
 
 | # | Wave | Groups |
 | - | ---- | ------ |

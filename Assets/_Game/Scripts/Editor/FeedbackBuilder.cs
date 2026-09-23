@@ -11,7 +11,7 @@ namespace YASS.Editor
     /// <summary>
     /// Builds the game-feel assets: the sound bank (matching generated clips to <see cref="Sfx"/> entries by
     /// name) and the particle effect prefabs (GDD "Art Direction", Visual effects; "Audio Direction").
-    /// Re-runnable, like the menu builders: tune a value here and rebuild rather than hand-editing prefabs.
+    /// Re-runnable: tune a value here and rebuild rather than hand-editing prefabs.
     /// </summary>
     public static class FeedbackBuilder
     {
@@ -28,8 +28,8 @@ namespace YASS.Editor
         /// </summary>
         const int EffectSortingOrder = 7;
 
-        /// <summary>Where an effect's prefab lives, so the wiring builder and this one cannot disagree.</summary>
-        public static string PrefabPathFor(Effect effect) => $"{EffectFolder}/{effect}.prefab";
+        /// <summary>Where an effect's prefab lives.</summary>
+        static string PrefabPathFor(Effect effect) => $"{EffectFolder}/{effect}.prefab";
 
         /// <summary>Per-sound trim, so a long explosion does not drown a shot (GDD "Audio Direction", Mixing).</summary>
         static float VolumeFor(Sfx sfx)
@@ -85,7 +85,7 @@ namespace YASS.Editor
             }
 
             var serialized = new SerializedObject(bank);
-            var array = MenuSceneParts.Find(serialized, "entries");
+            var array = Find(serialized, "entries");
             array.arraySize = entries.Count;
             for (var i = 0; i < entries.Count; i++)
             {
@@ -284,6 +284,17 @@ namespace YASS.Editor
 
             EditorUtility.SetDirty(material);
             return material;
+        }
+
+        /// <summary>Finds a serialised field, complaining by name rather than throwing a null reference later.</summary>
+        static SerializedProperty Find(SerializedObject serialized, string field)
+        {
+            var property = serialized.FindProperty(field);
+            if (property == null)
+                throw new InvalidOperationException(
+                    $"{serialized.targetObject.GetType().Name} has no serialised field '{field}'.");
+
+            return property;
         }
     }
 }

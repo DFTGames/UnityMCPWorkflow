@@ -23,7 +23,7 @@ namespace YASS.Tests.UI
     public class MenuFlowTests
     {
         const string TitleScene = "Title";
-        const string LevelScene = "Level01";
+        const string LevelScene = "Level";
 
         bool _previousRunInBackground;
         InputSettings.BackgroundBehavior _previousBackgroundBehavior;
@@ -270,7 +270,7 @@ namespace YASS.Tests.UI
             yield return null;
 
             FindButton("Ace").onClick.Invoke();
-            yield return WaitUntil(() => SceneManager.GetActiveScene().name == LevelScene, 10f, "Level01 to load");
+            yield return WaitUntil(() => SceneManager.GetActiveScene().name == LevelScene, 10f, "the level to load");
             yield return null;
 
             var runner = Object.FindAnyObjectByType<GameRunner>();
@@ -565,7 +565,7 @@ namespace YASS.Tests.UI
             FindButton("Play").onClick.Invoke();
             yield return null;
             FindButton("Cadet").onClick.Invoke();
-            yield return WaitUntil(() => SceneManager.GetActiveScene().name == LevelScene, 10f, "Level01 to load");
+            yield return WaitUntil(() => SceneManager.GetActiveScene().name == LevelScene, 10f, "the level to load");
             yield return null;
 
             var runner = Object.FindAnyObjectByType<GameRunner>();
@@ -607,7 +607,7 @@ namespace YASS.Tests.UI
             FindButton("Play").onClick.Invoke();
             yield return null;
             FindButton("Pilot").onClick.Invoke();
-            yield return WaitUntil(() => SceneManager.GetActiveScene().name == LevelScene, 10f, "Level01 to load");
+            yield return WaitUntil(() => SceneManager.GetActiveScene().name == LevelScene, 10f, "the level to load");
             yield return null;
 
             var run = GameFlow.Run;
@@ -666,7 +666,7 @@ namespace YASS.Tests.UI
             FindButton("Play").onClick.Invoke();
             yield return null;
             FindButton("Pilot").onClick.Invoke();
-            yield return WaitUntil(() => SceneManager.GetActiveScene().name == LevelScene, 10f, "Level01 to load");
+            yield return WaitUntil(() => SceneManager.GetActiveScene().name == LevelScene, 10f, "the level to load");
             yield return null;
 
             if (fromTheFinalLevel)

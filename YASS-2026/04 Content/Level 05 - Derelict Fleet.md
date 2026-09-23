@@ -3,7 +3,7 @@ tags:
   - gdd
   - content
 status: draft
-updated: 2026-09-20
+updated: 2026-09-22
 ---
 
 # Level 05 - Derelict Fleet
@@ -11,8 +11,8 @@ updated: 2026-09-20
 Setting: a graveyard of broken warships in cold green light (see [[Art Direction]]). Length: about 4 minutes. Enemies: Dart, Swarm drone, Gunship, Diver, Mine Layer, Frigate; solid meteors. Boss: **Dreadnought** (below).
 
 ## Waves
-Counts are for Pilot; the enemy count multiplier scales each group ([[Wave System]]). Built by
-`Tools/YASS/Build Levels`: change a wave there and rebuild rather than editing the asset by hand.
+Counts are for Pilot; the enemy count multiplier scales each group ([[Wave System]]). The level is
+a `LevelDefinition` asset: change a wave by editing it in the Inspector.
 
 | # | Wave | Groups |
 | - | ---- | ------ |

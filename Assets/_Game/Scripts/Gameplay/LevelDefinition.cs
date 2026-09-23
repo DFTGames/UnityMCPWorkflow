@@ -40,15 +40,21 @@ namespace YASS.Gameplay
         [SerializeField, Min(0f)] float firstWaveDelay = 1f;
         [SerializeField] Wave[] waves = Array.Empty<Wave>();
         [SerializeField] BossView bossPrefab;
-        [SerializeField, Tooltip("The level's sky. Its own scene has this already; Endless borrows it per cycle.")]
-        Sprite backdrop;
+        [SerializeField, Tooltip("The level's sky, under Resources: loaded when the level starts, freed when it ends.")]
+        string backdropPath;
 
         public int LevelNumber => levelNumber;
         public string DisplayName => displayName;
         public float FirstWaveDelay => firstWaveDelay;
         public IReadOnlyList<Wave> Waves => waves;
         public BossView BossPrefab => bossPrefab;
-        public Sprite Backdrop => backdrop;
+
+        /// <summary>
+        /// Where the level's sky lives, as a Resources path. A path rather than a reference so that a level
+        /// holds its own sky and nothing else: one scene plays all eight, and a direct reference would put
+        /// every backdrop in the scene's dependency graph (see <see cref="ContentCache"/>).
+        /// </summary>
+        public string BackdropPath => backdropPath;
 
         public Group GetGroup(int waveIndex, int groupIndex) => waves[waveIndex].groups[groupIndex];
 
@@ -90,6 +96,10 @@ namespace YASS.Gameplay
         public string Validate()
         {
             if (bossPrefab == null) return "no boss prefab";
+
+            // One scene plays every level, so this is the only thing that paints the sky: without it the
+            // level opens on a blank backdrop and nothing says why.
+            if (string.IsNullOrEmpty(backdropPath)) return "no backdrop";
             for (var w = 0; w < waves.Length; w++)
             {
                 var groups = waves[w].groups;

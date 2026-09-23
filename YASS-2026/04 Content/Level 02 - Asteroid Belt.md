@@ -3,7 +3,7 @@ tags:
   - gdd
   - content
 status: draft
-updated: 2026-09-20
+updated: 2026-09-22
 ---
 
 # Level 02 - Asteroid Belt
@@ -11,8 +11,8 @@ updated: 2026-09-20
 Setting: a dense belt of tumbling rock lit by a distant sun (see [[Art Direction]]). Length: about 3.5 minutes. Enemies: Dart, Weaver, Swarm drone, Gunship; splitting and solid meteors. Boss: **Rock Crusher** (below).
 
 ## Waves
-Counts are for Pilot; the enemy count multiplier scales each group ([[Wave System]]). Built by
-`Tools/YASS/Build Levels`: change a wave there and rebuild rather than editing the asset by hand.
+Counts are for Pilot; the enemy count multiplier scales each group ([[Wave System]]). The level is
+a `LevelDefinition` asset: change a wave by editing it in the Inspector.
 
 | # | Wave | Groups |
 | - | ---- | ------ |

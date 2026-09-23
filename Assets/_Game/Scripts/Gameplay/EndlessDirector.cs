@@ -40,9 +40,6 @@ namespace YASS.Gameplay
         /// <summary>The boss of the cycle being played.</summary>
         public BossView BossPrefab { get; private set; }
 
-        /// <summary>The sky of the cycle being played.</summary>
-        public Sprite Backdrop => _definition.Level(Run.SettingIndex).Backdrop;
-
         /// <summary>
         /// Draws the cycle's waves and boss and returns the wave script for them. Called once per cycle, before
         /// its first wave.

@@ -40,6 +40,8 @@ namespace YASS.Core
     {
         readonly PlayerCarry[] _players;
 
+        bool _banked;
+
         public CampaignRun(Difficulty difficulty, int levelCount, int playerCount = 1)
         {
             if (levelCount < 1) throw new ArgumentOutOfRangeException(nameof(levelCount));
@@ -74,13 +76,18 @@ namespace YASS.Core
         /// <summary>True when the level just cleared was the last one.</summary>
         public bool IsFinalLevel => LevelIndex == LevelCount - 1;
 
-        /// <summary>What a player carries into the current level, or null on the first one.</summary>
+        /// <summary>
+        /// What a player carries into the current level, or null when nothing has been banked yet. Keyed on
+        /// whether a level was actually completed rather than on the level number: a run moved to a later
+        /// level without playing the ones before it has nothing to carry, and handing back the empty value
+        /// would start that player with no lives and no health.
+        /// </summary>
         public PlayerCarry? CarryFor(int playerIndex)
         {
             if (playerIndex < 0 || playerIndex >= _players.Length)
                 throw new ArgumentOutOfRangeException(nameof(playerIndex));
 
-            return LevelIndex == 0 ? (PlayerCarry?)null : _players[playerIndex];
+            return _banked ? _players[playerIndex] : (PlayerCarry?)null;
         }
 
         /// <summary>
@@ -99,13 +106,14 @@ namespace YASS.Core
             for (var i = 0; i < _players.Length && i < session.PlayerCount; i++)
                 _players[i] = PlayerCarry.From(session.GetPlayer(i));
 
+            _banked = true;
             LevelIndex++;
         }
 
         /// <summary>
-        /// Test seam: jumps the run to its last level, so a test can reach the campaign's ending without playing
-        /// all eight of them. It does not invent the levels it skipped, so what each player carries is still
-        /// whatever the run has banked: call it while the level in play has already started.
+        /// Test seam: jumps the run to its last level, so a test can reach the campaign's ending without
+        /// playing all eight of them. It does not invent the levels it skipped, so the run still carries
+        /// whatever it has banked, which for a fresh run is nothing at all.
         /// </summary>
         internal void SkipToFinalLevel() => LevelIndex = LevelCount - 1;
 

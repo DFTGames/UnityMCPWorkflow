@@ -12,16 +12,26 @@ using Object = UnityEngine.Object;
 namespace YASS.Tests.Gameplay
 {
     /// <summary>
-    /// Shared setup for the tests that play the real Level01 scene: a fresh run with in-memory settings, plus the
+    /// Shared setup for the tests that play the real level scene: a fresh run with in-memory settings, plus the
     /// handful of helpers they all need. Prefabs are loaded through the AssetDatabase, so these run in the
     /// Editor only.
+    ///
+    /// One scene plays every level and Endless too, so a test that wants something other than the scene's own
+    /// fallback level says so in <see cref="ConfigureRun"/>, before the scene loads and its runner reads the
+    /// context.
     /// </summary>
     public abstract class LevelSceneFixture
     {
         protected const string PrefabDir = "Assets/_Game/Prefabs/";
 
-        /// <summary>The scene these tests play. Endless has its own, built from this one.</summary>
-        protected virtual string SceneName => "Level01";
+        /// <summary>The one scene the game is played in.</summary>
+        protected const string SceneName = "Level";
+
+        /// <summary>
+        /// Sets up the run before the scene loads. The default is no run at all, which is a level opened
+        /// directly: the runner falls back to the level assigned in the scene.
+        /// </summary>
+        protected virtual void ConfigureRun() { }
 
         protected static readonly PlayerCommand Idle = new PlayerCommand(NVector2.Zero, false, NVector2.UnitX);
         protected static readonly PlayerCommand FireForward = new PlayerCommand(NVector2.Zero, true, NVector2.UnitX);
@@ -46,6 +56,7 @@ namespace YASS.Tests.Gameplay
             // The level reads the run context and the scene's SettingsApplier reads the saved settings: start
             // from a clean, in-memory state so these tests neither depend on nor touch either.
             RunContext.Clear();
+            ConfigureRun();
             YASS.UI.GameFlow.UseSettings(new SettingsService(new MemorySettingsStore()));
             yield return SceneManager.LoadSceneAsync(SceneName, LoadSceneMode.Single);
 

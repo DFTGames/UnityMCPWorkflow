@@ -12,12 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a53b954cffb142f47b82efef1e6f36fe, type: 3}
   m_Name: Campaign
   m_EditorClassIdentifier: YASS.Game::YASS.UI.Campaign
-  levelScenes:
-  - Level01
-  - Level02
-  - Level03
-  - Level04
-  - Level05
-  - Level06
-  - Level07
-  - Level08
+  levels:
+  - {fileID: 11400000, guid: 290b1565854e2594ba9a27af5dfa123a, type: 2}
+  - {fileID: 11400000, guid: d11655d97a57c9647813a78447228cec, type: 2}
+  - {fileID: 11400000, guid: f6a4c7e5fda64eb4eb69cf204bd492c1, type: 2}
+  - {fileID: 11400000, guid: 1843a00b0b0993f43877885cf1a085fb, type: 2}
+  - {fileID: 11400000, guid: 8852fdc1ba12d434d9dbc6fbb8563600, type: 2}
+  - {fileID: 11400000, guid: d688e82544cc5b24a868dbdbd5799b88, type: 2}
+  - {fileID: 11400000, guid: 58c97d09750ea65468150974d584886d, type: 2}
+  - {fileID: 11400000, guid: a88d2f01aacc40c41b3ebeebd25c8f1f, type: 2}

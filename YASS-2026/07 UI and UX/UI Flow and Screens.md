@@ -9,7 +9,7 @@ updated: 2026-09-22
 # UI Flow and Screens
 
 ## Scenes
-`Title` (menus) and one scene per level (`Level01`). Loading a level shows it immediately; there is no separate loading screen yet.
+`Title` (menus) and `Level`, the one scene the game is played in: every campaign level and an Endless run all play there, the level itself being data rather than a scene. Loading a level shows it immediately; there is no separate loading screen yet.
 
 ## Flow
 ```mermaid
@@ -17,14 +17,15 @@ flowchart LR
   Title --> Difficulty
   Title --> Settings
   Title --> Credits
-  Difficulty --> Level01
-  Level01 --> Pause
-  Pause --> Level01
+  Difficulty --> Level
+  Level --> Pause
+  Pause --> Level
   Pause --> Settings
   Pause --> Title
-  Level01 --> GameOver
-  Level01 --> SectorClear
-  GameOver --> Level01
+  Level --> GameOver
+  Level --> SectorClear
+  GameOver --> Level
+  SectorClear --> Level
   GameOver --> Title
   SectorClear --> Title
 ```
