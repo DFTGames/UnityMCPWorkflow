@@ -97,6 +97,12 @@ namespace YASS.Gameplay
         {
             if (bossPrefab == null) return "no boss prefab";
 
+            // Reaching into the boss's own data, which nothing else does: its sprite is loaded by name and a
+            // level whose boss has no path would play the fight against nothing visible.
+            if (bossPrefab.Definition == null) return $"{bossPrefab.name} has no definition";
+            if (bossPrefab.Definition.Validate() is string bossProblem)
+                return $"{bossPrefab.name}: {bossProblem}";
+
             // One scene plays every level, so this is the only thing that paints the sky: without it the
             // level opens on a blank backdrop and nothing says why.
             if (string.IsNullOrEmpty(backdropPath)) return "no backdrop";

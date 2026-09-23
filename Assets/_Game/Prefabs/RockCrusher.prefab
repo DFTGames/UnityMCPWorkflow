@@ -4765,7 +4765,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 1
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: 81a5197673aa5da4b92a1ecc95fcbfdd, type: 3}
+  m_Sprite: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -4773,7 +4773,7 @@ SpriteRenderer:
   m_Size: {x: 4.2, y: 3.1171873}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
+  m_WasSpriteAssigned: 0
   m_SpriteSortPoint: 0
   m_BlendShapeWeights: []
 --- !u!61 &6003485798091968474
@@ -4927,6 +4927,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: YASS.Game::YASS.Gameplay.BossView
   definition: {fileID: 11400000, guid: f3dafdb5ed19ac7448ae79f5cec0a9c1, type: 2}
+  bodyRenderer: {fileID: 7551086846059902945}
   body: {fileID: 1800749342412622364}
   core: {fileID: 4057397507076389860}
   launchBays:

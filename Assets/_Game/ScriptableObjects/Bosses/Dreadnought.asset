@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Dreadnought
   m_EditorClassIdentifier: YASS.Game::YASS.Gameplay.BossDefinition
   displayName: Dreadnought
+  spritePath: Bosses/Dreadnought
   levelNumber: 5
   maxHealth: 460
   hullDamageMultiplier: 0.5

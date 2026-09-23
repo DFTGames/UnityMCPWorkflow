@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Tempest
   m_EditorClassIdentifier: YASS.Game::YASS.Gameplay.BossDefinition
   displayName: Tempest
+  spritePath: Bosses/Tempest
   levelNumber: 6
   maxHealth: 500
   hullDamageMultiplier: 0.5

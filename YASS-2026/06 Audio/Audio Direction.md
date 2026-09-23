@@ -3,7 +3,7 @@ tags:
   - gdd
   - audio
 status: approved
-updated: 2026-09-22
+updated: 2026-09-23
 ---
 
 # Audio Direction
@@ -48,6 +48,6 @@ The saved volumes are in force from the moment the game opens, not from the mome
 
 Effect voices feed the SFX group and carry only their clip's own trim from the sound bank, so the volume is applied once. Repeats are limited per sound (shots 60 ms, explosions 40 ms, player and shield hits 100 ms) with a small repeating pitch variation so a stream of shots is not one flat note. Twelve voices play at once; when they are all busy the one closest to finishing is reused, so a four-second boss explosion survives the shots fired over it.
 
-Sound effects are generated into `Assets/_Game/Audio/SFX/`, one file per entry above, named after it. `Tools/YASS/Build Feedback Assets` matches those files to the game's sound list, so adding or replacing a sound only means generating a file with the right name and rebuilding.
+Sound effects are generated into `Assets/_Game/Audio/SFX/`, one file per entry above, named after it, and listed in the `SoundBank` asset. Adding or replacing a sound means generating the file and pointing the bank's row at it.
 
 Back to [[00 GDD Home]]

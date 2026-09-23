@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: RockCrusher
   m_EditorClassIdentifier: YASS.Game::YASS.Gameplay.BossDefinition
   displayName: Rock Crusher
+  spritePath: Bosses/RockCrusher
   levelNumber: 2
   maxHealth: 260
   hullDamageMultiplier: 0.5

@@ -31,6 +31,9 @@ namespace YASS.Gameplay
 
         [Header("Identity")]
         [SerializeField] string displayName = "Boss";
+
+        [SerializeField, Tooltip("The boss's own sprite, under Resources: loaded when it arrives, freed when it goes.")]
+        string spritePath;
         [SerializeField, Min(1)] int levelNumber = 1;
 
         [Header("Rules")]
@@ -86,6 +89,13 @@ namespace YASS.Gameplay
         [SerializeField, Min(0.1f)] float pullRadius = 14f;
 
         public string DisplayName => displayName;
+
+        /// <summary>
+        /// Where this boss's sprite lives, as a Resources path. A path rather than a reference because a boss
+        /// is the heaviest art in the game and only one is ever in play: held by reference it would be packed
+        /// with the atlas and resident for every level (see <see cref="ContentCache"/>).
+        /// </summary>
+        public string SpritePath => spritePath;
         public int LevelNumber => levelNumber;
         public float MaxHealth => maxHealth;
         public float HullDamageMultiplier => hullDamageMultiplier;
@@ -143,6 +153,8 @@ namespace YASS.Gameplay
         /// <summary>Returns a description of the first problem found, or null when the boss is usable.</summary>
         public string Validate()
         {
+            // The boss paints itself from this at spawn: without it the fight happens against nothing visible.
+            if (string.IsNullOrEmpty(spritePath)) return "no sprite path";
             if (openSeconds >= cycleSeconds) return "the core is open for the whole cycle, so it is never armoured";
             if (attacks.Length == 0) return "no attacks";
             if (hullDamageMultiplier > coreDamageMultiplier)

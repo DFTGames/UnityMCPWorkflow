@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Overmind
   m_EditorClassIdentifier: YASS.Game::YASS.Gameplay.BossDefinition
   displayName: The Overmind
+  spritePath: Bosses/Overmind
   levelNumber: 8
   maxHealth: 700
   hullDamageMultiplier: 0.5

@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: FrostLancer
   m_EditorClassIdentifier: YASS.Game::YASS.Gameplay.BossDefinition
   displayName: Frost Lancer
+  spritePath: Bosses/FrostLancer
   levelNumber: 4
   maxHealth: 360
   hullDamageMultiplier: 0.5

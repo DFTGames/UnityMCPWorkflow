@@ -1,12 +1,12 @@
 fileFormatVersion: 2
-guid: a63296c383c1a0a41b0c0451c26cdee0
+guid: 7646d2b79922fbf43b6ca36a90ee31f7
 labels:
 - UnityAI
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 4964337050964233518
-    second: Sunforge_0
+      213: -4781544398011593356
+    second: Overmind_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -53,7 +53,7 @@ TextureImporter:
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 116.36363
+  spritePixelsToUnits: 98.46154
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -79,7 +79,7 @@ TextureImporter:
     maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 0
+    textureCompression: 2
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -143,7 +143,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Sunforge_0
+      name: Overmind_0
       rect:
         serializedVersion: 2
         x: 0
@@ -158,8 +158,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: e2d8804ee3ed4e440800000000000000
-      internalID: 4964337050964233518
+      spriteID: 47d82c624ba84adb0800000000000000
+      internalID: -4781544398011593356
       vertices: []
       indices: 
       edges: []
@@ -178,7 +178,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Sunforge_0: 4964337050964233518
+      Overmind_0: -4781544398011593356
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

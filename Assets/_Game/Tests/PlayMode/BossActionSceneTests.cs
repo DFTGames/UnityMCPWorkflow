@@ -26,8 +26,15 @@ namespace YASS.Tests.Gameplay
             Runner.SetCommandOverride(0, Idle);
 
             var prefab = LoadAsset<GameObject>(BossPrefabDir + prefabName + ".prefab").GetComponent<BossView>();
+
+            // Standing in for the runner: a boss takes its art from the cache, and the cache holds only what
+            // it has been asked for, so a test putting its own boss on the field has to ask for its art.
+            Runner.BossContent.Require<Sprite>(new[] { prefab.Definition.SpritePath });
+
             var boss = Object.Instantiate(prefab);
             boss.Init(Runner, Session.Settings, new Vector2(Runner.Playfield.MaxX + 3f, ShipPosition.y));
+
+            Assert.That(boss.BodySprite, Is.Not.Null, prefabName + " arrived with no art");
 
             // It does nothing until it has flown in; everything these tests look for happens after that.
             yield return WaitUntil(() => HasArrived(boss), 8f, prefabName + " to reach its station");

@@ -21,8 +21,10 @@ namespace YASS.Gameplay
     /// blocks; one that needs an asset the same frame it asks for it pays for the load, which is right when a
     /// level is starting and there is nothing to draw yet anyway.
     ///
-    /// **One owner.** <see cref="Require{T}"/> means "hold exactly this and nothing else", so a second owner
-    /// calling it would free the first one's assets. The runner's cache belongs to the sky.
+    /// **One owner each.** <see cref="Require{T}"/> means "hold exactly this and nothing else", so a second
+    /// owner calling it would free the first one's assets. The runner therefore keeps one of these per owner:
+    /// one for the sky, one for the boss. Two caches must not be given the same path, because each frees a
+    /// sprite's texture without being able to see what the other is holding.
     ///
     /// Keys are Resources paths: no extension, relative to a <c>Resources</c> folder ("Backgrounds/Nebula").
     /// </remarks>
@@ -31,6 +33,9 @@ namespace YASS.Gameplay
         readonly Dictionary<string, Object> _loaded = new Dictionary<string, Object>();
         readonly Dictionary<string, ResourceRequest> _loading = new Dictionary<string, ResourceRequest>();
         readonly HashSet<string> _failed = new HashSet<string>();
+
+        /// <summary>What the owner has asked for, so a fetch of anything else can be reported.</summary>
+        readonly HashSet<string> _wasRequired = new HashSet<string>();
         readonly AssetResidency _residency = new AssetResidency();
         readonly List<string> _toLoad = new List<string>();
         readonly List<string> _toFree = new List<string>();
@@ -47,6 +52,11 @@ namespace YASS.Gameplay
         /// </summary>
         public void Require<T>(IReadOnlyCollection<string> paths) where T : Object
         {
+            _wasRequired.Clear();
+            if (paths != null)
+                foreach (var path in paths)
+                    if (!string.IsNullOrEmpty(path)) _wasRequired.Add(path);
+
             _residency.Plan(paths, _toLoad, _toFree);
 
             foreach (var path in _toFree) Free(path);
@@ -76,7 +86,13 @@ namespace YASS.Gameplay
             if (arrived != null) return arrived;
             if (string.IsNullOrEmpty(path) || _failed.Contains(path)) return null;
 
-            // Blocking, and deliberately: the caller has said it cannot carry on without this.
+            // Blocking, and deliberately: the caller has said it cannot carry on without this. Asking for
+            // something never required is a caller's mistake, not a service this offers: it makes the cache
+            // hold more than was asked for, which is the one promise it makes.
+            if (!_wasRequired.Contains(path))
+                Debug.LogError($"{nameof(ContentCache)}: {path} was fetched without being required, so the " +
+                               "cache now holds more than its owner asked for.");
+
             _loading.Remove(path);
             Store(path, Resources.Load<T>(path));
 

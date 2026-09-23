@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Sunforge
   m_EditorClassIdentifier: YASS.Game::YASS.Gameplay.BossDefinition
   displayName: Sunforge
+  spritePath: Bosses/Sunforge
   levelNumber: 3
   maxHealth: 320
   hullDamageMultiplier: 0.5

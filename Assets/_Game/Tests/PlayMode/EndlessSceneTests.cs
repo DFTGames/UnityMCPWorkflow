@@ -119,6 +119,35 @@ namespace YASS.Tests.Gameplay
         }
 
         [UnityTest]
+        public IEnumerator ARunHoldsOnlyTheBossItIsFighting()
+        {
+            // Eight boss sprites, one fight: held by reference they would all be resident, which is why they
+            // are outside the sprite atlas and loaded by name.
+            Runner.SpawningEnabled = false;
+            Runner.SetCommandOverride(0, Idle);
+
+            // The art is fetched in the background, so wait for it rather than assuming one frame is enough.
+            yield return WaitUntil(() => Runner.BossContent.LoadedCount == 1, 5f, "the boss art to load");
+
+            var first = Runner.Boss.Definition.SpritePath;
+            Assert.That(Runner.BossContent.Get<Sprite>(first), Is.Not.Null, "the boss in play has no art");
+
+            // Keep going until the ring actually draws a different boss, or the assertion that the old art is
+            // given back would simply not run whenever two cycles happen to draw the same one.
+            for (var cycle = 0; cycle < 6 && Runner.Boss.Definition.SpritePath == first; cycle++)
+                yield return ClearTheCycle();
+
+            Assert.That(Runner.Boss.Definition.SpritePath, Is.Not.EqualTo(first),
+                "six cycles drew the same boss every time, so this proves nothing");
+
+            yield return WaitUntil(() => Runner.BossContent.LoadedCount == 1, 5f, "the next boss art to load");
+            Assert.That(Runner.BossContent.Count, Is.EqualTo(1),
+                "a run holds one boss's art; the beaten boss's was never given back");
+            Assert.That(Runner.BossContent.Get<Sprite>(Runner.Boss.Definition.SpritePath), Is.Not.Null,
+                "the boss now being fought has no art");
+        }
+
+        [UnityTest]
         public IEnumerator ARunHoldsOnlyTheSkyItIsShowing()
         {
             // Holding the whole ring because a definition referenced it is what this replaced. A run keeps the

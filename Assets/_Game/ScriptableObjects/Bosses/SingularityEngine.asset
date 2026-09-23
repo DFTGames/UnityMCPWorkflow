@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: SingularityEngine
   m_EditorClassIdentifier: YASS.Game::YASS.Gameplay.BossDefinition
   displayName: Singularity Engine
+  spritePath: Bosses/SingularityEngine
   levelNumber: 7
   maxHealth: 560
   hullDamageMultiplier: 0.5

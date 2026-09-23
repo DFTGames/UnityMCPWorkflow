@@ -10,7 +10,7 @@ namespace YASS.Tests.Gameplay
     /// <summary>
     /// Checks the enemy prefabs the builder produces. A hitbox that does not match the art, or a missing sprite,
     /// is invisible in the Inspector and silent at run time: one enemy simply cannot be hit where it looks solid.
-    /// Re-run <c>Tools/YASS/Build Enemies</c> if any of these fail.
+    /// The prefabs are edited directly, so a failure here means one of them has been broken by hand.
     /// </summary>
     public class EnemyPrefabTests
     {

@@ -3,7 +3,7 @@ tags:
   - gdd
   - art
 status: draft
-updated: 2026-09-20
+updated: 2026-09-23
 ---
 
 # Asset List
@@ -26,7 +26,7 @@ updated: 2026-09-20
 | Swarm drone, Gunship, Diver, Mine Layer, Frigate, Sniper | Sprites | `Sprites/Ships/` | AI (Gemini 3.1 Flash) | Prototype |
 | Proximity mine | Sprite | `Sprites/Hazards/Mine.png` | AI (Gemini 3.1 Flash) | Prototype |
 | Sniper warning line and beam | Stretched `UIWhite` sprite driven by `BeamView` | `Prefabs/Sniper.prefab` | Procedural | Prototype |
-| Rock Crusher, Sunforge, Frost Lancer, Dreadnought, Tempest, Singularity Engine, The Overmind | Sprites | `Sprites/Bosses/` | AI (Gemini 3.1 Flash) | Prototype |
+| Rock Crusher, Sunforge, Frost Lancer, Dreadnought, Tempest, Singularity Engine, The Overmind | Sprites | `Resources/Bosses/` (outside the atlas, loaded by name) | AI (Gemini 3.1 Flash) | Prototype |
 | Backdrops for levels 2 to 8 | Sprites, 2048x1152, unlit, darkening baked in | `Textures/Backgrounds/` | AI (Gemini 3.1 Flash) | Prototype |
 
 All paths are under `Assets/_Game/`.

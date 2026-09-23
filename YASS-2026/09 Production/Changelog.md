@@ -3,7 +3,7 @@ tags:
   - gdd
   - production
 status: draft
-updated: 2026-09-22
+updated: 2026-09-23
 ---
 
 # Changelog
@@ -11,6 +11,7 @@ updated: 2026-09-22
 %% Newest first. Record significant design decisions and which pages changed. %%
 
 ## 2026-09-23
+- Boss art left the sprite atlas. Measured first: the prefabs themselves are only 27 KB and their pooled instances another 27 KB, so unloading them would have saved nothing, but the atlas page they shared was 10.71 MB and the eight boss bodies were two thirds of its content. An atlas page loads whole, so one Dart on screen kept every boss's art resident. The bodies now live in `Resources/Bosses/`, are named by `BossDefinition.SpritePath`, and are loaded when a boss arrives and freed when the level ends or an Endless cycle turns. The atlas repacked itself to 1024x1024, and the art a campaign level holds fell from about 13.3 MB to 5.8 MB as the Editor reports it (a player build compresses further, so the ratio is the result rather than the absolute figures). The eight bodies are 1.31 MB together as BC7 and a fight holds one. The cost is batching: the boss draws in the same sorting band as the enemies, so it splits that batch. Pages updated: Art Direction, Technical Design, Open Questions.
 - The game now loads only the art it is using. The backdrops and the Endless skies were referenced directly from the level data, which hands the decision to Unity: the dependency graph behind one scene was the whole game's, and when it loaded depended on the platform. They live under `Resources/` now and are held by path: a level takes its own backdrop and gives it back when it ends, and an Endless run holds the sky it is showing plus the one arriving for the length of a dissolve, two of six rather than six. The next sky is fetched in the background shortly before its dissolve rather than loaded at the moment it appears, so nothing blocks mid-fight. Two tests guard it: one drives a full lap of the ring and fails if anything accumulates, the other asks the engine whether the freed texture is still loaded (Unity's destroyed-object null does not report an unloaded asset, so it cannot answer that question). Each backdrop is 1.13 MB resident (DXT1), so the set is 15.8 MB and a run now holds 1.13 MB of it. Boss and enemy prefabs are still held by reference and are the next candidates. Pages updated: Technical Design, Open Questions.
 
 ## 2026-09-22

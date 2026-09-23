@@ -16,6 +16,9 @@ namespace YASS.Gameplay
     public sealed class BossView : MonoBehaviour, IDamageable
     {
         [SerializeField] BossDefinition definition;
+
+        [SerializeField, Tooltip("The boss's body. Its sprite is loaded when the boss arrives, not saved here.")]
+        SpriteRenderer bodyRenderer;
         [SerializeField] Rigidbody2D body;
         [SerializeField] BossCoreView core;
         [SerializeField, Tooltip("Local positions launched enemies appear at.")]
@@ -59,6 +62,9 @@ namespace YASS.Gameplay
 
         public BossBrain Brain => _brain;
         public BossDefinition Definition => definition;
+
+        /// <summary>What the boss is actually drawn with, which is the only proof it can be seen.</summary>
+        internal Sprite BodySprite => bodyRenderer != null ? bodyRenderer.sprite : null;
         public float ContactDamage => definition != null ? definition.ContactDamage : 40f;
         public Vector2 Position => body.position;
 
@@ -66,9 +72,31 @@ namespace YASS.Gameplay
 
         void Awake() => _flash = GetComponent<HitFlash>();
 
+        /// <summary>
+        /// Takes the boss's sprite from the run's cache. The prefab deliberately has none: a reference there
+        /// would put every boss's art in the dependency graph of every level, and only one is ever in play.
+        /// </summary>
+        void PaintFrom(ContentCache content)
+        {
+            if (bodyRenderer == null)
+            {
+                Debug.LogError($"{name} has no body renderer, so it can never be seen.", this);
+                return;
+            }
+
+            if (definition == null || string.IsNullOrEmpty(definition.SpritePath))
+            {
+                Debug.LogError($"{name} has no sprite path, so it fights invisibly.", this);
+                return;
+            }
+
+            bodyRenderer.sprite = content.Get<Sprite>(definition.SpritePath);
+        }
+
         public void Init(GameRunner runner, DifficultySettings settings, Vector2 position)
         {
             _runner = runner;
+            PaintFrom(runner.BossContent);
             _brain = new BossBrain(definition.ToSpec());
             _dash = null;
             _sweep = null;
@@ -181,6 +209,12 @@ namespace YASS.Gameplay
         {
             IsAlive = false;
             if (beam != null) beam.Hide();
+
+            // Destroy is deferred to the end of the frame, but the art may be freed on the next fixed step
+            // when an Endless cycle turns. Letting go of it here means nothing is ever drawing an unloaded
+            // texture, rather than relying on the order those two happen to fall in.
+            if (bodyRenderer != null) bodyRenderer.sprite = null;
+
             Destroy(gameObject);
         }
 

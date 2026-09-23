@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: HiveCarrier
   m_EditorClassIdentifier: YASS.Game::YASS.Gameplay.BossDefinition
   displayName: Hive Carrier
+  spritePath: Bosses/HiveCarrier
   levelNumber: 1
   maxHealth: 200
   hullDamageMultiplier: 0.5

@@ -177,9 +177,14 @@ namespace YASS.Tests.Gameplay
             Assert.That(view.Definition, Is.Not.Null, name + " has no definition");
             Assert.That(view.Definition.name, Is.EqualTo(name));
 
+            // The prefab deliberately carries no sprite: the boss paints itself from its definition's path
+            // when it arrives, so the other seven bosses' art is not in this level's graph. What the prefab
+            // must have is the renderer to paint onto, which is a serialised reference and so can go missing.
             var renderer = prefab.GetComponent<SpriteRenderer>();
-            Assert.That(renderer.sprite, Is.Not.Null, name + " has no sprite");
-            Assert.That(renderer.sprite.name, Is.EqualTo(name), "each boss wears its own art");
+            Assert.That(renderer.sprite, Is.Null, name + " still carries its sprite, so it loads with the prefab");
+
+            var bodyRenderer = new SerializedObject(view).FindProperty("bodyRenderer").objectReferenceValue;
+            Assert.That(bodyRenderer, Is.Not.Null, name + " has no body renderer, so it would never be drawn");
 
             // A boss that sweeps a beam needs something to draw it with.
             var sweeps = Has(view.Definition, BossActionType.BeamSweep);
@@ -225,6 +230,38 @@ namespace YASS.Tests.Gameplay
                 Assert.That(Vector2.Distance(closest, centre), Is.GreaterThanOrEqualTo(radius),
                     $"{name}: an armour collider overlaps the core");
             }
+        }
+
+        /// <summary>
+        /// A boss's sprite is the heaviest single piece of art in the game and only one boss is ever in play,
+        /// so it is held by name and loaded when that boss arrives. Nothing may reference it directly: a
+        /// reference from the prefab would put all eight in the graph of every level, which is what taking
+        /// them out of the sprite atlas was for.
+        /// </summary>
+        [TestCase("HiveCarrier")]
+        [TestCase("RockCrusher")]
+        [TestCase("Sunforge")]
+        [TestCase("FrostLancer")]
+        [TestCase("Dreadnought")]
+        [TestCase("Tempest")]
+        [TestCase("SingularityEngine")]
+        [TestCase("Overmind")]
+        public void EveryBoss_HoldsItsSpriteByName(string name)
+        {
+            var definition = Load(name);
+            Assert.That(definition.SpritePath, Is.Not.Null.And.Not.Empty, name + " has no sprite path");
+
+            var sprite = Resources.Load<Sprite>(definition.SpritePath);
+            Assert.That(sprite, Is.Not.Null, $"{name}'s sprite is not at Resources/{definition.SpritePath}");
+            Assert.That(sprite.packed, Is.False,
+                name + "'s sprite is in an atlas, so loading it would pull in the whole page");
+
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{PrefabFolder}{name}.prefab");
+            Assert.That(prefab, Is.Not.Null);
+
+            foreach (var renderer in prefab.GetComponentsInChildren<SpriteRenderer>(true))
+                Assert.That(renderer.sprite, Is.Not.EqualTo(sprite),
+                    name + " still references its own sprite from the prefab, so it loads with it");
         }
 
         /// <summary>Bosses get tougher as the campaign goes on; that is the whole of the difficulty curve here.</summary>

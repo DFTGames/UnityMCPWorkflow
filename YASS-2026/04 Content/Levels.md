@@ -3,7 +3,7 @@ tags:
   - gdd
   - content
 status: approved
-updated: 2026-09-22
+updated: 2026-09-23
 ---
 
 # Levels
@@ -27,7 +27,7 @@ New enemy types are introduced per the "First level" column in [[Enemies and Haz
 
 Every boss is the same behaviour driven by different data: health, how long its core stays shut, and a table of
 attacks scoped to a phase and a band of its remaining health (`BossDefinition` assets, built by
-`Tools/YASS/Build Bosses`). A boss's signature is which attacks it has and when, not a class of its own.
+its `BossDefinition` asset). A boss's signature is which attacks it has and when, not a class of its own.
 
 **Damage:** a shot into the armoured hull is worth **half**, and a shot into the open core is worth **full**
 (both fractions are per boss, in its definition). A shot into a closed core hits the shutters over it and counts

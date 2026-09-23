@@ -56,6 +56,21 @@ namespace YASS.Tests.Gameplay
         }
 
         [Test]
+        public void TheBossIsActuallyVisible()
+        {
+            // The sprite arrives at run time from a path, so nothing in the prefab or the data proves the
+            // boss can be seen: delete the painting step and every other test here still passes.
+            Runner.StartBossFightNow();
+
+            var boss = Runner.Boss;
+            Assert.That(boss, Is.Not.Null, "no boss arrived");
+            Assert.That(boss.BodySprite, Is.Not.Null, "the boss is invisible: nothing painted its sprite");
+
+            var expected = Resources.Load<Sprite>(boss.Definition.SpritePath);
+            Assert.That(boss.BodySprite, Is.EqualTo(expected), "the boss is wearing the wrong art");
+        }
+
+        [Test]
         public void TheBossIsTheLevelsOwn()
         {
             var campaign = TheCampaign;

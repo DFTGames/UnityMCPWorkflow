@@ -133,8 +133,18 @@ namespace YASS.Gameplay
         /// </summary>
         readonly ContentCache _content = new ContentCache();
 
+        /// <summary>
+        /// The boss's art, kept apart from the sky's. A cache means "hold exactly this and nothing else", so
+        /// two owners sharing one would free each other's assets every time either of them asked.
+        /// </summary>
+        readonly ContentCache _bossContent = new ContentCache();
+        readonly List<string> _bossPaths = new List<string>(1);
+
         /// <summary>Test seam: what this level is holding in memory right now.</summary>
         internal ContentCache Content => _content;
+
+        /// <summary>The cache a boss takes its sprite from, held while that boss is the one in play.</summary>
+        internal ContentCache BossContent => _bossContent;
         float _endTime = -1f;
         bool _sectorClear;
 
@@ -260,6 +270,8 @@ namespace YASS.Gameplay
             var bossMinion = _level.BossPrefab != null && _level.BossPrefab.Definition != null
                 ? _level.BossPrefab.Definition.MinionPrefab
                 : null;
+
+            HoldBossArt(_level.BossPrefab);
             if (bossMinion != null) RegisterEnemyPool(bossMinion);
             foreach (var wave in _level.Waves)
             foreach (var group in wave.groups)
@@ -268,6 +280,19 @@ namespace YASS.Gameplay
             // Created up front (inactive) so its particle systems do not hitch the boss's entrance.
             _boss = Instantiate(_level.BossPrefab, spawnRoot);
             _boss.gameObject.SetActive(false);
+        }
+
+        /// <summary>
+        /// Holds the art of the boss about to be played and nothing else, so the seven bosses this run is not
+        /// fighting are not in memory. A boss sprite is the heaviest single piece of art in the game.
+        /// </summary>
+        void HoldBossArt(BossView boss)
+        {
+            var path = boss != null && boss.Definition != null ? boss.Definition.SpritePath : null;
+
+            _bossPaths.Clear();
+            if (!string.IsNullOrEmpty(path)) _bossPaths.Add(path);
+            _bossContent.Require<Sprite>(_bossPaths);
         }
 
         /// <summary>
@@ -317,7 +342,9 @@ namespace YASS.Gameplay
             // The boss warning switched the music over; the waves of the next cycle are not a boss fight.
             MusicPlayer.PlayIfPresent(Track.Level);
 
-            // Each cycle brings its own boss, built inactive now so its entrance does not hitch later.
+            // Each cycle brings its own boss, built inactive now so its entrance does not hitch later. Its
+            // sprite replaces the last cycle's, which nothing is drawing any more.
+            HoldBossArt(_endless.BossPrefab);
             if (_boss != null) Destroy(_boss.gameObject);
             _boss = Instantiate(_endless.BossPrefab, spawnRoot);
             _boss.gameObject.SetActive(false);
@@ -351,6 +378,7 @@ namespace YASS.Gameplay
             // Leaving the level: nothing it was holding is wanted any more. The next level asks for its own.
             if (sky != null) sky.ReleaseAll();
             _content.Clear();
+            _bossContent.Clear();
         }
 
         void FixedUpdate()
