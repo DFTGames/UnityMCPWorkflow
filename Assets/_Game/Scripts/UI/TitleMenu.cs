@@ -20,7 +20,14 @@ namespace YASS.UI
             if (quitButton != null) quitButton.SetActive(GameFlow.CanQuit);
         }
 
-        public void Play() => router.Open(MenuScreen.Difficulty);
+        /// <summary>
+        /// Straight to the difficulty screen, unless the player has never been asked their name: a board
+        /// entry needs one, and the moment they choose to play is when asking makes sense.
+        /// </summary>
+        public void Play() =>
+            router.Open(NameEntryMenu.NeedsAsking ? MenuScreen.NameEntry : MenuScreen.Difficulty);
+
+        public void OpenLeaderboards() => router.Open(MenuScreen.Leaderboards);
 
         public void OpenSettings() => router.Open(MenuScreen.Settings);
 

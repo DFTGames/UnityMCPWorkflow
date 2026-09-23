@@ -39,8 +39,33 @@ namespace YASS.UI
             if (ended < resultDelay) return;
 
             _shown = true;
+
+            // Nothing is known about the placing yet, and the previous run's must not linger.
+            if (gameOver != null) gameOver.SetPlacing(null);
+            if (victory != null) victory.SetPlacing(null);
             if (runner.IsSectorClear) ShowClear();
             else ShowGameOver();
+        }
+
+        /// <summary>
+        /// Sends the finished run to its board and shows where it came. Nothing here can stop the player:
+        /// a board that cannot be reached leaves the panel showing the run's figures and nothing else.
+        /// </summary>
+        void Submit(long score)
+        {
+            if (!Leaderboards.WorthSubmitting(score)) return;
+
+            GameFlow.SubmitRun(score, result =>
+            {
+                if (this == null) return; // the player left before the answer came back
+
+                var placing = result.Status == LeaderboardStatus.Succeeded && result.YourRank > 0
+                    ? $"Ranked {result.YourRank}"
+                    : null;
+
+                if (gameOver != null) gameOver.SetPlacing(placing);
+                if (victory != null) victory.SetPlacing(placing);
+            });
         }
 
         void ShowGameOver()
@@ -53,6 +78,11 @@ namespace YASS.UI
                 var run = runner.EndlessRun;
                 gameOver.SetNote(run != null ? $"Reached cycle {run.Cycle}" : null);
             }
+
+            // The run is over, whichever mode it was: this is one of the two places a score is final
+            // (GDD "Core Loop": play a run until victory or game over, submit the score).
+            var campaign = GameFlow.Run;
+            Submit(campaign != null ? campaign.TotalScore(runner.Session) : runner.Session.Score.Score);
 
             Cue.Play(Sfx.GameOver);
             router.ShowResult(MenuScreen.GameOver);
@@ -84,6 +114,10 @@ namespace YASS.UI
             // The panels show the run's totals, not this level's: a campaign is one score.
             var panel = wasFinalLevel ? victory : sectorClear;
             if (panel != null) panel.Fill(run.CarriedScore, run.CarriedKills, run.BestChainSteps, 0L);
+
+            // The other place a score is final: the campaign is won, so the run has finished. A cleared
+            // level in the middle of a campaign is not submitted, because the run carries on.
+            if (wasFinalLevel) Submit(run.CarriedScore);
 
             Cue.Play(Sfx.SectorClear);
             router.ShowResult(wasFinalLevel ? MenuScreen.Victory : MenuScreen.SectorClear);

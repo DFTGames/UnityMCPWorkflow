@@ -20,6 +20,9 @@ namespace YASS.UI
         [SerializeField, Tooltip("A line above the totals, for what the mode itself has to report.")]
         TMP_Text noteText;
 
+        [SerializeField, Tooltip("Where this run came on the board. Hidden until the answer arrives.")]
+        TMP_Text placingText;
+
         [Header("Labels")]
         [SerializeField] string scorePrefix = "Score ";
         [SerializeField] string killsPrefix = "Kills ";
@@ -43,6 +46,18 @@ namespace YASS.UI
 
             noteText.text = note ?? string.Empty;
             noteText.gameObject.SetActive(!string.IsNullOrEmpty(note));
+        }
+
+        /// <summary>
+        /// Where this run placed on its board, once the service has said. Null hides the line, which is what
+        /// a player with no network sees: their own figures, and nothing pretending to be a rank.
+        /// </summary>
+        public void SetPlacing(string placing)
+        {
+            if (placingText == null) return;
+
+            placingText.text = placing ?? string.Empty;
+            placingText.gameObject.SetActive(!string.IsNullOrEmpty(placing));
         }
 
         /// <summary>Shows a whole campaign run's figures, which span several levels.</summary>

@@ -9,6 +9,8 @@ namespace YASS.Core
         void SetFloat(string key, float value);
         bool GetBool(string key, bool fallback);
         void SetBool(string key, bool value);
+        string GetString(string key, string fallback);
+        void SetString(string key, string value);
 
         /// <summary>Flushes pending writes to disk. Costly: a synchronous write on most platforms.</summary>
         void Save();
@@ -29,6 +31,9 @@ namespace YASS.Core
         public const string ScreenShakeKey = "yass.settings.screenShake";
         public const string FullscreenKey = "yass.settings.fullscreen";
 
+        /// <summary>The name that goes on the leaderboards, and on the HUD (GDD "Scoring", Leaderboards).</summary>
+        public const string PlayerNameKey = "yass.settings.playerName";
+
         readonly ISettingsStore _store;
 
         bool _dirty;
@@ -37,9 +42,19 @@ namespace YASS.Core
         {
             _store = store ?? throw new ArgumentNullException(nameof(store));
             Settings = Load();
+            PlayerName = _store.GetString(PlayerNameKey, string.Empty);
         }
 
         public GameSettings Settings { get; private set; }
+
+        /// <summary>
+        /// What the player is called on a board. Empty until they have been asked, which is how the game
+        /// knows to ask: a name is the one setting that cannot have a sensible default chosen for it.
+        /// </summary>
+        public string PlayerName { get; private set; } = string.Empty;
+
+        /// <summary>True once a name has been chosen, so the game only asks the once.</summary>
+        public bool HasPlayerName => !string.IsNullOrEmpty(PlayerName);
 
         /// <summary>Raised after <see cref="Settings"/> changes. The initial load does not raise it; <see cref="Apply"/> does.</summary>
         public event Action<GameSettings> Changed;
@@ -63,6 +78,18 @@ namespace YASS.Core
         public void SetFullscreen(bool value) => Set(Settings.WithFullscreen(value));
 
         public void ResetToDefaults() => Set(GameSettings.Default);
+
+        /// <summary>Names the player, cleaned to something that can go on a public board.</summary>
+        public void SetPlayerName(string name)
+        {
+            var cleaned = Leaderboards.CleanName(name);
+            if (cleaned == PlayerName) return;
+
+            PlayerName = cleaned;
+            _store.SetString(PlayerNameKey, cleaned);
+            _dirty = true;
+            Changed?.Invoke(Settings);
+        }
 
         /// <summary>Writes pending changes to disk. Call it when leaving the settings screen or quitting.</summary>
         public void Flush()

@@ -1,0 +1,101 @@
+using System;
+using NUnit.Framework;
+using YASS.Core;
+
+namespace YASS.Tests.Core
+{
+    /// <summary>
+    /// The part of the leaderboards that can be decided without a network (GDD "Scoring", Leaderboards): which
+    /// board a run belongs to, what may be written on it, and what is not worth sending.
+    /// </summary>
+    public class LeaderboardsTests
+    {
+        [Test]
+        public void EveryModeAndDifficulty_HasItsOwnBoard()
+        {
+            // Six boards, and no two runs sharing one: a Cadet campaign score on the Ace board would make
+            // both meaningless.
+            var ids = Leaderboards.AllIds();
+
+            Assert.That(ids.Length, Is.EqualTo(Leaderboards.Count));
+            Assert.That(ids, Is.Unique);
+        }
+
+        [Test]
+        public void ABoardId_NamesItsModeAndDifficulty()
+        {
+            // Typed into the service's dashboard by hand, so it has to be readable and unambiguous.
+            Assert.That(Leaderboards.IdFor(GameMode.Campaign, Difficulty.Pilot), Is.EqualTo("campaign_pilot"));
+            Assert.That(Leaderboards.IdFor(GameMode.Endless, Difficulty.Ace), Is.EqualTo("endless_ace"));
+        }
+
+        [Test]
+        public void BoardIds_AreTheSameEveryTime()
+        {
+            // These are the keys the scores already on the service are filed under: if this test ever has to
+            // change, every score on the old id is orphaned.
+            Assert.That(Leaderboards.AllIds(), Is.EqualTo(new[]
+            {
+                "campaign_cadet", "campaign_pilot", "campaign_ace",
+                "endless_cadet", "endless_pilot", "endless_ace"
+            }));
+        }
+
+        [Test]
+        public void AName_IsTrimmedAndCutToLength()
+        {
+            Assert.That(Leaderboards.CleanName("  Ace  "), Is.EqualTo("Ace"));
+            Assert.That(Leaderboards.CleanName(new string('x', 40)),
+                Has.Length.EqualTo(Leaderboards.MaxNameLength));
+        }
+
+        [Test]
+        public void AnEmptyName_BecomesTheDefault()
+        {
+            // Nobody is nameless on a public board, and a blank row looks like a bug in the game.
+            Assert.That(Leaderboards.CleanName(null), Is.EqualTo(Leaderboards.DefaultName));
+            Assert.That(Leaderboards.CleanName("   "), Is.EqualTo(Leaderboards.DefaultName));
+            Assert.That(Leaderboards.CleanName("\t\n"), Is.EqualTo(Leaderboards.DefaultName));
+        }
+
+        [Test]
+        public void AName_ThatIsOnlySpacesOnceCut_BecomesTheDefault()
+        {
+            // Twelve characters of name followed by spaces: cutting leaves trailing blanks, not a name.
+            var name = new string(' ', Leaderboards.MaxNameLength) + "Ace";
+
+            Assert.That(Leaderboards.CleanName(name), Is.EqualTo("Ace"), "the leading spaces are trimmed first");
+        }
+
+        [Test]
+        public void ARunWorthNothing_IsNotSent()
+        {
+            // A board full of zeroes buries the runs that meant something.
+            Assert.That(Leaderboards.WorthSubmitting(0), Is.False);
+            Assert.That(Leaderboards.WorthSubmitting(-10), Is.False);
+            Assert.That(Leaderboards.WorthSubmitting(1), Is.True);
+        }
+
+        [Test]
+        public void AnEntry_KnowsWhereItCame()
+        {
+            var entry = new LeaderboardEntry(3, "Ace", 1200, isYou: true);
+
+            Assert.That(entry.Rank, Is.EqualTo(3));
+            Assert.That(entry.Score, Is.EqualTo(1200));
+            Assert.That(entry.IsYou, Is.True);
+            Assert.Throws<ArgumentOutOfRangeException>(() => new LeaderboardEntry(0, "Ace", 1));
+        }
+
+        [Test]
+        public void AFailedRequest_CarriesNoEntriesRatherThanNull()
+        {
+            // The UI walks the entries without checking: a failure shows an empty board, not an exception.
+            var result = LeaderboardResult.Failure("no network");
+
+            Assert.That(result.Status, Is.EqualTo(LeaderboardStatus.Failed));
+            Assert.That(result.Entries, Is.Not.Null.And.Empty);
+            Assert.That(result.Problem, Is.EqualTo("no network"));
+        }
+    }
+}

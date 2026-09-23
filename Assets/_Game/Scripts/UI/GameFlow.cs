@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using YASS.Core;
@@ -23,6 +24,7 @@ namespace YASS.UI
         const string CampaignPath = "Campaign"; // in Resources, so the flow needs no scene reference
 
         static SettingsService _settings;
+        static ILeaderboardService _leaderboards;
         static CampaignProgress _progress;
         static Campaign _campaign;
 
@@ -34,6 +36,32 @@ namespace YASS.UI
 
         /// <summary>Settings, loaded on first use and shared by every screen.</summary>
         public static SettingsService Settings => _settings ??= new SettingsService(new PlayerPrefsSettingsStore());
+
+        /// <summary>
+        /// Where scores go (GDD "Scoring", Leaderboards). The online boards when they can be reached, and the
+        /// ones on this machine when they cannot: a player with no network still sees their own best runs,
+        /// and nothing about a leaderboard is allowed to stop them playing.
+        /// </summary>
+        public static ILeaderboardService Leaderboards => _leaderboards ??= new UgsLeaderboards();
+
+        /// <summary>The board to fall back to when the service cannot be reached.</summary>
+        public static ILeaderboardService LocalBoards { get; } = new LocalLeaderboards(new PlayerPrefsSettingsStore());
+
+        /// <summary>
+        /// Sends a finished run to the board for its mode and difficulty, and to the local one either way so
+        /// the player's own history is kept whatever the network did.
+        /// </summary>
+        public static void SubmitRun(long score, Action<LeaderboardResult> done = null)
+        {
+            var mode = RunContext.Mode;
+            var difficulty = RunContext.Difficulty;
+            var name = Settings.PlayerName;
+
+            LocalBoards.Submit(mode, difficulty, name, score);
+
+            if (Leaderboards.IsReady) Leaderboards.Submit(mode, difficulty, name, score, done);
+            else done?.Invoke(LeaderboardResult.Failure("the boards could not be reached"));
+        }
 
         /// <summary>What the player has finished before, across sessions.</summary>
         public static CampaignProgress Progress => _progress ??= new CampaignProgress(new PlayerPrefsSettingsStore());
@@ -62,6 +90,7 @@ namespace YASS.UI
         static void ResetStatics()
         {
             _settings = null;
+            _leaderboards = null;
             _progress = null;
             _campaign = null;
             RunContext.Clear();
@@ -69,6 +98,9 @@ namespace YASS.UI
 
         /// <summary>Test seam: replaces the settings, including their store. Null restores the saved ones.</summary>
         internal static void UseSettings(SettingsService settings) => _settings = settings;
+
+        /// <summary>Test seam: replaces the boards, so a test never talks to a real service.</summary>
+        internal static void UseLeaderboards(ILeaderboardService boards) => _leaderboards = boards;
 
         /// <summary>Test seam: replaces saved progress, so a test never reads or writes the player's own.</summary>
         internal static void UseProgress(CampaignProgress progress) => _progress = progress;

@@ -9,6 +9,7 @@ namespace YASS.Tests.Core
     {
         readonly Dictionary<string, float> _floats = new Dictionary<string, float>();
         readonly Dictionary<string, bool> _bools = new Dictionary<string, bool>();
+        readonly Dictionary<string, string> _strings = new Dictionary<string, string>();
 
         public int Saves { get; private set; }
 
@@ -16,6 +17,8 @@ namespace YASS.Tests.Core
         public void SetFloat(string key, float value) => _floats[key] = value;
         public bool GetBool(string key, bool fallback) => _bools.TryGetValue(key, out var v) ? v : fallback;
         public void SetBool(string key, bool value) => _bools[key] = value;
+        public string GetString(string key, string fallback) => _strings.TryGetValue(key, out var v) ? v : fallback;
+        public void SetString(string key, string value) => _strings[key] = value;
         public void Save() => Saves++;
     }
 

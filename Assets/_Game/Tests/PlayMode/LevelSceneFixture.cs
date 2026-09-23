@@ -81,6 +81,8 @@ namespace YASS.Tests.Gameplay
             public void SetFloat(string key, float value) { }
             public bool GetBool(string key, bool fallback) => fallback;
             public void SetBool(string key, bool value) { }
+            public string GetString(string key, string fallback) => fallback;
+            public void SetString(string key, string value) { }
             public void Save() { }
         }
 

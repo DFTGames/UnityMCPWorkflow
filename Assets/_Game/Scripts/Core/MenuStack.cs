@@ -15,7 +15,13 @@ namespace YASS.Core
         Pause,
         GameOver,
         SectorClear,
-        Victory
+        Victory,
+
+        /// <summary>The six boards, browsable from the title (GDD "Scoring", Leaderboards).</summary>
+        Leaderboards,
+
+        /// <summary>Asked for once, before the first run: a board entry needs a name.</summary>
+        NameEntry
     }
 
     /// <summary>

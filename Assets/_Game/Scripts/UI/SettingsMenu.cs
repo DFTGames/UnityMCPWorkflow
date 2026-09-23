@@ -18,6 +18,9 @@ namespace YASS.UI
         [SerializeField, Tooltip("The fullscreen row, hidden where the platform owns the window.")]
         GameObject fullscreenRow;
 
+        [SerializeField, Tooltip("The name that goes on the leaderboards and the HUD.")]
+        TMPro.TMP_InputField playerName;
+
         // While the widgets are being filled in from the saved settings, their callbacks must not write back.
         bool _loading;
 
@@ -32,6 +35,12 @@ namespace YASS.UI
             if (sfxVolume != null) sfxVolume.onValueChanged.AddListener(OnSfxVolume);
             if (screenShake != null) screenShake.onValueChanged.AddListener(OnScreenShake);
             if (fullscreen != null) fullscreen.onValueChanged.AddListener(OnFullscreen);
+
+            if (playerName != null)
+            {
+                playerName.characterLimit = Leaderboards.MaxNameLength;
+                playerName.onEndEdit.AddListener(OnPlayerName);
+            }
         }
 
         void OnEnable() => Load(Settings.Settings);
@@ -45,6 +54,7 @@ namespace YASS.UI
             if (sfxVolume != null) sfxVolume.onValueChanged.RemoveListener(OnSfxVolume);
             if (screenShake != null) screenShake.onValueChanged.RemoveListener(OnScreenShake);
             if (fullscreen != null) fullscreen.onValueChanged.RemoveListener(OnFullscreen);
+            if (playerName != null) playerName.onEndEdit.RemoveListener(OnPlayerName);
         }
 
         void Load(GameSettings settings)
@@ -54,7 +64,20 @@ namespace YASS.UI
             if (sfxVolume != null) sfxVolume.SetValueWithoutNotify(settings.SfxVolume);
             if (screenShake != null) screenShake.SetIsOnWithoutNotify(settings.ScreenShake);
             if (fullscreen != null) fullscreen.SetIsOnWithoutNotify(settings.Fullscreen);
+            if (playerName != null) playerName.SetTextWithoutNotify(Settings.PlayerName);
             _loading = false;
+        }
+
+        /// <summary>
+        /// On finishing the edit rather than on every keystroke: the name is cleaned as it is stored, and
+        /// rewriting the box mid-word would fight the player typing.
+        /// </summary>
+        void OnPlayerName(string value)
+        {
+            if (_loading) return;
+
+            Settings.SetPlayerName(value);
+            if (playerName != null) playerName.SetTextWithoutNotify(Settings.PlayerName);
         }
 
         void OnMusicVolume(float value)

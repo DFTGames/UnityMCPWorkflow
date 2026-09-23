@@ -16,6 +16,10 @@ namespace YASS.UI
 
         public void SetBool(string key, bool value) => PlayerPrefs.SetInt(key, value ? 1 : 0);
 
+        public string GetString(string key, string fallback) => PlayerPrefs.GetString(key, fallback);
+
+        public void SetString(string key, string value) => PlayerPrefs.SetString(key, value ?? string.Empty);
+
         public void Save() => PlayerPrefs.Save();
     }
 }
