@@ -75,8 +75,12 @@ namespace YASS.Tests.Gameplay
             {
                 var options = new InitializationOptions();
                 options.SetEnvironmentName(Environment);
-                yield return Wait(UnityServices.InitializeAsync(), "the services to start");
+                yield return Wait(UnityServices.InitializeAsync(options), "the services to start");
                 _weStartedTheServices = true;
+
+                // This fixture started them, so it is the one that knows the environment. UgsLeaderboards
+                // refuses to send or read anything from a session whose environment nobody can name.
+                UgsSession.Declare(Environment);
             }
 
             // The services are a process-wide singleton: whoever starts them first chooses the environment for

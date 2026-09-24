@@ -98,6 +98,16 @@ namespace YASS.UI
                 return;
             }
 
+            // Last gate before a score leaves the machine. A run in the editor is a practice run or a test,
+            // and neither belongs on a board real players are ranked on; every one that lands there has to be
+            // deleted by hand. Refused rather than assumed safe when the environment cannot be shown.
+            if (!UgsSession.MayTalk(out var wrongEnvironment))
+            {
+                Debug.LogError($"{nameof(UgsLeaderboards)}: score not sent, {wrongEnvironment}.");
+                done?.Invoke(LeaderboardResult.Failure("the boards are not reachable from here"));
+                return;
+            }
+
             await RenameIfNeeded(playerName);
 
             try
@@ -149,6 +159,15 @@ namespace YASS.UI
             if (!IsReady)
             {
                 done?.Invoke(LeaderboardResult.Failure("not signed in"));
+                return;
+            }
+
+            // Reading is harmless to the live boards, but a read from an environment nobody can name is how a
+            // test ends up asserting against real players' scores and reporting a number it never sent.
+            if (!UgsSession.MayTalk(out var wrongEnvironment))
+            {
+                Debug.LogError($"{nameof(UgsLeaderboards)}: board not read, {wrongEnvironment}.");
+                done?.Invoke(LeaderboardResult.Failure("the boards are not reachable from here"));
                 return;
             }
 

@@ -224,14 +224,12 @@ namespace YASS.UI
         static bool Mentions(string text, string what) =>
             text.IndexOf(what, StringComparison.OrdinalIgnoreCase) >= 0;
 
-        /// <summary>Starts Unity Services if they are not already running. False when they cannot be.</summary>
-        static async Task<bool> Started()
-        {
-            if (UnityServices.State == ServicesInitializationState.Initialized) return true;
-
-            await WithDeadline(UnityServices.InitializeAsync());
-            return UnityServices.State == ServicesInitializationState.Initialized;
-        }
+        /// <summary>
+        /// Starts Unity Services if they are not already running. False when they cannot be, and also when
+        /// they are running but were started by something that did not record the environment: an account
+        /// made against an unknown environment is an account on possibly the live service.
+        /// </summary>
+        static Task<bool> Started() => UgsSession.Start(WithDeadline);
 
         /// <summary>
         /// Waits for the service, but not for ever. The timer is cancelled when the work wins, so a call does
