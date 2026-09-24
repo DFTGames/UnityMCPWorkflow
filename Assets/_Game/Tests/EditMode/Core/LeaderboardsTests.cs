@@ -67,6 +67,28 @@ namespace YASS.Tests.Core
             Assert.That(Leaderboards.CleanName(name), Is.EqualTo("Ace"), "the leading spaces are trimmed first");
         }
 
+        /// <summary>
+        /// Not a nicety: Unity Authentication refuses a player name containing any whitespace, and that
+        /// refusal used to arrive in the middle of submitting a score and take the score with it. "Red
+        /// Baron" meant a run that never reached a board, looking exactly like having no network.
+        /// </summary>
+        [Test]
+        public void AName_KeepsNoSpacesAtAll()
+        {
+            Assert.That(Leaderboards.CleanName("Red Baron"), Is.EqualTo("RedBaron"));
+            Assert.That(Leaderboards.CleanName("a b\tc\nd"), Is.EqualTo("abcd"));
+            Assert.That(Leaderboards.CleanName(" The  Ace "), Is.EqualTo("TheAce"));
+        }
+
+        [Test]
+        public void AName_IsCutByWhatIsLeftAfterTheSpacesGo()
+        {
+            // The limit is on the name that goes up, so spaces must not eat into the player's allowance.
+            Assert.That(Leaderboards.CleanName("A B C D E F G H"), Is.EqualTo("ABCDEFGH"));
+            Assert.That(Leaderboards.CleanName(new string(' ', 30) + new string('x', 40)),
+                Has.Length.EqualTo(Leaderboards.MaxNameLength));
+        }
+
         [Test]
         public void ARunWorthNothing_IsNotSent()
         {

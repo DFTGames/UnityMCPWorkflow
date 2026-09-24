@@ -9,6 +9,7 @@
         "UnityEngine.UI",
         "Unity.TextMeshPro",
         "Unity.InputSystem",
+        "Unity.InputSystem.TestFramework",
         "Unity.Services.Core",
         "Unity.Services.Authentication",
         "Unity.Services.Leaderboards",

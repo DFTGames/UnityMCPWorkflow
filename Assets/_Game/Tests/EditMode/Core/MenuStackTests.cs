@@ -246,5 +246,72 @@ namespace YASS.Tests.Core
         {
             Assert.Throws<ArgumentOutOfRangeException>(() => new MenuStack().ShowResult(MenuScreen.Pause));
         }
+
+        /// <summary>
+        /// The name screen is answered, not visited: after it opens the difficulty screen, back belongs to
+        /// the title. Opening rather than replacing put the player back in front of the question they had
+        /// just answered, with the box taking their keyboard again.
+        /// </summary>
+        [Test]
+        public void AReplacedScreen_IsNotWhatBackReturnsTo()
+        {
+            var stack = new MenuStack(MenuScreen.Title);
+            stack.Open(MenuScreen.NameEntry);
+            stack.Replace(MenuScreen.Difficulty);
+
+            Assert.That(stack.Current, Is.EqualTo(MenuScreen.Difficulty));
+            Assert.That(stack.Depth, Is.EqualTo(1), "the screen it replaced is gone, not buried");
+
+            Assert.That(stack.Back(), Is.True);
+            Assert.That(stack.Current, Is.EqualTo(MenuScreen.Title), "back skips the screen already answered");
+        }
+
+        [Test]
+        public void ReplacingFromTheRoot_JustOpens()
+        {
+            var stack = new MenuStack(MenuScreen.Title);
+            stack.Replace(MenuScreen.Difficulty);
+
+            Assert.That(stack.Current, Is.EqualTo(MenuScreen.Difficulty));
+            Assert.That(stack.Depth, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void ReplacingAfterTheRunHasEnded_DoesNothing()
+        {
+            var stack = new MenuStack();
+            stack.ShowResult(MenuScreen.GameOver);
+            stack.Replace(MenuScreen.Difficulty);
+
+            Assert.That(stack.Current, Is.EqualTo(MenuScreen.GameOver), "nothing opens over a result");
+        }
+
+        /// <summary>
+        /// A player who alt-tabs, takes a call or switches app has stopped playing, and a ship that dies
+        /// while they are away is not a fair death. The same rule on every platform.
+        /// </summary>
+        [Test]
+        public void LosingFocus_PausesTheGame()
+        {
+            Assert.That(MenuStack.ShouldPauseOnFocusLoss(hasFocus: false, inEditor: false), Is.True);
+        }
+
+        [Test]
+        public void KeepingFocus_DoesNot()
+        {
+            Assert.That(MenuStack.ShouldPauseOnFocusLoss(hasFocus: true, inEditor: false), Is.False);
+        }
+
+        /// <summary>
+        /// Never in the editor. Focus there belongs to the Console and the Inspector in turn, and an
+        /// automated PlayMode run never has it at all: without this carve-out every test in the suite would
+        /// pause the game and then time out waiting for a game that is not running.
+        /// </summary>
+        [Test]
+        public void TheEditor_NeverPausesOnFocus()
+        {
+            Assert.That(MenuStack.ShouldPauseOnFocusLoss(hasFocus: false, inEditor: true), Is.False);
+            Assert.That(MenuStack.ShouldPauseOnFocusLoss(hasFocus: true, inEditor: true), Is.False);
+        }
     }
 }

@@ -23,9 +23,16 @@ namespace YASS.Tests.Gameplay
 
             Action<LeaderboardResult> _waiting;
 
-            public bool IsReady { get; set; } = true;
+            /// <summary>Starts signed out, as the real service does: a run has to sign in before it can be sent.</summary>
+            public bool IsReady { get; private set; }
 
-            public void Prepare(Action<bool> ready = null) => ready?.Invoke(IsReady);
+            public bool SignsIn = true;
+
+            public void Prepare(Action<bool> ready = null)
+            {
+                if (SignsIn) IsReady = true;
+                ready?.Invoke(IsReady);
+            }
 
             public void Submit(GameMode mode, Difficulty difficulty, string playerName, long score,
                 Action<LeaderboardResult> done = null)
@@ -43,16 +50,28 @@ namespace YASS.Tests.Gameplay
         }
 
         FakeBoards _boards;
+        FakeBoards _local;
 
         protected override void ConfigureRun()
         {
             _boards = new FakeBoards();
+            _local = new FakeBoards();
+
             GameFlow.UseLeaderboards(_boards);
+
+            // The local board too: every finished run is mirrored there whatever the network did, so without
+            // a fake the suite files its own thousand-point runs in the saved scores of whoever runs it.
+            GameFlow.UseLocalBoards(_local);
+
             RunContext.Configure(Difficulty.Ace, GameMode.Endless);
         }
 
         [TearDown]
-        public void ForgetTheFake() => GameFlow.UseLeaderboards(null);
+        public void ForgetTheFakes()
+        {
+            GameFlow.UseLeaderboards(null);
+            GameFlow.UseLocalBoards(null);
+        }
 
         [UnityTest]
         public IEnumerator AFinishedRun_GoesToItsOwnBoard()
@@ -72,6 +91,32 @@ namespace YASS.Tests.Gameplay
             Assert.That(sent.Difficulty, Is.EqualTo(Difficulty.Ace), "and on the one for its difficulty");
             Assert.That(sent.Name, Is.EqualTo("Ace"));
             Assert.That(sent.Score, Is.GreaterThan(0));
+
+            // The run is kept on this machine as well, which is what a player with no network is shown.
+            Assert.That(_local.Sent, Has.Count.EqualTo(1), "the run was not mirrored locally");
+            Assert.That(_local.Sent[0].Score, Is.EqualTo(sent.Score));
+        }
+
+        /// <summary>
+        /// A player with no network finishes runs too. The panel has to appear and the buttons have to work;
+        /// only the placing is missing (GDD "Scoring": a leaderboard never interrupts a game).
+        /// </summary>
+        [UnityTest]
+        public IEnumerator ARun_ThatCannotSignIn_StillEndsProperly()
+        {
+            _boards.SignsIn = false;
+            Runner.SpawningEnabled = false;
+            Runner.SetCommandOverride(0, Idle);
+
+            Session.ReportKill(0, 1000);
+            yield return EndTheRun();
+
+            Assert.That(_boards.Sent, Is.Empty, "a run that could not sign in has nowhere to go");
+            Assert.That(_local.Sent, Has.Count.EqualTo(1),
+                "with no network the local board is the only record there is, so it must still be written");
+
+            var router = UnityEngine.Object.FindAnyObjectByType<MenuRouter>();
+            Assert.That(router.Current, Is.EqualTo(MenuScreen.GameOver), "the run still has to end on its panel");
         }
 
         [UnityTest]
@@ -83,6 +128,7 @@ namespace YASS.Tests.Gameplay
             yield return EndTheRun();
 
             Assert.That(_boards.Sent, Is.Empty, "a board full of zeroes buries the runs that meant something");
+            Assert.That(_local.Sent, Is.Empty, "nor is it worth keeping on this machine");
         }
 
         /// <summary>Takes every life off the player, which is what ends a run.</summary>

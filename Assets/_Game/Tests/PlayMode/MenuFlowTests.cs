@@ -47,6 +47,33 @@ namespace YASS.Tests.UI
             public void Save() { }
         }
 
+        /// <summary>
+        /// An account that is simply signed in, so the tests about what comes after Play are not each a test
+        /// about signing in. The ones about the account screen use ANewPilot() to take it away again.
+        /// </summary>
+        sealed class FakeAccounts : IPlayerAccounts
+        {
+            public bool IsSignedIn { get; set; } = true;
+
+            public string SignedInAs => IsSignedIn ? "Ace" : string.Empty;
+
+            public void Resume(Action<bool> signedIn) => signedIn?.Invoke(IsSignedIn);
+
+            public void SignUp(string name, string password, Action<AccountResult> done)
+            {
+                IsSignedIn = true;
+                done?.Invoke(AccountResult.Ok);
+            }
+
+            public void SignIn(string name, string password, Action<AccountResult> done)
+            {
+                IsSignedIn = true;
+                done?.Invoke(AccountResult.Ok);
+            }
+
+            public void SignOut() => IsSignedIn = false;
+        }
+
         static MenuRouter Router => Object.FindAnyObjectByType<MenuRouter>();
 
         [SetUp]
@@ -71,7 +98,20 @@ namespace YASS.Tests.UI
 
             GameFlow.UseSettings(new SettingsService(new MemoryStore()));
             GameFlow.UseProgress(new CampaignProgress(new MemoryStore()));
+
+            // These tests play runs to a game over, and a finished run is submitted. The game signs into the
+            // real service the first time a board is needed, so boards that go nowhere are not a nicety here:
+            // without them the suite writes its own scores onto a live leaderboard.
+            GameFlow.UseLeaderboards(new LocalLeaderboards(new MemoryStore()));
+            GameFlow.UseLocalBoards(new LocalLeaderboards(new MemoryStore()));
+
             GameFlow.ResetForTests();
+
+            // A pilot who is already signed in. The account screen stands between Play and the difficulty
+            // screen for anybody who is not (GDD "Scoring", Leaderboards), so without this every test that
+            // presses Play would have to sign in first. The tests about that screen call ANewPilot().
+            GameFlow.UseAccounts(new FakeAccounts());
+            GameFlow.Settings.SetPlayerName("Ace");
         }
 
         [TearDown]
@@ -85,6 +125,9 @@ namespace YASS.Tests.UI
 #endif
             GameFlow.UseSettings(null);
             GameFlow.UseProgress(null);
+            GameFlow.UseLeaderboards(null);
+            GameFlow.UseLocalBoards(null);
+            GameFlow.UseAccounts(null);
             GameFlow.ResetForTests();
         }
 
@@ -209,6 +252,71 @@ namespace YASS.Tests.UI
 
             Assert.Fail($"No active element named {name}.");
             return null;
+        }
+
+        /// <summary>Nobody signed in and nothing chosen, as on a machine where the game is new.</summary>
+        static void ANewPilot()
+        {
+            GameFlow.UseSettings(new SettingsService(new MemoryStore()));
+            GameFlow.UseAccounts(new FakeAccounts { IsSignedIn = false });
+        }
+
+        [UnityTest]
+        public IEnumerator AFirstRun_AsksThePilotTheirName()
+        {
+            ANewPilot();
+            yield return Load(TitleScene);
+
+            FindButton("Play").onClick.Invoke();
+            yield return null;
+
+            Assert.That(Router.Current, Is.EqualTo(MenuScreen.NameEntry),
+                "a score belongs to an account, and the moment they choose to play is when asking makes sense");
+        }
+
+        /// <summary>
+        /// Answering the account screen goes on to the difficulty, and back from there belongs to the title:
+        /// the question has been answered, so the player must not be put in front of it again.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator AnsweringTheAccountScreen_GoesOnAndDoesNotComeBack()
+        {
+            ANewPilot();
+            yield return Load(TitleScene);
+
+            FindButton("Play").onClick.Invoke();
+            yield return null;
+
+            FindButton("PlayOffline").onClick.Invoke();
+            yield return null;
+            Assert.That(Router.Current, Is.EqualTo(MenuScreen.Difficulty));
+
+            Router.Back();
+            yield return null;
+            Assert.That(Router.Current, Is.EqualTo(MenuScreen.Title), "back skips the screen already answered");
+        }
+
+        /// <summary>
+        /// A leaderboard is never worth blocking a game for: choosing to play without an account is
+        /// remembered, so the question is asked once rather than at the start of every session.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator APilotWhoDeclinedAnAccount_IsNotAskedAgain()
+        {
+            ANewPilot();
+            yield return Load(TitleScene);
+
+            FindButton("Play").onClick.Invoke();
+            yield return null;
+            FindButton("PlayOffline").onClick.Invoke();
+            yield return null;
+
+            Router.Back();
+            yield return null;
+
+            FindButton("Play").onClick.Invoke();
+            yield return null;
+            Assert.That(Router.Current, Is.EqualTo(MenuScreen.Difficulty), "they were asked a second time");
         }
 
         [UnityTest]

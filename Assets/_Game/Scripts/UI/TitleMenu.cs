@@ -18,6 +18,11 @@ namespace YASS.UI
                 Debug.LogError($"{nameof(TitleMenu)}: no router assigned; its buttons will do nothing.", this);
 
             if (quitButton != null) quitButton.SetActive(GameFlow.CanQuit);
+
+            // Sign the player back in, if this machine remembers them, while they are reading the title. It
+            // takes a round trip, and doing it here means the answer is usually in by the time they press
+            // Play, so a returning player is not shown the account screen they have already answered.
+            GameFlow.Accounts.Resume(null);
         }
 
         /// <summary>

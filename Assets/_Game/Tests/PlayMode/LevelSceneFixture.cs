@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using YASS.Core;
+using YASS.UI;
 using YASS.Gameplay;
 using NVector2 = System.Numerics.Vector2;
 using Object = UnityEngine.Object;
@@ -56,6 +57,13 @@ namespace YASS.Tests.Gameplay
             // The level reads the run context and the scene's SettingsApplier reads the saved settings: start
             // from a clean, in-memory state so these tests neither depend on nor touch either.
             RunContext.Clear();
+
+            // Boards that go nowhere, set before ConfigureRun so a test can still put its own in their place.
+            // A test that plays a run to its end submits a score like any other run, and the game signs into
+            // the real service on demand, so without this the suite files its scores on a live leaderboard.
+            YASS.UI.GameFlow.UseLeaderboards(new LocalLeaderboards(new MemorySettingsStore()));
+            YASS.UI.GameFlow.UseLocalBoards(new LocalLeaderboards(new MemorySettingsStore()));
+
             ConfigureRun();
             YASS.UI.GameFlow.UseSettings(new SettingsService(new MemorySettingsStore()));
             yield return SceneManager.LoadSceneAsync(SceneName, LoadSceneMode.Single);
@@ -71,6 +79,8 @@ namespace YASS.Tests.Gameplay
         {
             Application.runInBackground = _previousRunInBackground;
             YASS.UI.GameFlow.UseSettings(null);
+            YASS.UI.GameFlow.UseLeaderboards(null);
+            YASS.UI.GameFlow.UseLocalBoards(null);
             RunContext.Clear();
         }
 

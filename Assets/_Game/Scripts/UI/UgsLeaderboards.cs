@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
 using Unity.Services.Leaderboards;
@@ -14,7 +15,8 @@ namespace YASS.UI
 {
     /// <summary>
     /// The online boards (GDD "Scoring": six Unity Gaming Services leaderboards, one per mode and difficulty).
-    /// Signs in anonymously, because a score board is not worth making somebody hold an account for.
+    /// A score belongs to the player's account, which <see cref="IPlayerAccounts"/> owns: the boards are
+    /// usable exactly while somebody is signed in.
     /// </summary>
     /// <remarks>
     /// Nothing here is allowed to interrupt a game. Every call is wrapped, every failure becomes a
@@ -25,43 +27,60 @@ namespace YASS.UI
     /// </remarks>
     public sealed class UgsLeaderboards : ILeaderboardService
     {
-        readonly List<LeaderboardEntry> _entries = new List<LeaderboardEntry>();
+        readonly IPlayerAccounts _accounts;
+        readonly List<Action<bool>> _waiting = new List<Action<bool>>();
 
         bool _preparing;
 
-        public bool IsReady { get; private set; }
-
-        public async void Prepare(Action<bool> ready = null)
+        public UgsLeaderboards(IPlayerAccounts accounts = null)
         {
-            if (IsReady || _preparing)
+            _accounts = accounts ?? new UgsAccounts();
+        }
+
+        /// <summary>The boards are usable exactly while somebody is signed in.</summary>
+        public bool IsReady => _accounts.IsSignedIn;
+
+        /// <summary>
+        /// Resumes whatever session this machine remembers, once. Callers that arrive while that is in
+        /// flight are queued and answered with it, rather than told "not signed in" on the spot: opening the
+        /// board screen starts it, and the player pressing a button during it must not be answered by the
+        /// fact that the thing they are waiting for has not finished yet.
+        /// </summary>
+        /// <remarks>
+        /// This never asks anybody to sign in. A player without an account simply has no online boards,
+        /// which the screens say plainly; signing up is something they choose, on the account screen.
+        /// </remarks>
+        public void Prepare(Action<bool> ready = null)
+        {
+            if (IsReady)
             {
-                ready?.Invoke(IsReady);
+                ready?.Invoke(true);
                 return;
             }
 
+            if (ready != null) _waiting.Add(ready);
+            if (_preparing) return;
+
             _preparing = true;
-            try
-            {
-                if (UnityServices.State != ServicesInitializationState.Initialized)
-                    await UnityServices.InitializeAsync();
-
-                if (!AuthenticationService.Instance.IsSignedIn)
-                    await AuthenticationService.Instance.SignInAnonymouslyAsync();
-
-                IsReady = AuthenticationService.Instance.IsSignedIn;
-            }
-            catch (Exception problem)
-            {
-                // A warning, not an error: no network is an ordinary condition, not a fault in the game.
-                Debug.LogWarning($"{nameof(UgsLeaderboards)}: could not sign in, so scores stay on this " +
-                                 $"machine. {problem.Message}");
-                IsReady = false;
-            }
-            finally
+            _accounts.Resume(_ =>
             {
                 _preparing = false;
-                ready?.Invoke(IsReady);
-            }
+                AnswerEveryoneWaiting();
+            });
+        }
+
+        /// <summary>
+        /// Tells everyone who asked. The list is emptied first, because answering one of them can start
+        /// another request that arrives back here before this loop has finished.
+        /// </summary>
+        void AnswerEveryoneWaiting()
+        {
+            if (_waiting.Count == 0) return;
+
+            var waiting = _waiting.ToArray();
+            _waiting.Clear();
+
+            foreach (var callback in waiting) callback(IsReady);
         }
 
         public async void Submit(GameMode mode, Difficulty difficulty, string playerName, long score,
@@ -79,12 +98,10 @@ namespace YASS.UI
                 return;
             }
 
+            await RenameIfNeeded(playerName);
+
             try
             {
-                // The name is the player's own, so it goes up with every submission: changing it in Settings
-                // should change what the board shows, not leave the old one there for ever.
-                await AuthenticationService.Instance.UpdatePlayerNameAsync(Leaderboards.CleanName(playerName));
-
                 var entry = await LeaderboardsService.Instance.AddPlayerScoreAsync(
                     Leaderboards.IdFor(mode, difficulty), score);
 
@@ -96,6 +113,34 @@ namespace YASS.UI
             {
                 Debug.LogWarning($"{nameof(UgsLeaderboards)}: score not sent. {problem.Message}");
                 done?.Invoke(LeaderboardResult.Failure(problem.Message));
+            }
+        }
+
+        /// <summary>
+        /// Puts the player's chosen name on their account, if it is not there already.
+        /// </summary>
+        /// <remarks>
+        /// In its own try, and awaited before the score rather than with it: a rename can be refused (the
+        /// service rate-limits them) and a refusal must cost the player their new name, not their run. It
+        /// used to share the submission's try, so one rejected rename threw the score away.
+        ///
+        /// Skipped when the name has not changed, which is every run after the first: the service appends
+        /// its own disambiguating number, so the comparison is against the part before the '#'.
+        /// </remarks>
+        static async Task RenameIfNeeded(string playerName)
+        {
+            var wanted = Leaderboards.CleanName(playerName);
+            try
+            {
+                var current = AuthenticationService.Instance.PlayerName;
+                if (!string.IsNullOrEmpty(current) && WithoutTheNumber(current) == wanted) return;
+
+                await AuthenticationService.Instance.UpdatePlayerNameAsync(wanted);
+            }
+            catch (Exception problem)
+            {
+                Debug.LogWarning($"{nameof(UgsLeaderboards)}: could not set the player name to '{wanted}', " +
+                                 $"so the board will show the previous one. {problem.Message}");
             }
         }
 
@@ -113,13 +158,19 @@ namespace YASS.UI
                 var page = await LeaderboardsService.Instance.GetScoresAsync(
                     id, new GetScoresOptions { Limit = count });
 
+                // A list per call, not a shared buffer: two boards can be in flight at once (cycling the
+                // mode does exactly that), and a result belongs to whoever asked for it.
+                // Guarded against being empty: an entry whose player id is also empty would otherwise be
+                // marked as the player's own, and the screen would highlight a stranger's run as theirs.
                 var me = AuthenticationService.Instance.PlayerId;
-                _entries.Clear();
+                var knowWhoIAm = !string.IsNullOrEmpty(me);
+                var entries = new List<LeaderboardEntry>(page.Results.Count);
                 foreach (var score in page.Results)
-                    _entries.Add(new LeaderboardEntry(score.Rank + 1, NameOf(score), (long)score.Score,
-                        score.PlayerId == me));
+                    entries.Add(new LeaderboardEntry(score.Rank + 1, NameOf(score), (long)score.Score,
+                        knowWhoIAm && score.PlayerId == me));
 
-                done?.Invoke(new LeaderboardResult(LeaderboardStatus.Succeeded, _entries, RankOfMine(), page.Total));
+                done?.Invoke(new LeaderboardResult(LeaderboardStatus.Succeeded, entries, RankOfMine(entries),
+                    page.Total));
             }
             catch (Exception problem)
             {
@@ -128,9 +179,9 @@ namespace YASS.UI
             }
         }
 
-        int RankOfMine()
+        static int RankOfMine(List<LeaderboardEntry> entries)
         {
-            foreach (var entry in _entries)
+            foreach (var entry in entries)
                 if (entry.IsYou) return entry.Rank;
 
             return 0;
@@ -140,11 +191,12 @@ namespace YASS.UI
         /// Unity Authentication appends a number to a player name to keep it unique ("Ace#1234"). The board
         /// shows the name the player typed; the number is the service's business, not theirs.
         /// </summary>
-        static string NameOf(ServiceEntry score)
-        {
-            var name = score.PlayerName;
-            if (string.IsNullOrEmpty(name)) return Leaderboards.DefaultName;
+        static string NameOf(ServiceEntry score) =>
+            string.IsNullOrEmpty(score.PlayerName) ? Leaderboards.DefaultName : WithoutTheNumber(score.PlayerName);
 
+        /// <summary>Drops the "#1234" the service appends to keep player names unique.</summary>
+        static string WithoutTheNumber(string name)
+        {
             var hash = name.IndexOf('#');
             return hash > 0 ? name.Substring(0, hash) : name;
         }

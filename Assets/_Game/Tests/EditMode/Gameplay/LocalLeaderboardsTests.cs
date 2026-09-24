@@ -107,6 +107,51 @@ namespace YASS.Tests.Gameplay
             Assert.That(result.YourRank, Is.EqualTo(1), "the earlier, better run still stands");
         }
 
+        /// <summary>
+        /// An Endless run's score multiplier is uncapped (GDD "Core Loop"), so eight-figure scores are
+        /// reachable. They were stored as floats, which have 24 bits of mantissa, so the board showed a
+        /// number a few points away from the one the results screen had shown a second earlier.
+        /// </summary>
+        [Test]
+        public void ABigScore_ComesBackExactly()
+        {
+            const long score = 20_481_377L; // not representable as a float
+            var board = Board(out _);
+
+            LeaderboardResult result = default;
+            board.Submit(GameMode.Endless, Difficulty.Ace, "Ace", score);
+            board.Top(GameMode.Endless, Difficulty.Ace, 10, r => result = r);
+
+            Assert.That(result.Entries[0].Score, Is.EqualTo(score));
+        }
+
+        /// <summary>
+        /// Every row on this board is the player's, so marking them all as theirs paints the whole screen in
+        /// the colour that exists to pick their run out of everyone else's. One row is marked: their best,
+        /// which is the row the online board would show them as.
+        /// </summary>
+        [Test]
+        public void OnlyYourBestRun_IsMarkedAsYours()
+        {
+            var board = Board(out _);
+            board.Submit(GameMode.Campaign, Difficulty.Pilot, "Ace", 500);
+            board.Submit(GameMode.Campaign, Difficulty.Pilot, "Ace", 9000);
+            board.Submit(GameMode.Campaign, Difficulty.Pilot, "Ace", 3000);
+
+            LeaderboardResult result = default;
+            board.Top(GameMode.Campaign, Difficulty.Pilot, 10, r => result = r);
+
+            Assert.That(result.Entries, Has.Count.EqualTo(3), "the history is still kept");
+
+            var mine = 0;
+            foreach (var entry in result.Entries)
+                if (entry.IsYou) mine++;
+
+            Assert.That(mine, Is.EqualTo(1), "only one row is the player's own");
+            Assert.That(result.Entries[0].IsYou, Is.True, "and it is their best run");
+            Assert.That(result.YourRank, Is.EqualTo(1));
+        }
+
         [Test]
         public void TheBoard_SurvivesTheSession()
         {

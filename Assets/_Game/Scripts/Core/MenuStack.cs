@@ -62,6 +62,19 @@ namespace YASS.Core
         public event Action<MenuScreen> CurrentChanged;
 
         /// <summary>
+        /// Whether losing focus should pause the game. It should: a player who alt-tabs, takes a call or
+        /// switches app has stopped playing, and coming back to a ship that died while they were away is the
+        /// worst way to find that out. The same on every platform, because the reason is the same.
+        /// </summary>
+        /// <remarks>
+        /// Never in the editor. Focus there belongs to the Console, the Inspector and the Game view in turn,
+        /// so the game would pause every time somebody clicked away from it; and an automated PlayMode run
+        /// never has focus at all, so this would pause every test in the suite and each one would then time
+        /// out waiting for a game that is not running.
+        /// </remarks>
+        public static bool ShouldPauseOnFocusLoss(bool hasFocus, bool inEditor) => !hasFocus && !inEditor;
+
+        /// <summary>
         /// Game Over and Sector Clear end the run: they are left by choosing a button, never by pressing back,
         /// and nothing can be stacked on top of them.
         /// </summary>
@@ -85,6 +98,26 @@ namespace YASS.Core
             if (screen == MenuScreen.None) throw new ArgumentOutOfRangeException(nameof(screen));
             if (screen == Current) return;
             if (IsLockedForResult || IsResult(Current)) return; // the run is over: nothing opens over the result
+
+            Push(screen);
+        }
+
+        /// <summary>
+        /// Swaps the open screen for another, so back skips the one being left. For a screen the player has
+        /// answered rather than merely visited: the name screen opens the difficulty screen this way, and
+        /// back from there goes to the title rather than asking their name again.
+        /// </summary>
+        public void Replace(MenuScreen screen)
+        {
+            if (screen == MenuScreen.None) throw new ArgumentOutOfRangeException(nameof(screen));
+            if (IsLockedForResult || IsResult(Current)) return;
+
+            if (Depth > 0) _stack.RemoveAt(_stack.Count - 1);
+            if (screen == Current)
+            {
+                CurrentChanged?.Invoke(Current);
+                return;
+            }
 
             Push(screen);
         }

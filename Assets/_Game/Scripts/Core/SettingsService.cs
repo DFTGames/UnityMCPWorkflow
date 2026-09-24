@@ -31,8 +31,11 @@ namespace YASS.Core
         public const string ScreenShakeKey = "yass.settings.screenShake";
         public const string FullscreenKey = "yass.settings.fullscreen";
 
-        /// <summary>The name that goes on the leaderboards, and on the HUD (GDD "Scoring", Leaderboards).</summary>
+        /// <summary>The name that goes on the leaderboards, which is also the account (GDD "Scoring").</summary>
         public const string PlayerNameKey = "yass.settings.playerName";
+
+        /// <summary>Set once the player has said they would rather play without an account.</summary>
+        public const string PlaysOfflineKey = "yass.settings.playsOffline";
 
         readonly ISettingsStore _store;
 
@@ -43,6 +46,7 @@ namespace YASS.Core
             _store = store ?? throw new ArgumentNullException(nameof(store));
             Settings = Load();
             PlayerName = _store.GetString(PlayerNameKey, string.Empty);
+            PlaysOffline = _store.GetBool(PlaysOfflineKey, false);
         }
 
         public GameSettings Settings { get; private set; }
@@ -55,6 +59,26 @@ namespace YASS.Core
 
         /// <summary>True once a name has been chosen, so the game only asks the once.</summary>
         public bool HasPlayerName => !string.IsNullOrEmpty(PlayerName);
+
+        /// <summary>
+        /// True once the player has chosen to play without an account. Remembered, because being asked to
+        /// sign up at the start of every session is exactly the nagging a leaderboard is not worth.
+        /// </summary>
+        /// <remarks>
+        /// Nothing sets this back to false yet, so the choice is final on a machine. That is a hole rather
+        /// than a decision: see Open Questions, "Account management".
+        /// </remarks>
+        public bool PlaysOffline { get; private set; }
+
+        /// <summary>Records that the player would rather not have an account, so they are not asked again.</summary>
+        public void ChooseOffline()
+        {
+            if (PlaysOffline) return;
+
+            PlaysOffline = true;
+            _store.SetBool(PlaysOfflineKey, true);
+            _dirty = true;
+        }
 
         /// <summary>Raised after <see cref="Settings"/> changes. The initial load does not raise it; <see cref="Apply"/> does.</summary>
         public event Action<GameSettings> Changed;
@@ -79,14 +103,18 @@ namespace YASS.Core
 
         public void ResetToDefaults() => Set(GameSettings.Default);
 
-        /// <summary>Names the player, cleaned to something that can go on a public board.</summary>
+        /// <summary>
+        /// Names the player. The name is their account as well as their board entry, so it is stored as
+        /// typed: cleaning it, as this used to, would hand them a name they could no longer sign in with.
+        /// <see cref="Credentials.CheckName"/> is what decides whether it may be used at all.
+        /// </summary>
         public void SetPlayerName(string name)
         {
-            var cleaned = Leaderboards.CleanName(name);
-            if (cleaned == PlayerName) return;
+            var trimmed = (name ?? string.Empty).Trim();
+            if (trimmed == PlayerName) return;
 
-            PlayerName = cleaned;
-            _store.SetString(PlayerNameKey, cleaned);
+            PlayerName = trimmed;
+            _store.SetString(PlayerNameKey, trimmed);
             _dirty = true;
             Changed?.Invoke(Settings);
         }

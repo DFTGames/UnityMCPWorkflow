@@ -1,6 +1,6 @@
+using System;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 using YASS.Core;
 
 namespace YASS.UI
@@ -24,35 +24,41 @@ namespace YASS.UI
         [SerializeField] MenuRouter router;
 
         [SerializeField, Tooltip("One row per place, in order. Filled or hidden as the board needs.")]
-        LeaderboardRow[] rows = System.Array.Empty<LeaderboardRow>();
+        LeaderboardRow[] rows = Array.Empty<LeaderboardRow>();
 
         [SerializeField, Tooltip("Which board is showing, and what went wrong when one will not load.")]
         TMP_Text headingText;
 
         [SerializeField] TMP_Text messageText;
 
-        [SerializeField, Tooltip("Cycles the mode: Campaign or Endless.")]
-        Button modeButton;
+        [SerializeField, Tooltip("What the mode button says: Campaign or Endless.")]
+        TMP_Text modeLabel;
 
-        [SerializeField, Tooltip("Cycles the difficulty.")]
-        Button difficultyButton;
-
-        [SerializeField] TMP_Text modeLabel;
-        [SerializeField] TMP_Text difficultyLabel;
+        [SerializeField, Tooltip("What the difficulty button says.")]
+        TMP_Text difficultyLabel;
 
         GameMode _mode = GameMode.Campaign;
         Difficulty _difficulty = Difficulty.Pilot;
+
+        /// <summary>
+        /// Which load the screen is waiting for. Every answer arrives later than the question, and cycling the
+        /// mode twice quickly asks three questions: without this, the first board back wins and the screen ends
+        /// up showing something other than what its heading says.
+        /// </summary>
+        int _asked;
 
         /// <summary>Which board the screen is showing, for tests.</summary>
         internal string ShowingBoard => Leaderboards.IdFor(_mode, _difficulty);
 
         void OnEnable()
         {
-            // The board the player most likely wants: the one they last played.
-            if (RunContext.IsConfigured)
+            // The board the player most likely wants: the one they last played. Read from what the player
+            // has done rather than from the run in progress, because there is never a run in progress here:
+            // every route back to the title clears it before the scene loads.
+            if (RunContext.HasPlayed)
             {
-                _mode = RunContext.Mode;
-                _difficulty = RunContext.Difficulty;
+                _mode = RunContext.LastMode;
+                _difficulty = RunContext.LastDifficulty;
             }
 
             Refresh();
@@ -76,7 +82,10 @@ namespace YASS.UI
             Refresh();
         }
 
-        public void Back() => router.Back();
+        public void Back()
+        {
+            if (router != null) router.Back();
+        }
 
         void Refresh()
         {
@@ -85,35 +94,53 @@ namespace YASS.UI
             if (headingText != null) headingText.text = $"{_mode} - {_difficulty}";
 
             Say("Loading...");
-            foreach (var row in rows) row.Hide();
+            foreach (var row in rows)
+                if (row != null) row.Hide();
 
-            var boards = GameFlow.Leaderboards;
-            if (boards.IsReady) boards.Top(_mode, _difficulty, Places, Show);
-            else GameFlow.LocalBoards.Top(_mode, _difficulty, Places, ShowLocal);
+            // Opening the screen is what signs the player in, so the answer can arrive a frame or more later;
+            // the screen stays usable in the meantime and the player may have left by then.
+            var asked = ++_asked;
+            GameFlow.WhenReady(ready =>
+            {
+                if (Stale(asked)) return;
+
+                if (ready) GameFlow.Leaderboards.Top(_mode, _difficulty, Places, result => Show(asked, result));
+                else ShowLocal(asked);
+            });
         }
 
-        void Show(LeaderboardResult result)
+        void Show(int asked, LeaderboardResult result)
         {
-            if (this == null) return; // the player left while it was loading
+            if (Stale(asked)) return;
 
             if (result.Status != LeaderboardStatus.Succeeded)
             {
                 // Falling back rather than showing nothing: the player's own runs are better than an error.
-                GameFlow.LocalBoards.Top(_mode, _difficulty, Places, ShowLocal);
+                ShowLocal(asked);
                 return;
             }
 
             Fill(result, result.Entries.Count == 0 ? "No scores yet. Be the first." : null);
         }
 
-        void ShowLocal(LeaderboardResult result)
-        {
-            if (this == null) return;
+        void ShowLocal(int asked) =>
+            GameFlow.LocalBoards.Top(_mode, _difficulty, Places, result =>
+            {
+                if (Stale(asked)) return;
 
-            Fill(result, result.Entries.Count == 0
-                ? "No scores yet, and the online boards cannot be reached."
-                : "Your runs on this machine. The online boards cannot be reached.");
-        }
+                Fill(result, result.Entries.Count == 0
+                    ? "No scores yet, and the online boards cannot be reached."
+                    : "Your runs on this machine. The online boards cannot be reached.");
+            });
+
+        /// <summary>True once the player has left the screen or asked for a different board.</summary>
+        bool Stale(int asked) => this == null || asked != _asked;
+
+        /// <summary>
+        /// Leaving cancels whatever was in flight. Back only deactivates the panel, so without this a board
+        /// that arrived afterwards would fill and re-show rows on a screen nobody is looking at.
+        /// </summary>
+        void OnDisable() => _asked++;
 
         void Fill(LeaderboardResult result, string message)
         {
@@ -121,17 +148,21 @@ namespace YASS.UI
 
             for (var i = 0; i < rows.Length; i++)
             {
+                if (rows[i] == null) continue;
+
                 if (i < result.Entries.Count) rows[i].Show(result.Entries[i]);
                 else rows[i].Hide();
             }
         }
 
+        /// <summary>
+        /// Writes the message line, leaving it in place when it is empty. Deactivating it would take it out
+        /// of the column's layout, so the heading, every row and the Back button would all jump a line the
+        /// moment a board finished loading, and jump back on the next press.
+        /// </summary>
         void Say(string message)
         {
-            if (messageText == null) return;
-
-            messageText.text = message ?? string.Empty;
-            messageText.gameObject.SetActive(!string.IsNullOrEmpty(message));
+            if (messageText != null) messageText.text = message ?? string.Empty;
         }
     }
 }

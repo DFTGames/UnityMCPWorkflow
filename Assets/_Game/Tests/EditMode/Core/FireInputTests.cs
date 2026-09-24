@@ -71,24 +71,11 @@ namespace YASS.Tests.Core
             Assert.That(FireInput.ResolvePointer(Vector2.Zero, Vector2.UnitY, false, out _), Is.False);
         }
 
-        [Test]
-        public void VirtualStick_HeldAndDeflected_FiresAlongStick()
-        {
-            Assert.That(FireInput.ResolveVirtualStick(new Vector2(0f, -0.9f), true, DeadZone, out var dir), Is.True);
-            AssertVector(-Vector2.UnitY, dir);
-        }
-
-        [Test]
-        public void VirtualStick_HeldButCentred_FiresForward()
-        {
-            Assert.That(FireInput.ResolveVirtualStick(new Vector2(0.1f, 0f), true, DeadZone, out var dir), Is.True);
-            AssertVector(Vector2.UnitX, dir);
-        }
-
-        [Test]
-        public void VirtualStick_NotHeld_DoesNotFire()
-        {
-            Assert.That(FireInput.ResolveVirtualStick(Vector2.UnitY, false, DeadZone, out _), Is.False);
-        }
+        /// <summary>
+        /// Touch used to have a rule of its own here, a second copy of the gamepad's with the same behaviour.
+        /// It is gone: <c>TouchControls.ResolveAim</c> calls the gamepad rule, so the dead zone and the
+        /// firing arc have one answer, and <c>VirtualStickTests.TouchAndGamepad_ResolveTheSameWay</c> is what
+        /// keeps the two from drifting apart.
+        /// </summary>
     }
 }

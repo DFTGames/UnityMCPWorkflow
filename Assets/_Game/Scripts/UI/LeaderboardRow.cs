@@ -1,3 +1,4 @@
+using System.Globalization;
 using TMPro;
 using UnityEngine;
 using YASS.Core;
@@ -22,7 +23,7 @@ namespace YASS.UI
         Color yours = new Color(1f, 0.82f, 0.3f);
 
         /// <summary>What this row is showing, for tests. Empty when the row is hidden.</summary>
-        internal string Line => gameObject.activeSelf && nameText != null
+        internal string Line => gameObject.activeSelf && rankText != null && nameText != null && scoreText != null
             ? $"{rankText.text} {nameText.text} {scoreText.text}"
             : string.Empty;
 
@@ -35,8 +36,8 @@ namespace YASS.UI
             Write(nameText, entry.Name, colour);
 
             // Thousands separated: a six figure score is unreadable otherwise, and reading the board is the
-            // whole point of it.
-            Write(scoreText, entry.Score.ToString("N0"), colour);
+            // whole point of it. Invariant, so one board does not read differently on each player's machine.
+            Write(scoreText, entry.Score.ToString("N0", CultureInfo.InvariantCulture), colour);
         }
 
         public void Hide() => gameObject.SetActive(false);

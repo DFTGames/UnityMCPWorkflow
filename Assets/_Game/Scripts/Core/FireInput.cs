@@ -42,19 +42,6 @@ namespace YASS.Core
             return true;
         }
 
-        /// <summary>Touch: the right virtual stick fires while held, in its direction, or forward when centred.</summary>
-        public static bool ResolveVirtualStick(Vector2 stick, bool held, float deadZone, out Vector2 direction)
-        {
-            if (!held)
-            {
-                direction = Vector2.Zero;
-                return false;
-            }
-
-            direction = IsBeyond(stick, deadZone) ? Vector2.Normalize(stick) : Forward;
-            return true;
-        }
-
         static bool IsBeyond(Vector2 stick, float deadZone)
         {
             if (deadZone < 0f) throw new ArgumentOutOfRangeException(nameof(deadZone));

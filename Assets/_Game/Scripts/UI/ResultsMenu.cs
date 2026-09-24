@@ -49,15 +49,18 @@ namespace YASS.UI
         }
 
         /// <summary>
-        /// Where this run placed on its board, once the service has said. Null hides the line, which is what
-        /// a player with no network sees: their own figures, and nothing pretending to be a rank.
+        /// Where this run placed on its board, once the service has said. Null leaves the line blank, which
+        /// is what a player with no network sees: their own figures, and nothing pretending to be a rank.
         /// </summary>
+        /// <remarks>
+        /// The label stays in the layout whether or not it says anything, and its row is reserved. The rank
+        /// arrives a network round trip after the panel does, and deactivating the label would take its row
+        /// out of the column, so Retry and Title would jump up the screen at the moment the player is
+        /// already reaching for them.
+        /// </remarks>
         public void SetPlacing(string placing)
         {
-            if (placingText == null) return;
-
-            placingText.text = placing ?? string.Empty;
-            placingText.gameObject.SetActive(!string.IsNullOrEmpty(placing));
+            if (placingText != null) placingText.text = placing ?? string.Empty;
         }
 
         /// <summary>Shows a whole campaign run's figures, which span several levels.</summary>

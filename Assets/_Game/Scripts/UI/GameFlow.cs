@@ -25,6 +25,8 @@ namespace YASS.UI
 
         static SettingsService _settings;
         static ILeaderboardService _leaderboards;
+        static ILeaderboardService _localBoards;
+        static IPlayerAccounts _accounts;
         static CampaignProgress _progress;
         static Campaign _campaign;
 
@@ -42,10 +44,17 @@ namespace YASS.UI
         /// ones on this machine when they cannot: a player with no network still sees their own best runs,
         /// and nothing about a leaderboard is allowed to stop them playing.
         /// </summary>
-        public static ILeaderboardService Leaderboards => _leaderboards ??= new UgsLeaderboards();
+        public static ILeaderboardService Leaderboards => _leaderboards ??= new UgsLeaderboards(Accounts);
+
+        /// <summary>
+        /// The player's account (GDD "Scoring", Leaderboards). The pilot name is the account, so signing in
+        /// is what makes a score theirs rather than this machine's.
+        /// </summary>
+        public static IPlayerAccounts Accounts => _accounts ??= new UgsAccounts();
 
         /// <summary>The board to fall back to when the service cannot be reached.</summary>
-        public static ILeaderboardService LocalBoards { get; } = new LocalLeaderboards(new PlayerPrefsSettingsStore());
+        public static ILeaderboardService LocalBoards =>
+            _localBoards ??= new LocalLeaderboards(new PlayerPrefsSettingsStore());
 
         /// <summary>
         /// Sends a finished run to the board for its mode and difficulty, and to the local one either way so
@@ -59,8 +68,23 @@ namespace YASS.UI
 
             LocalBoards.Submit(mode, difficulty, name, score);
 
-            if (Leaderboards.IsReady) Leaderboards.Submit(mode, difficulty, name, score, done);
-            else done?.Invoke(LeaderboardResult.Failure("the boards could not be reached"));
+            // Signing in is deferred to the first thing that needs a board, rather than done at start-up: a
+            // player who never opens one and never finishes a run never talks to the service at all.
+            WhenReady(ready =>
+            {
+                if (ready) Leaderboards.Submit(mode, difficulty, name, score, done);
+                else done?.Invoke(LeaderboardResult.Failure("the boards could not be reached"));
+            });
+        }
+
+        /// <summary>
+        /// Signs in if that has not happened yet, then says whether the online boards can be used. The answer
+        /// may arrive on a later frame, and is false rather than an exception when there is no network.
+        /// </summary>
+        public static void WhenReady(Action<bool> ready)
+        {
+            if (Leaderboards.IsReady) ready?.Invoke(true);
+            else Leaderboards.Prepare(ready);
         }
 
         /// <summary>What the player has finished before, across sessions.</summary>
@@ -91,9 +115,11 @@ namespace YASS.UI
         {
             _settings = null;
             _leaderboards = null;
+            _localBoards = null;
+            _accounts = null;
             _progress = null;
             _campaign = null;
-            RunContext.Clear();
+            RunContext.Reset();
         }
 
         /// <summary>Test seam: replaces the settings, including their store. Null restores the saved ones.</summary>
@@ -101,6 +127,23 @@ namespace YASS.UI
 
         /// <summary>Test seam: replaces the boards, so a test never talks to a real service.</summary>
         internal static void UseLeaderboards(ILeaderboardService boards) => _leaderboards = boards;
+
+        /// <summary>
+        /// Test seam: replaces the local board, so a test never writes runs into the player's own saved
+        /// scores. Every finished run is mirrored there, real service or not, so without this the suite
+        /// filed a thousand-point Endless run on whichever machine it ran on.
+        /// </summary>
+        internal static void UseLocalBoards(ILeaderboardService boards) => _localBoards = boards;
+
+        /// <summary>
+        /// Test seam: replaces the accounts, so a test never signs in to the real service. Setting this also
+        /// clears the boards, which hold a reference to whatever accounts they were built with.
+        /// </summary>
+        internal static void UseAccounts(IPlayerAccounts accounts)
+        {
+            _accounts = accounts;
+            _leaderboards = null;
+        }
 
         /// <summary>Test seam: replaces saved progress, so a test never reads or writes the player's own.</summary>
         internal static void UseProgress(CampaignProgress progress) => _progress = progress;

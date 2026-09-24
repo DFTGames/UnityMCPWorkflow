@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 
 namespace YASS.Core
 {
@@ -63,17 +64,30 @@ namespace YASS.Core
         }
 
         /// <summary>
-        /// A name fit to go on a public board: trimmed, cut to length, and never empty. Deliberately not a
+        /// A name fit to go on a public board: no spaces, cut to length, and never empty. Deliberately not a
         /// judgement about what the name says, which is the service's moderation to make, not this game's.
         /// </summary>
+        /// <remarks>
+        /// Every space goes, not just the ones at the ends. Unity Authentication rejects a player name
+        /// containing any whitespace at all, and that rejection arrives in the middle of submitting a score
+        /// and takes the score down with it: "Red Baron" would have meant a run that silently never reached
+        /// any board, indistinguishable from having no network. The name is written back into the box as it
+        /// is cleaned, so the player sees what their board entry will say.
+        /// </remarks>
         public static string CleanName(string name)
         {
             if (string.IsNullOrWhiteSpace(name)) return DefaultName;
 
-            var trimmed = name.Trim();
-            if (trimmed.Length > MaxNameLength) trimmed = trimmed.Substring(0, MaxNameLength).TrimEnd();
+            var kept = new StringBuilder(MaxNameLength);
+            foreach (var letter in name)
+            {
+                if (char.IsWhiteSpace(letter)) continue;
+                if (kept.Length == MaxNameLength) break;
 
-            return trimmed.Length == 0 ? DefaultName : trimmed;
+                kept.Append(letter);
+            }
+
+            return kept.Length == 0 ? DefaultName : kept.ToString();
         }
 
         /// <summary>

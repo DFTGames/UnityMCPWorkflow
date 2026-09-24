@@ -3,7 +3,7 @@ tags:
   - gdd
   - production
 status: draft
-updated: 2026-09-20
+updated: 2026-09-24
 ---
 
 # Open Questions
@@ -11,6 +11,8 @@ updated: 2026-09-20
 %% Undecided design questions. Once answered, move the decision into the relevant page and log it in the Changelog. %%
 
 - [ ] Health pickup: confirm the provisional 25 health.
+- [ ] **On iOS there is no way to pause on purpose.** [[Controls]] says touch pauses with the "Back button or gesture" and rules out an on-screen button. The `Cancel` action binds `<Keyboard>/escape` and `<Gamepad>/buttonEast` only; Android's Back arrives as Escape so Android is covered, but iOS has no Back button and no gesture is implemented. The only pause left there is the automatic one when the OS backgrounds the app. Add a gesture (a two-finger tap, or an edge swipe), allow an on-screen button on iOS only, or accept it and say so.
+- [ ] **Auto-rotation is enabled with all four orientations**, in a side-scroller. Locking to landscape would suit the game, keep the two thumbs where the sticks expect them, and remove a whole class of mid-rotation input bug. Confirm whether portrait play is wanted at all.
 - [ ] Co-op (future): chain, pity timer and score are currently shared by all players. Per-player instead? With a shared score, the level-clear bonus is currently awarded once per surviving player.
 - [ ] Music loops are 30-second clips that do not loop seamlessly (the generator produces a piece with a beginning and an end). Edit them into true loops, or crossfade a track with itself.
 - [ ] Confirm the provisional firing arc: 35 degrees either way, with the ship's tilt showing that same angle.
@@ -32,3 +34,15 @@ updated: 2026-09-20
 - [ ] Sound effects list.
 
 Back to [[00 GDD Home]]
+
+## Account management
+
+The pilot name is the account now ([[Scoring]]), but nothing manages one after it is made:
+
+- A player who chooses **"Play without an account"** can never create one. The choice is remembered and nothing clears it, so Play skips the account screen for ever on that machine.
+- A signed-in player can never **sign out**. `SignOut` exists and is never called.
+- Therefore **two people cannot share a machine**, which both the Scoring page and the changelog claim they can. The session token signs the first person back in, the second is never asked, and their runs are filed on the first person's account under the first person's name.
+
+The obvious home is a row in Settings: who you are signed in as, with Sign out, and Sign in or create an account when you are not. The snag is that Settings is reachable from the pause menu in the level scene, where the account screen does not exist, so either that row hides itself outside the title or the account screen has to live in both scenes.
+
+Raised 2026-09-24, by review, before anybody played it.

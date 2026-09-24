@@ -16,6 +16,9 @@ namespace YASS.Gameplay
 
         [SerializeField] InputActionAsset actions;
 
+        [SerializeField, Tooltip("The on-screen sticks. Optional: a scene without them plays as before.")]
+        TouchSticks touch;
+
         InputActionMap _map;
         InputAction _move;
         InputAction _aimStick;
@@ -44,11 +47,25 @@ namespace YASS.Gameplay
 
         public PlayerCommand ReadCommand(NVector2 shipPosition, Camera worldCamera)
         {
-            var move = _move.ReadValue<Vector2>().ToNumerics();
+            // Each half of the command is taken from touch only while a thumb is actually on that stick, not
+            // whenever the screen is being touched at all. Taking the whole command the moment either stick
+            // was held meant a right thumb firing zeroed the keyboard's steering and a left thumb steering
+            // stopped the mouse firing, and any stray contact killed the pad for as long as it rested there.
+            // A hybrid device really does keep working with either, whichever the player reaches for.
+            var thumbSteering = touch != null && touch.Move.IsHeld;
+            var thumbAiming = touch != null && touch.Aim.IsHeld;
+            var fromTouch = thumbSteering || thumbAiming ? touch.ReadCommand() : default;
+
+            var move = thumbSteering ? fromTouch.Move : _move.ReadValue<Vector2>().ToNumerics();
 
             bool fire;
             NVector2 direction;
-            if (_firePointer.IsPressed())
+            if (thumbAiming)
+            {
+                fire = fromTouch.Fire;
+                direction = fromTouch.AimDirection;
+            }
+            else if (_firePointer.IsPressed())
             {
                 var screen = _pointerPosition.ReadValue<Vector2>();
                 var world = worldCamera.ScreenToWorldPoint(new Vector3(screen.x, screen.y, 0f));

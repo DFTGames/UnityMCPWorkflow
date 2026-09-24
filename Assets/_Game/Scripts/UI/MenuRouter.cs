@@ -102,7 +102,7 @@ namespace YASS.UI
             RestoreLostSelection();
             ReportSelectionMoved();
 
-            if (_cancel != null && _cancel.WasPressedThisFrame()) OnCancel();
+            if (_cancel != null && _cancel.WasPressedThisFrame() && !IsTyping) OnCancel();
             else if (_pause != null && _pause.WasPressedThisFrame()) OnPause();
         }
 
@@ -151,6 +151,15 @@ namespace YASS.UI
             Stack.Open(screen);
         }
 
+        /// <summary>
+        /// Opens a screen in place of the open one, so back skips it. For a screen the player has answered.
+        /// </summary>
+        public void Replace(MenuScreen screen)
+        {
+            Cue.Play(Sfx.UiConfirm);
+            Stack.Replace(screen);
+        }
+
         /// <summary>For Back buttons; also what Escape and the gamepad's east button do.</summary>
         public void Back()
         {
@@ -177,6 +186,50 @@ namespace YASS.UI
 
             if (Stack.Current == MenuScreen.Pause) Stack.Back();
             else if (Stack.Depth == 0) Stack.Open(MenuScreen.Pause);
+        }
+
+        /// <summary>
+        /// Losing focus pauses a level: the player has gone, and a ship that dies while they are in another
+        /// window is not a fair death. Regaining it does not unpause, because the pause menu is now theirs to
+        /// leave when they are ready to play again.
+        /// </summary>
+        void OnApplicationFocus(bool hasFocus) => PauseIfTheyHaveGone(hasFocus);
+
+        /// <summary>
+        /// The same thing on mobile, where switching app raises this rather than the focus callback. Both are
+        /// wired, because which one arrives is the platform's business, and opening the pause menu twice is
+        /// harmless: the stack refuses a screen that is already current.
+        /// </summary>
+        void OnApplicationPause(bool paused) => PauseIfTheyHaveGone(!paused);
+
+        void PauseIfTheyHaveGone(bool hasFocus)
+        {
+            if (!MenuStack.ShouldPauseOnFocusLoss(hasFocus, Application.isEditor)) return;
+            if (rootScreen != MenuScreen.None || Stack.Depth != 0) return;
+
+            // Open rather than OnPause: this is never a toggle. Anything already open, including a result
+            // panel, is left alone, and the stack refuses to open over a run that has ended.
+            Stack.Open(MenuScreen.Pause);
+        }
+
+        /// <summary>
+        /// Whether the player is in a text field. Escape belongs to the field then: it restores what was
+        /// there before the edit, and without this one press would both undo their typing and close the
+        /// screen out from under them.
+        /// </summary>
+        bool IsTyping
+        {
+            get
+            {
+                var events = EventSystem.current;
+                if (events == null) return false;
+
+                var selected = events.currentSelectedGameObject;
+                if (selected == null) return false;
+
+                var field = selected.GetComponent<TMPro.TMP_InputField>();
+                return field != null && field.isFocused;
+            }
         }
 
         void Refresh()

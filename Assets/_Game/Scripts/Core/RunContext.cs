@@ -28,11 +28,27 @@ namespace YASS.Core
         /// <summary>The campaign in progress, or null when a level is being played on its own.</summary>
         public static CampaignRun Campaign { get; private set; }
 
+        /// <summary>
+        /// What the player last chose to play. Deliberately survives <see cref="Clear"/>, which forgets the
+        /// run: this is a fact about the player, not about the run, and it is how the leaderboard screen
+        /// opens on the board they were just on (GDD "Scoring", Leaderboards). False until something has
+        /// been played, which is what a cold start looks like.
+        /// </summary>
+        public static bool HasPlayed { get; private set; }
+
+        public static GameMode LastMode { get; private set; } = GameMode.Campaign;
+
+        public static Difficulty LastDifficulty { get; private set; } = Difficulty.Pilot;
+
         public static void Configure(Difficulty difficulty, GameMode mode = GameMode.Campaign)
         {
             Difficulty = difficulty;
             Mode = mode;
             IsConfigured = true;
+
+            HasPlayed = true;
+            LastMode = mode;
+            LastDifficulty = difficulty;
         }
 
         /// <summary>Starts a campaign: the difficulty comes from the run itself.</summary>
@@ -42,13 +58,26 @@ namespace YASS.Core
             Configure(campaign.Difficulty);
         }
 
-        /// <summary>Forgets the run, as when returning to the menus.</summary>
+        /// <summary>Forgets the run, as when returning to the menus. What was last played is kept.</summary>
         public static void Clear()
         {
             Difficulty = Difficulty.Pilot;
             Mode = GameMode.Campaign;
             IsConfigured = false;
             Campaign = null;
+        }
+
+        /// <summary>
+        /// Forgets everything, including what was last played. This project runs with domain reloading off,
+        /// so a new play session has to be told to start blank; <see cref="Clear"/> alone would carry the
+        /// previous session's choices into it.
+        /// </summary>
+        public static void Reset()
+        {
+            Clear();
+            HasPlayed = false;
+            LastMode = GameMode.Campaign;
+            LastDifficulty = Difficulty.Pilot;
         }
     }
 }

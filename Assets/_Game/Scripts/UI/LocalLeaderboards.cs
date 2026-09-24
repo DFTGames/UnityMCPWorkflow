@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using YASS.Core;
 
 namespace YASS.UI
@@ -58,6 +59,11 @@ namespace YASS.UI
             done?.Invoke(Build(entries, 0, count));
         }
 
+        /// <summary>
+        /// Builds the board, highlighting exactly one row: the best of the player's runs, which is the one
+        /// the online board would show them as. Every row here is theirs, so marking them all would paint
+        /// the whole screen in the colour that exists to help them find themselves.
+        /// </summary>
         LeaderboardResult Build(List<Run> runs, int yourRank, int count = Keep)
         {
             runs.Sort((a, b) => b.Score.CompareTo(a.Score));
@@ -65,8 +71,10 @@ namespace YASS.UI
             var entries = new List<LeaderboardEntry>();
             for (var i = 0; i < runs.Count && i < count; i++)
             {
-                entries.Add(new LeaderboardEntry(i + 1, runs[i].Name, runs[i].Score, runs[i].Mine));
-                if (runs[i].Mine && yourRank == 0) yourRank = i + 1;
+                var best = runs[i].Mine && yourRank == 0;
+                if (best) yourRank = i + 1;
+
+                entries.Add(new LeaderboardEntry(i + 1, runs[i].Name, runs[i].Score, best));
             }
 
             return new LeaderboardResult(LeaderboardStatus.Succeeded, entries, yourRank, runs.Count);
@@ -77,8 +85,12 @@ namespace YASS.UI
             var runs = new List<Run>();
             for (var i = 0; i < Keep; i++)
             {
-                var score = (long)_store.GetFloat($"{KeyPrefix}{id}.{i}.score", 0f);
-                if (score <= 0) continue;
+                // Through a string, not a float: a float has 24 bits of mantissa, and an Endless run's
+                // score multiplier is uncapped, so an eight-figure score would come back a few points
+                // different from the one the results screen had just shown.
+                if (!long.TryParse(_store.GetString($"{KeyPrefix}{id}.{i}.score", string.Empty),
+                        out var score) || score <= 0)
+                    continue;
 
                 runs.Add(new Run(_store.GetString($"{KeyPrefix}{id}.{i}.name", Leaderboards.DefaultName),
                     score, _store.GetBool($"{KeyPrefix}{id}.{i}.mine", false)));
@@ -94,7 +106,8 @@ namespace YASS.UI
             for (var i = 0; i < Keep; i++)
             {
                 var has = i < runs.Count;
-                _store.SetFloat($"{KeyPrefix}{id}.{i}.score", has ? runs[i].Score : 0f);
+                _store.SetString($"{KeyPrefix}{id}.{i}.score",
+                    has ? runs[i].Score.ToString(CultureInfo.InvariantCulture) : string.Empty);
                 _store.SetString($"{KeyPrefix}{id}.{i}.name", has ? runs[i].Name : string.Empty);
                 _store.SetBool($"{KeyPrefix}{id}.{i}.mine", has && runs[i].Mine);
             }

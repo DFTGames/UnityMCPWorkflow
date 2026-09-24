@@ -46,7 +46,16 @@ namespace YASS.UI
         void OnEnable() => Load(Settings.Settings);
 
         /// <summary>Dragging a slider writes the value at once but not to disk; leaving the screen does that.</summary>
-        void OnDisable() => Settings.Flush();
+        /// <remarks>
+        /// The name is committed here first. A panel's OnDisable runs before its children's, and it is the
+        /// input field's own deactivation that fires the end-of-edit this screen listens for, so a name typed
+        /// and then dismissed with Back was being stored just after the flush meant to save it.
+        /// </remarks>
+        void OnDisable()
+        {
+            if (playerName != null) OnPlayerName(playerName.text);
+            Settings.Flush();
+        }
 
         void OnDestroy()
         {
@@ -64,7 +73,17 @@ namespace YASS.UI
             if (sfxVolume != null) sfxVolume.SetValueWithoutNotify(settings.SfxVolume);
             if (screenShake != null) screenShake.SetIsOnWithoutNotify(settings.ScreenShake);
             if (fullscreen != null) fullscreen.SetIsOnWithoutNotify(settings.Fullscreen);
-            if (playerName != null) playerName.SetTextWithoutNotify(Settings.PlayerName);
+            if (playerName != null)
+            {
+                playerName.SetTextWithoutNotify(Settings.PlayerName);
+
+                // The pilot name is the account once somebody has signed in (GDD "Scoring", Leaderboards),
+                // and this screen cannot rename an account: editing it here would change the label while
+                // leaving the account it stands for untouched, so the two would silently disagree. It stays
+                // editable for a player with no account, where it is only a label on a local board.
+                playerName.interactable = !GameFlow.Accounts.IsSignedIn;
+            }
+
             _loading = false;
         }
 
