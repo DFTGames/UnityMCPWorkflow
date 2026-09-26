@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Signing in to YASS 2026</title>
+<style>
+  :root { color-scheme: dark; }
+  body {
+    margin: 0; min-height: 100vh; display: grid; place-items: center;
+    background: #0b0e1a; color: #c8d2e8;
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+    text-align: center; padding: 24px;
+  }
+  p { max-width: 34ch; }
+  .quiet { color: #6b7a99; font-size: 14px; }
+</style>
+</head>
+<body>
+<p id="said">Signing you in&hellip;</p>
+
+<script>
+// Where itch.io sends the player back to after they sign in. Its whole job is to hand the fragment itch put
+// in the URL back to the game that opened it, and then get out of the way.
+//
+// WHY THIS PAGE EXISTS
+// itch.io offers the implicit OAuth flow only, so the token arrives in the URL fragment of a redirect, and
+// the redirect has to land somewhere we control and have registered. A Cloud Code function cannot be that
+// somewhere: it is not a web page. So this is one static file on GitHub Pages, and it is deliberately the
+// smallest thing that can do the job.
+//
+// WHY THE TOKEN IS NEVER DRAWN OR STORED
+// It is a live credential for somebody's itch account, briefly. It is not written to the page, not put in
+// localStorage, not logged, and this page leaves no history entry behind it. It is passed to the opener and
+// forgotten.
+
+(function () {
+  "use strict";
+
+  // The hosts itch.io serves HTML5 games from. postMessage delivers nothing when the target origin does not
+  // match, so sending to each in turn is safe: a window on any other origin receives nothing at all.
+  //
+  // Never "*". That would hand the token to whatever page happened to open this one.
+  //
+  // **This list does not identify our game, and cannot.** itch serves every HTML5 game from these same
+  // shared hosts, so any other itch game is on an allowed origin. One that opened our authorize URL, whose
+  // client id and redirect are public, would receive the token of a player who had already granted the app.
+  // That is inherent to the implicit flow on a shared host rather than something this list can fix; the
+  // scope is profile:me and the worst of it is leaderboard impersonation. Recorded in the GDD's Open
+  // Questions. Moving the build off the shared origin is the only real answer.
+  //
+  // No localhost entries. They were here for local testing and this is the live redirect for the real OAuth
+  // app: any process on a player's machine listening on that port could have asked for, and received, their
+  // token. Test against a separate OAuth application with its own callback instead.
+  var ALLOWED = [
+    "https://html-classic.itch.zone",
+    "https://v6p9d9t4.ssl.hwcdn.net"
+  ];
+
+  var said = document.getElementById("said");
+
+  function say(text, quiet) {
+    said.textContent = text;
+    said.className = quiet ? "quiet" : "";
+  }
+
+  // Everything after the '#', which is where itch puts both the token and any refusal. Taken before
+  // anything else touches the URL.
+  var fragment = window.location.hash.replace(/^#/, "");
+
+  if (!fragment) {
+    say("Open this from the game rather than directly: there is nothing to sign in with here.", true);
+    return;
+  }
+
+  if (!window.opener) {
+    // The popup was blocked and itch redirected this tab instead, or somebody kept the link. Either way
+    // there is nobody to hand it to, and the token must not simply sit here in the address bar.
+    history.replaceState(null, "", window.location.pathname);
+    say("Signing in finished, but the game window is not open any more. Close this and try again.", true);
+    return;
+  }
+
+  for (var i = 0; i < ALLOWED.length; i++) {
+    try {
+      window.opener.postMessage({ source: "yass-itch-oauth", fragment: fragment }, ALLOWED[i]);
+    } catch (ignored) {
+      // A cross-origin opener that has gone away. Nothing to do and nothing worth saying.
+    }
+  }
+
+  // The token is in the address bar of this window until this line. Replacing the entry rather than adding
+  // one means it is not left behind in the browser's history either.
+  history.replaceState(null, "", window.location.pathname);
+
+  // **This page cannot tell whether the message arrived.** postMessage drops silently when the target
+  // origin does not match and does not throw, so counting the calls counts attempts, not deliveries. An
+  // earlier version counted them and claimed success on the strength of it, which meant that a build served
+  // from a host missing from the list above showed the player "Signed in" while the game received nothing.
+  // The game is what knows; it closes this window when it has the token, and the wording below promises
+  // nothing it cannot see.
+  say("You can close this window and go back to the game.");
+
+  // The game closes this itself once it has what it needs, which is the ordinary path. This is only for the
+  // case where it does not: a window left open on a page saying "you can close this" is untidy, but a window
+  // that closes before the message lands is a sign-in that silently did nothing.
+  window.setTimeout(function () {
+    try { window.close(); } catch (ignored) { /* a window we did not open cannot be closed */ }
+  }, 1500);
+})();
+</script>
+</body>
+</html>
