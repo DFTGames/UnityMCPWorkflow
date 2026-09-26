@@ -59,9 +59,16 @@ namespace YASS.UI
             {
                 if (this == null) return; // the player left before the answer came back
 
-                var placing = result.Status == LeaderboardStatus.Succeeded && result.YourRank > 0
-                    ? $"Ranked {result.YourRank}"
-                    : null;
+                // A rank when there is one. When there is not, say why rather than leaving the row blank:
+                // a player who has never signed in has no idea the online boards exist, and an empty line
+                // where a placing would go is the moment they would most want to be told.
+                string placing;
+                if (result.Status == LeaderboardStatus.Succeeded && result.YourRank > 0)
+                    placing = $"Ranked {result.YourRank}";
+                else if (!GameFlow.Accounts.IsSignedIn)
+                    placing = "Sign in from Settings to rank on the online boards";
+                else
+                    placing = null;
 
                 if (gameOver != null) gameOver.SetPlacing(placing);
                 if (victory != null) victory.SetPlacing(placing);

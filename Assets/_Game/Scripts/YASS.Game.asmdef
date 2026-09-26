@@ -9,6 +9,7 @@
         "Unity.Services.Core",
         "Unity.Services.Core.Environments",
         "Unity.Services.Authentication",
+        "Unity.Services.Authentication.PlayerAccounts",
         "Unity.Services.Leaderboards"
     ],
     "includePlatforms": [],

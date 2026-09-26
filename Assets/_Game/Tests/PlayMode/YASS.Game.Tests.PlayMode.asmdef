@@ -12,6 +12,7 @@
         "Unity.InputSystem.TestFramework",
         "Unity.Services.Core",
         "Unity.Services.Authentication",
+        "Unity.Services.Authentication.PlayerAccounts",
         "Unity.Services.Leaderboards",
         "Unity.Services.Core.Environments"
     ],

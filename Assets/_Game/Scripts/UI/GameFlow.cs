@@ -50,7 +50,13 @@ namespace YASS.UI
         /// The player's account (GDD "Scoring", Leaderboards). The pilot name is the account, so signing in
         /// is what makes a score theirs rather than this machine's.
         /// </summary>
-        public static IPlayerAccounts Accounts => _accounts ??= new UgsAccounts();
+        /// <summary>
+        /// Given the same store the settings use, because it has one thing to remember across launches:
+        /// whether this machine's session came from a Unity account. Player Accounts keeps no token of its
+        /// own between runs, so without that flag a purely anonymous session is indistinguishable from a
+        /// signed-in one and the account screen would offer to manage an account nobody has.
+        /// </summary>
+        public static IPlayerAccounts Accounts => _accounts ??= new UgsAccounts(new PlayerPrefsSettingsStore());
 
         /// <summary>The board to fall back to when the service cannot be reached.</summary>
         public static ILeaderboardService LocalBoards =>

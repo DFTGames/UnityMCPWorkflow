@@ -21,7 +21,13 @@ namespace YASS.Core
         Leaderboards,
 
         /// <summary>Asked for once, before the first run: a board entry needs a name.</summary>
-        NameEntry
+        NameEntry,
+
+        /// <summary>
+        /// Signing in, out, and changing who is signed in (GDD "UI Flow and Screens", Account). Reached from
+        /// Settings rather than the title, because it is a thing done once and then rarely.
+        /// </summary>
+        Account
     }
 
     /// <summary>

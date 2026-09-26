@@ -45,8 +45,25 @@ namespace YASS.Tests.Core
         public void AName_IsTrimmedAndCutToLength()
         {
             Assert.That(Leaderboards.CleanName("  Ace  "), Is.EqualTo("Ace"));
-            Assert.That(Leaderboards.CleanName(new string('x', 40)),
+            Assert.That(Leaderboards.CleanName(new string('x', Leaderboards.MaxNameLength + 20)),
                 Has.Length.EqualTo(Leaderboards.MaxNameLength));
+        }
+
+        /// <summary>
+        /// The limit is the service's, not the width of a board row. It was 12 for a while, measured off the
+        /// row, which meant the game refused and truncated names the service had itself generated:
+        /// SeriousForgottenSnowflake is 25 characters. The row shortens nothing; its label is 420 px of 28 pt
+        /// with overflow Ellipsis, which holds about 29 characters and cuts the rest at the right pixel.
+        /// </summary>
+        [Test]
+        public void TheLimit_IsTheServiceOwn_NotTheWidthOfABoardRow()
+        {
+            Assert.That(Leaderboards.MaxNameLength, Is.EqualTo(50), "Unity Authentication's documented limit");
+
+            const string generated = "SeriousForgottenSnowflake";
+            Assert.That(generated.Length, Is.LessThanOrEqualTo(Leaderboards.MaxNameLength));
+            Assert.That(Leaderboards.CleanName(generated), Is.EqualTo(generated),
+                "a name the service generated must survive the game's own cleaning unchanged");
         }
 
         [Test]
@@ -61,7 +78,7 @@ namespace YASS.Tests.Core
         [Test]
         public void AName_ThatIsOnlySpacesOnceCut_BecomesTheDefault()
         {
-            // Twelve characters of name followed by spaces: cutting leaves trailing blanks, not a name.
+            // A run of spaces ahead of the name: cutting from the front would leave blanks, not a name.
             var name = new string(' ', Leaderboards.MaxNameLength) + "Ace";
 
             Assert.That(Leaderboards.CleanName(name), Is.EqualTo("Ace"), "the leading spaces are trimmed first");
@@ -85,7 +102,7 @@ namespace YASS.Tests.Core
         {
             // The limit is on the name that goes up, so spaces must not eat into the player's allowance.
             Assert.That(Leaderboards.CleanName("A B C D E F G H"), Is.EqualTo("ABCDEFGH"));
-            Assert.That(Leaderboards.CleanName(new string(' ', 30) + new string('x', 40)),
+            Assert.That(Leaderboards.CleanName(new string(' ', 30) + new string('x', Leaderboards.MaxNameLength + 20)),
                 Has.Length.EqualTo(Leaderboards.MaxNameLength));
         }
 

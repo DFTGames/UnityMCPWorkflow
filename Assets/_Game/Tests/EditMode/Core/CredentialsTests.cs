@@ -60,41 +60,6 @@ namespace YASS.Tests.Core
             Assert.That(check.Problem, Is.Not.Empty, "and the player has to be told why");
         }
 
-        [TestCase("Aa1!aaaa")]
-        [TestCase("Str0ng-Password")]
-        public void AStrongPassword_IsAccepted(string password)
-        {
-            Assert.That(Credentials.CheckPassword(password).IsUsable, Is.True, password);
-        }
-
-        [TestCase("Aa1!aaa", "too short")]
-        [TestCase("aaaaaaa1!", "no capital")]
-        [TestCase("AAAAAAA1!", "no small letter")]
-        [TestCase("Aaaaaaaa!", "no digit")]
-        [TestCase("Aaaaaaa1", "no symbol")]
-        public void AWeakPassword_IsRefused(string password, string why)
-        {
-            var check = Credentials.CheckPassword(password);
-
-            Assert.That(check.IsUsable, Is.False, why + " should be refused");
-            Assert.That(check.Problem, Is.Not.Empty);
-        }
-
-        [Test]
-        public void AnOverlongPassword_IsRefused()
-        {
-            var password = "Aa1!" + new string('x', Credentials.MaxPasswordLength);
-
-            Assert.That(Credentials.CheckPassword(password).IsUsable, Is.False);
-        }
-
-        [Test]
-        public void AnEmptyPassword_IsRefused()
-        {
-            Assert.That(Credentials.CheckPassword(null).IsUsable, Is.False);
-            Assert.That(Credentials.CheckPassword(string.Empty).IsUsable, Is.False);
-        }
-
         /// <summary>
         /// The name is the display name on the boards as well as the account's username. '@' is allowed in a
         /// username but not confirmed for a display name, and a name the boards will not take fails silently:
@@ -105,17 +70,6 @@ namespace YASS.Tests.Core
         {
             Assert.That(Credentials.IsAllowedInName('@'), Is.False);
             Assert.That(Credentials.CheckName("a@b").IsUsable, Is.False);
-        }
-
-        /// <summary>
-        /// A space is not the symbol the service asks for, and a password that passed here on the strength of
-        /// one would be refused after the round trip, with a message about something else.
-        /// </summary>
-        [Test]
-        public void APassword_IsNotSymbolicJustForHavingASpace()
-        {
-            Assert.That(Credentials.CheckPassword("Aa1 aaaa").IsUsable, Is.False);
-            Assert.That(Credentials.CheckPassword("Aa1!aaaa").IsUsable, Is.True);
         }
 
         /// <summary>

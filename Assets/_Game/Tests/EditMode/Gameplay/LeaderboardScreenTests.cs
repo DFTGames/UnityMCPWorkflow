@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using NUnit.Framework;
+using TMPro;
 using UnityEditor;
+using UnityEngine;
 using UnityEngine.UI;
 using YASS.Core;
 using YASS.UI;
@@ -69,6 +71,36 @@ namespace YASS.Tests.Gameplay
             });
         }
 
+        /// <summary>
+        /// A row must be able to draw a name the service generated. Nothing in code shortens a name any more:
+        /// the row hands the whole thing to the label, and the label's own Ellipsis overflow cuts it at the
+        /// pixel where it stops fitting. That puts the entire rule in the scene, where a narrowed label or an
+        /// overflow mode changed to Overflow or Truncate would spill over the score, or lose the ellipsis that
+        /// says a name was shortened, with nothing to fail. This is that something.
+        /// </summary>
+        [Test]
+        public void EveryRow_CanDrawAServiceGeneratedName()
+        {
+            // 25 characters, and real: the name Unity Authentication handed this project's test account.
+            // A row that cannot hold this cannot hold what most players will never have changed.
+            const string generated = "SeriousForgottenSnowflake";
+
+            ScenePeek.In("Title", scene =>
+            {
+                foreach (var row in ScenePeek.FindAll<LeaderboardRow>(scene))
+                {
+                    var label = (TMP_Text)new SerializedObject(row).FindProperty("nameText").objectReferenceValue;
+                    var width = ((RectTransform)label.transform).rect.width;
+
+                    Assert.That(label.GetPreferredValues(generated, 0f, 0f).x, Is.LessThanOrEqualTo(width),
+                        row.name + "'s name label is too narrow for a name the service generated itself");
+
+                    Assert.That(label.overflowMode, Is.EqualTo(TextOverflowModes.Ellipsis),
+                        row.name + "'s name label must shorten a longer name rather than spill or cut it dead");
+                }
+            });
+        }
+
         [Test]
         public void TheTitle_AsksForAName_BeforeTheFirstRun()
         {
@@ -80,10 +112,45 @@ namespace YASS.Tests.Gameplay
 
                 ScenePeek.RequireReference(menu, "router", "the screen could never be left");
                 ScenePeek.RequireReference(menu, "field", "there would be nothing to type into");
-                ScenePeek.RequireReference(menu, "passwordField",
-                    "every attempt would be refused with 'Choose a password.'");
                 ScenePeek.RequireReference(menu, "messageText",
                     "every failure would be silent, and the screen would look broken rather than refused");
+            });
+        }
+
+        /// <summary>
+        /// The account screen's serialised references. A missing one is silent by design here: every setter
+        /// is null-guarded, so a lost button reference looks exactly like a button the screen has correctly
+        /// hidden, and a lost router makes Back do nothing at all.
+        /// </summary>
+        [Test]
+        public void TheTitle_HasAFullyWiredAccountScreen()
+        {
+            ScenePeek.In("Title", scene =>
+            {
+                var menu = ScenePeek.Find<AccountMenu>(scene);
+                Assert.That(menu, Is.Not.Null, "there is no account screen, so nobody could ever sign out");
+
+                ScenePeek.RequireReference(menu, "router", "Back would do nothing");
+                ScenePeek.RequireReference(menu, "summaryText", "nobody would be told who is signed in");
+                ScenePeek.RequireReference(menu, "messageText", "every refusal would be silent");
+                ScenePeek.RequireReference(menu, "signInButton", "a signed-out player could not sign in");
+                ScenePeek.RequireReference(menu, "signOutButton", "nobody could sign out");
+                ScenePeek.RequireReference(menu, "switchButton", "nobody could hand the game to someone else");
+                ScenePeek.RequireReference(menu, "manageButton", "a forgotten password could not be reset");
+            });
+        }
+
+        /// <summary>The way through to it, and the line that explains a refused name.</summary>
+        [Test]
+        public void TheTitle_SettingsCanReachTheAccountScreen()
+        {
+            ScenePeek.In("Title", scene =>
+            {
+                var settings = ScenePeek.Find<SettingsMenu>(scene);
+                ScenePeek.RequireReference(settings, "router", "the account screen would be unreachable");
+                ScenePeek.RequireReference(settings, "accountRow", "the row could not hide itself in a level");
+                ScenePeek.RequireReference(settings, "nameProblem",
+                    "a refused pilot name would be rejected in silence");
             });
         }
 
@@ -123,27 +190,37 @@ namespace YASS.Tests.Gameplay
         /// serialised reference to it. A button with the right label, in the right place, and an empty
         /// onClick is exactly what lost wiring looks like, and it is what a reference check cannot see.
         /// </summary>
-        [TestCase(nameof(TitleMenu.OpenLeaderboards), "the boards would be unreachable")]
-        [TestCase(nameof(LeaderboardMenu.NextMode), "the mode could not be changed")]
-        [TestCase(nameof(LeaderboardMenu.NextDifficulty), "the difficulty could not be changed")]
-        [TestCase(nameof(NameEntryMenu.CreateAccount), "nobody could ever make an account")]
-        [TestCase(nameof(NameEntryMenu.SignIn), "a returning player could not sign in")]
-        [TestCase(nameof(NameEntryMenu.PlayOffline), "the account screen would have no way past it")]
-        public void TheTitle_HasAButton_ThatCalls(string method, string otherwise)
+        [TestCase(typeof(TitleMenu), nameof(TitleMenu.OpenLeaderboards), "the boards would be unreachable")]
+        [TestCase(typeof(LeaderboardMenu), nameof(LeaderboardMenu.NextMode), "the mode could not be changed")]
+        [TestCase(typeof(LeaderboardMenu), nameof(LeaderboardMenu.NextDifficulty), "the difficulty could not be changed")]
+        [TestCase(typeof(NameEntryMenu), nameof(NameEntryMenu.SignIn), "nobody could sign in before their first run")]
+        [TestCase(typeof(NameEntryMenu), nameof(NameEntryMenu.PlayOffline), "the first-run screen would have no way past it")]
+        [TestCase(typeof(SettingsMenu), nameof(SettingsMenu.OpenAccount), "the account screen would be unreachable")]
+        [TestCase(typeof(AccountMenu), nameof(AccountMenu.SignIn), "a signed-out player could never sign in")]
+        [TestCase(typeof(AccountMenu), nameof(AccountMenu.SignOut), "nobody could sign out, so a shared machine keeps the first player")]
+        [TestCase(typeof(AccountMenu), nameof(AccountMenu.SwitchAccount), "nobody could hand the game to someone else")]
+        [TestCase(typeof(AccountMenu), nameof(AccountMenu.ManageAccount), "a forgotten password could not be reset")]
+        public void TheTitle_HasAButton_ThatCalls(System.Type target, string method, string otherwise)
         {
             ScenePeek.In("Title", scene =>
             {
                 var callers = 0;
                 foreach (var button in ScenePeek.FindAll<Button>(scene))
                     for (var i = 0; i < button.onClick.GetPersistentEventCount(); i++)
-                        if (button.onClick.GetPersistentMethodName(i) == method)
-                        {
-                            Assert.That(button.onClick.GetPersistentTarget(i), Is.Not.Null,
-                                "the button calling " + method + " points at nothing");
-                            callers++;
-                        }
+                    {
+                        if (button.onClick.GetPersistentMethodName(i) != method) continue;
 
-                Assert.That(callers, Is.EqualTo(1), $"no button calls {method}, so {otherwise}");
+                        // The target as well as the name: two screens can both have a SignIn, and a button
+                        // wired to the wrong one of them is exactly the mistake this is here to catch.
+                        var called = button.onClick.GetPersistentTarget(i);
+                        Assert.That(called, Is.Not.Null,
+                            $"the button calling {method} points at nothing");
+
+                        if (called.GetType() == target) callers++;
+                    }
+
+                Assert.That(callers, Is.EqualTo(1),
+                    $"expected exactly one button calling {target.Name}.{method}, or {otherwise}");
             });
         }
 

@@ -145,6 +145,19 @@ namespace YASS.UI
             _currentView.SelectFirst();
         }
 
+        /// <summary>
+        /// Whether this scene has that screen at all. Settings is reached from the title and from a pause in
+        /// a level, and the account screen only exists in the first: a button that opens nothing is worse
+        /// than no button, so the row is hidden where there is nothing behind it.
+        /// </summary>
+        public bool Has(MenuScreen screen)
+        {
+            foreach (var view in screens)
+                if (view != null && view.Screen == screen) return true;
+
+            return false;
+        }
+
         public void Open(MenuScreen screen)
         {
             Cue.Play(Sfx.UiConfirm);

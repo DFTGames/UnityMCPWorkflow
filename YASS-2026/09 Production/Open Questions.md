@@ -3,7 +3,7 @@ tags:
   - gdd
   - production
 status: draft
-updated: 2026-09-24
+updated: 2026-09-25
 ---
 
 # Open Questions
@@ -35,14 +35,18 @@ updated: 2026-09-24
 
 Back to [[00 GDD Home]]
 
-## Account management
+## Account management (answered 2026-09-25)
 
-The pilot name is the account now ([[Scoring]]), but nothing manages one after it is made:
+Answered by moving to Unity Player Accounts. The decision now lives in [[Scoring]] and
+[[UI Flow and Screens]]; kept here only so the trail is followed.
 
-- A player who chooses **"Play without an account"** can never create one. The choice is remembered and nothing clears it, so Play skips the account screen for ever on that machine.
-- A signed-in player can never **sign out**. `SignOut` exists and is never called.
-- Therefore **two people cannot share a machine**, which both the Scoring page and the changelog claim they can. The session token signs the first person back in, the second is never asked, and their runs are filed on the first person's account under the first person's name.
+- Signing out, and changing who is signed in, are on the account screen behind Settings. Signing out
+  clears the remembered session too, so a machine handed on does not sign the first player back in.
+- "Play without an account" is no longer final: the account screen signs a player in later.
+- Two people can share a machine, which the pages had been claiming before it was true.
+- The snag raised here was real and is what the answer had to solve: Settings is reachable from a pause
+  in the level scene, where there is no account screen. The row hides itself rather than the screen being
+  duplicated, which `MenuRouter.Has` decides.
 
-The obvious home is a row in Settings: who you are signed in as, with Sign out, and Sign in or create an account when you are not. The snag is that Settings is reachable from the pause menu in the level scene, where the account screen does not exist, so either that row hides itself outside the title or the account screen has to live in both scenes.
-
-Raised 2026-09-24, by review, before anybody played it.
+The pilot name is no longer the account. A Unity account is identified by an email address, so the name
+the boards show is a separate handle the player picks, and the email never leaves the account screen.

@@ -5,8 +5,9 @@ using YASS.Core;
 namespace YASS.UI
 {
     /// <summary>
-    /// Settings screen (GDD "UI Flow and Screens", Settings): music and effects volume, screen shake, and
-    /// fullscreen on desktop. Every change is saved at once, so leaving by any route keeps it.
+    /// Settings screen (GDD "UI Flow and Screens", Settings): the pilot name, music and effects volume,
+    /// screen shake, fullscreen on desktop, and the way through to the account screen. Every change is saved
+    /// at once, so leaving by any route keeps it.
     /// </summary>
     public sealed class SettingsMenu : MonoBehaviour
     {
@@ -21,6 +22,12 @@ namespace YASS.UI
         [SerializeField, Tooltip("The name that goes on the leaderboards and the HUD.")]
         TMPro.TMP_InputField playerName;
 
+        [SerializeField, Tooltip("Opens the account screen. Optional: a level has no account screen.")]
+        MenuRouter router;
+
+        [SerializeField, Tooltip("The account row, hidden in scenes with no account screen to open.")]
+        GameObject accountRow;
+
         // While the widgets are being filled in from the saved settings, their callbacks must not write back.
         bool _loading;
 
@@ -30,6 +37,7 @@ namespace YASS.UI
         void Awake()
         {
             if (fullscreenRow != null) fullscreenRow.SetActive(GameFlow.SupportsFullscreen);
+            if (accountRow != null) accountRow.SetActive(router != null && router.Has(MenuScreen.Account));
 
             if (musicVolume != null) musicVolume.onValueChanged.AddListener(OnMusicVolume);
             if (sfxVolume != null) sfxVolume.onValueChanged.AddListener(OnSfxVolume);
@@ -38,9 +46,18 @@ namespace YASS.UI
 
             if (playerName != null)
             {
-                playerName.characterLimit = Leaderboards.MaxNameLength;
+                playerName.characterLimit = Credentials.MaxNameLength;
                 playerName.onEndEdit.AddListener(OnPlayerName);
             }
+        }
+
+        /// <summary>
+        /// The account screen, where signing in, signing out and changing who is signed in happen (GDD
+        /// "UI Flow and Screens", Account). Managing the account itself is Unity's page, not ours.
+        /// </summary>
+        public void OpenAccount()
+        {
+            if (router != null) router.Open(MenuScreen.Account);
         }
 
         void OnEnable() => Load(Settings.Settings);
@@ -53,7 +70,10 @@ namespace YASS.UI
         /// </remarks>
         void OnDisable()
         {
-            if (playerName != null) OnPlayerName(playerName.text);
+            // Only when the box is this machine's to edit. While signed in it shows the account's name
+            // read-only, and writing that back here would recreate the stored copy that outlives the
+            // account and turns up in the next person's settings.
+            if (playerName != null && playerName.interactable) OnPlayerName(playerName.text);
             Settings.Flush();
         }
 
@@ -75,13 +95,32 @@ namespace YASS.UI
             if (fullscreen != null) fullscreen.SetIsOnWithoutNotify(settings.Fullscreen);
             if (playerName != null)
             {
-                playerName.SetTextWithoutNotify(Settings.PlayerName);
+                var accounts = GameFlow.Accounts;
 
-                // The pilot name is the account once somebody has signed in (GDD "Scoring", Leaderboards),
-                // and this screen cannot rename an account: editing it here would change the label while
-                // leaving the account it stands for untouched, so the two would silently disagree. It stays
-                // editable for a player with no account, where it is only a label on a local board.
-                playerName.interactable = !GameFlow.Accounts.IsSignedIn;
+                if (accounts.IsSignedIn)
+                {
+                    // The account's name, never this machine's copy: the stored one belongs to whoever was
+                    // signed in last, and showing it to the next person is how somebody sees a stranger's
+                    // name in their own settings. Read-only here; the account screen changes it.
+                    playerName.SetTextWithoutNotify(accounts.PilotName);
+                    playerName.interactable = false;
+                    Say("Your account name. Change it on the Account screen.");
+
+                    // Empty until the service answers, so ask, and fill it in when it does.
+                    accounts.FetchPilotName(fetched =>
+                    {
+                        if (this == null || !isActiveAndEnabled || playerName == null) return;
+
+                        _loading = true;
+                        playerName.SetTextWithoutNotify(fetched);
+                        _loading = false;
+                    });
+                }
+                else
+                {
+                    playerName.SetTextWithoutNotify(Settings.PlayerName);
+                    playerName.interactable = true;
+                }
             }
 
             _loading = false;
@@ -91,12 +130,44 @@ namespace YASS.UI
         /// On finishing the edit rather than on every keystroke: the name is cleaned as it is stored, and
         /// rewriting the box mid-word would fight the player typing.
         /// </summary>
+        [SerializeField, Tooltip("Why a name was refused. Optional: without it a refusal is silent.")]
+        TMPro.TMP_Text nameProblem;
+
         void OnPlayerName(string value)
         {
             if (_loading) return;
 
+            // Checked here as well as on the first-run screen. Without this the box accepted anything, the
+            // service refused it when a score was submitted, and the only sign was a warning in the log
+            // while the board quietly kept the previous name (GDD "Scoring": a name that will not do is
+            // refused and said so).
+            var check = Credentials.CheckName(value);
+            if (!check.IsUsable)
+            {
+                Say(check.Problem);
+
+                // The box keeps what they typed, so they can correct it rather than retype it from nothing.
+                return;
+            }
+
+            Say(string.Empty);
+
+            // Never while signed in: the account owns the name then, and this box is showing it read-only.
+            if (GameFlow.Accounts.IsSignedIn) return;
+
+            // This machine's copy, for a player with no account. Changing the name on an account is done on
+            // the account screen, with a button, because it changes what every board prints and the service
+            // rate-limits renames: it should not happen as a side effect of clicking out of a text box.
             Settings.SetPlayerName(value);
             if (playerName != null) playerName.SetTextWithoutNotify(Settings.PlayerName);
+
+            if (GameFlow.Accounts.IsSignedIn)
+                Say("Signed in: change the name the boards show on the Account screen.");
+        }
+
+        void Say(string problem)
+        {
+            if (nameProblem != null) nameProblem.text = problem ?? string.Empty;
         }
 
         void OnMusicVolume(float value)

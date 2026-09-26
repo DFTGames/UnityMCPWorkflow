@@ -33,6 +33,9 @@ namespace YASS.UI
 
             var colour = entry.IsYou ? yours : normal;
             Write(rankText, entry.Rank.ToString(), colour);
+            // The whole name, however long. The label is 420 px of 28 pt, which holds about 29 characters,
+            // and its overflow mode is Ellipsis, so TMP shortens at the pixel where a name stops fitting.
+            // Cutting to a character count here was worse at the same job: it shortened names that fit.
             Write(nameText, entry.Name, colour);
 
             // Thousands separated: a six figure score is unreadable otherwise, and reading the board is the

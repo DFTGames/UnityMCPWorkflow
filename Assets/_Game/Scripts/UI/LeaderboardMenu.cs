@@ -128,10 +128,26 @@ namespace YASS.UI
             {
                 if (Stale(asked)) return;
 
-                Fill(result, result.Entries.Count == 0
-                    ? "No scores yet, and the online boards cannot be reached."
-                    : "Your runs on this machine. The online boards cannot be reached.");
+                Fill(result, WhyTheseAreLocal(result.Entries.Count == 0));
             });
+
+        /// <summary>
+        /// Why the player is looking at their own runs rather than the world's. Not being signed in and not
+        /// being able to reach the service are different problems with different answers, and saying "the
+        /// online boards cannot be reached" to somebody who has simply never signed in sends them off to
+        /// check a connection that was never at fault, with no hint that there is anything they can do.
+        /// </summary>
+        static string WhyTheseAreLocal(bool empty)
+        {
+            if (!GameFlow.Accounts.IsSignedIn)
+                return empty
+                    ? "No runs on this machine yet. Sign in from Settings to join the online boards."
+                    : "Your runs on this machine. Sign in from Settings to join the online boards.";
+
+            return empty
+                ? "No scores yet, and the online boards cannot be reached."
+                : "Your runs on this machine. The online boards cannot be reached.";
+        }
 
         /// <summary>True once the player has left the screen or asked for a different board.</summary>
         bool Stale(int asked) => this == null || asked != _asked;

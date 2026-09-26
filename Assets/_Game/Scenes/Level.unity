@@ -14337,6 +14337,8 @@ MonoBehaviour:
   fullscreen: {fileID: 1975177317}
   fullscreenRow: {fileID: 1564248985}
   playerName: {fileID: 1904766735}
+  router: {fileID: 589275911}
+  accountRow: {fileID: 0}
 --- !u!114 &2111608631
 MonoBehaviour:
   m_ObjectHideFlags: 0

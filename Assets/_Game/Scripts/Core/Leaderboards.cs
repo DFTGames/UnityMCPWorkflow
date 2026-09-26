@@ -37,7 +37,14 @@ namespace YASS.Core
         public const int Count = 6;
 
         /// <summary>The longest name a player may put on a board.</summary>
-        public const int MaxNameLength = 12;
+        /// <summary>
+        /// Unity Authentication's own limit: "The name should not contain any white space and should have a
+        /// maximum length of 50 characters." This was 12 for a while, taken from how much a board row could
+        /// show, which was the wrong thing to measure: the service hands out generated names such as
+        /// SeriousForgottenSnowflake, and a game that cannot hold the name its own service assigned cannot
+        /// show it, let alone let anybody type it back.
+        /// </summary>
+        public const int MaxNameLength = 50;
 
         /// <summary>What an entry is called before the player has chosen anything.</summary>
         public const string DefaultName = "Pilot";

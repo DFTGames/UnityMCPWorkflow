@@ -134,16 +134,22 @@ namespace YASS.UI
         /// service rate-limits them) and a refusal must cost the player their new name, not their run. It
         /// used to share the submission's try, so one rejected rename threw the score away.
         ///
-        /// Skipped when the name has not changed, which is every run after the first: the service appends
-        /// its own disambiguating number, so the comparison is against the part before the '#'.
+        /// Skipped once the account has a name, which is every run after the first. The service's name is
+        /// authoritative from then on: it is what the boards print and what the player edits in Settings.
         /// </remarks>
         static async Task RenameIfNeeded(string playerName)
         {
             var wanted = Leaderboards.CleanName(playerName);
             try
             {
+                // Only when the account has no name at all, which is the player's first submission after
+                // signing in: this carries across the name they chose before they had an account. After
+                // that the service's name is the one that counts, because it is the one the player can see
+                // and set on the account screen. Pushing this machine's copy on every run would quietly
+                // undo a rename they had just made, and the only sign would be the board disagreeing with
+                // the screen that told them it had worked.
                 var current = AuthenticationService.Instance.PlayerName;
-                if (!string.IsNullOrEmpty(current) && WithoutTheNumber(current) == wanted) return;
+                if (!string.IsNullOrEmpty(current)) return;
 
                 await AuthenticationService.Instance.UpdatePlayerNameAsync(wanted);
             }

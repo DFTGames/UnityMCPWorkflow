@@ -42,10 +42,15 @@ namespace YASS.Tests.Gameplay
             Assert.That(_reader, Is.Not.Null, "the level has no input reader");
             Assert.That(_sticks, Is.Not.Null, "the level has no touch sticks");
 
+            // The editor has real devices of its own, so these are the second keyboard and touchscreen in
+            // the system. Whichever one is "current" is the one an action samples: if a leftover from an
+            // earlier fixture is current instead of ours, Hold below drives one keyboard while the reader
+            // reads another, and this suite has been seen to fail exactly that way without any code change.
             _screen = InputSystem.AddDevice<Touchscreen>();
             _keyboard = InputSystem.AddDevice<Keyboard>();
             EnhancedTouchSupport.Enable();
             yield return null;
+
         }
 
         [TearDown]
