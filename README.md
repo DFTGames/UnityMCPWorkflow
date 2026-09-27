@@ -109,9 +109,29 @@ From the Editor, use `Tools/YASS/Run EditMode Tests` or `Tools/YASS/Run PlayMode
 Unity.exe -batchmode -projectPath . -runTests -testPlatform EditMode -testResults TestResults.xml
 ```
 
+### Leaderboards and sign-in need a Unity project of your own
+
+**The game runs, builds and plays without any of this.** Scores fall back to `LocalLeaderboards`, which keeps runs on the machine through the same store as the settings, so a fresh clone is playable immediately. But the **online** boards and itch.io sign-in will not work until you connect the project to your own [Unity Gaming Services](https://unity.com/solutions/gaming-services) project, because the services this repository points at are ours and you have no access to them.
+
+`ProjectSettings/ProjectSettings.asset` carries our `cloudProjectId` and organisation. To make the online features work:
+
+1. **Link the project to your own UGS project.** In the Editor, *Project Settings ▸ Services*, or from the [Unity Dashboard](https://cloud.unity.com/). This rewrites `cloudProjectId`.
+2. **Create six leaderboards**, with the ids `campaign_cadet`, `campaign_pilot`, `campaign_ace`, `endless_cadet`, `endless_pilot` and `endless_ace`, in both a `production` and a `test` environment. Those ids are built as `{mode}_{difficulty}` and pinned by a test, because renaming one orphans every score already filed under it. They sort **descending** — worth setting in the dashboard, since the UGS CLI silently ignores `SortOrder`.
+3. **For itch.io sign-in**, follow [`09 Production/itch.io Sign-in Setup.md`](YASS-2026/09%20Production/itch.io%20Sign-in%20Setup.md). You need your own itch.io OAuth application, your own callback page, and `CloudCode/SignInWithItch.js` deployed with a service account key in Secret Manager. The OAuth client id in `Assets/_Game/Scripts/UI/ItchSettings.cs` and the redirect URL in `ItchAccounts.cs` are ours; replace both with yours.
+
+One behaviour to know: a **build** plays against the `production` environment and **anything in the Editor** plays against `test`, so an editor playtest can never put a practice score on a real board. The boards you see in the Editor are the test ones.
+
 ### Driving Unity from Claude Code
 
 [`.mcp.json`](.mcp.json) registers the `unity-mcp` server, which comes from the `com.unity.ai.assistant` package and only works while the Editor has this project open. With it running, the agent can create scenes and assets, edit GameObjects, run tests and read the console without a human touching the Editor.
+
+**Edit `.mcp.json` before this will work for you.** It is tracked rather than ignored, so it arrives holding an absolute path to the relay on the machine it was written on — account name and all — and it names the Windows binary:
+
+```json
+"command": "C:\\Users\\pino\\.unity/relay\\relay_win.exe"
+```
+
+Change it to the relay in your own home directory. The package installs it under `~/.unity/relay/` (`%USERPROFILE%\.unity\relay\` on Windows), and the executable is platform-specific: `relay_win.exe` on Windows. Treat that line as a local setting, not as project configuration.
 
 ---
 
