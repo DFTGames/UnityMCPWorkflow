@@ -47,18 +47,19 @@ namespace YASS.Tests.Gameplay
             Assert.That(level.Waves.Count, Is.EqualTo(11));
         }
 
-        // Wave number, Darts, Weavers, meteors (GDD wave table, Pilot counts).
-        [TestCase(1, 5, 0, 0)]
+        // Wave number, Darts, Weavers, meteors: the authored counts in the asset, which are what the GDD
+        // wave table lists. A difficulty multiplier is applied on top of these at run time.
+        [TestCase(1, 6, 0, 0)]
         [TestCase(2, 0, 3, 0)]
-        [TestCase(3, 0, 0, 4)]
-        [TestCase(4, 7, 0, 0)]
-        [TestCase(5, 4, 4, 0)]
-        [TestCase(6, 0, 0, 5)]
-        [TestCase(7, 8, 0, 0)]
-        [TestCase(8, 0, 6, 0)]
-        [TestCase(9, 6, 3, 2)]
-        [TestCase(10, 0, 0, 8)]
-        [TestCase(11, 10, 4, 0)]
+        [TestCase(3, 0, 0, 5)]
+        [TestCase(4, 8, 0, 0)]
+        [TestCase(5, 5, 4, 0)]
+        [TestCase(6, 0, 0, 6)]
+        [TestCase(7, 9, 0, 0)]
+        [TestCase(8, 0, 7, 0)]
+        [TestCase(9, 8, 3, 2)]
+        [TestCase(10, 0, 0, 9)]
+        [TestCase(11, 11, 5, 0)]
         public void Level01_WaveMatchesGdd(int waveNumber, int darts, int weavers, int meteors)
         {
             Totals(LoadLevel().Waves[waveNumber - 1], out var d, out var w, out var m);
@@ -81,11 +82,13 @@ namespace YASS.Tests.Gameplay
             var specs = LoadLevel().ToSpecs();
 
             Assert.That(specs.Length, Is.EqualTo(11));
-            Assert.DoesNotThrow(() => new WaveDirector(specs, 1.3f));
+            // Ace by name rather than by number: a literal 1.3 here used to mean "Ace" and, once the count
+            // multipliers moved, would have quietly meant nothing in particular.
+            Assert.DoesNotThrow(() => new WaveDirector(specs, DifficultySettings.Ace.EnemyCountMultiplier));
         }
 
-        [TestCase(3, 5)]  // 4 meteors x Ace 1.3 = 5.2
-        [TestCase(10, 11)] // 4 x 1.3 = 5.2 -> 5, 2 x 1.3 = 2.6 -> 3, 2 x 1.3 = 2.6 -> 3
+        [TestCase(3, 7)]   // 5 meteors x Ace 1.3 = 6.5 -> 7
+        [TestCase(10, 12)] // 4 x 1.3 -> 5, 2 x 1.3 -> 3, 3 x 1.3 -> 4
         public void Level01_MeteorFieldsScaleWithDifficulty(int waveNumber, int expectedOnAce)
         {
             var specs = LoadLevel().ToSpecs();

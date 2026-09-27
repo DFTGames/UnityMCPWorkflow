@@ -31,14 +31,25 @@ namespace YASS.Tests.Gameplay
             Assert.That(Runner.IsRunning, Is.True);
         }
 
+        /// <summary>
+        /// Wave 1 authors six Darts, and the fixture plays on Pilot, whose enemy count multiplier is 1.0.
+        /// </summary>
+        /// <remarks>
+        /// This said five until the authored counts were raised 15%, and it kept passing, which is the
+        /// interesting part. The group is a Line at 0.4 s spacing, so the live count climbs one at a time and
+        /// a per-frame <c>WaitUntil</c> caught the transient five on the way to six. It had quietly become
+        /// "five were alive at some point", and a single slow frame stepping four to six would have turned it
+        /// into a timeout complaining about "the five Darts of wave 1". Any formation whose members arrive
+        /// together (Column, V) would have broken it outright.
+        /// </remarks>
         [UnityTest]
-        public IEnumerator FirstWave_BringsFiveDartsAfterTheOpeningDelay()
+        public IEnumerator FirstWave_BringsSixDartsAfterTheOpeningDelay()
         {
             Assert.That(Runner.Director.CurrentWave, Is.EqualTo(-1));
 
             yield return WaitUntil(() => Runner.Director.CurrentWave == 0, 4f, "the first wave to start");
-            yield return WaitUntil(() => CountLiveHazards() == 5, 4f, "the five Darts of wave 1");
-            Assert.That(Runner.Director.Outstanding(0), Is.EqualTo(5));
+            yield return WaitUntil(() => CountLiveHazards() == 6, 4f, "the six Darts of wave 1");
+            Assert.That(Runner.Director.Outstanding(0), Is.EqualTo(6));
         }
 
         [UnityTest]

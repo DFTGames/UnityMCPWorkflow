@@ -48,7 +48,18 @@ namespace YASS.Gameplay
         const int PoolCapacity = 64;
         const int PoolMaxSize = 512;
         const int ProjectilePrewarm = 48;
-        const int HazardPrewarm = 8;
+
+        /// <summary>
+        /// Enough for the largest group that arrives on a single step, so a wave never instantiates mid-fight.
+        /// </summary>
+        /// <remarks>
+        /// The biggest simultaneous arrival in the campaign is Level 08's V of 8: a V has no spacing delay, so
+        /// every member spawns on one <c>FixedUpdate</c>. Raising the enemy count multipliers took that to 12
+        /// on Ace, which was four instantiates in one frame against a prewarm of 8, on the last wave of the
+        /// game. The pool keeps whatever it grows, so this only ever cost the first such wave, but it cost it
+        /// in the worst place.
+        /// </remarks>
+        const int HazardPrewarm = 12;
 
         static readonly NVector2 EnemyFallbackAim = -NVector2.UnitX;
 

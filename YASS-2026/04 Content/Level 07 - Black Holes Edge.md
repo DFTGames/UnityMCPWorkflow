@@ -3,7 +3,7 @@ tags:
   - gdd
   - content
 status: draft
-updated: 2026-09-22
+updated: 2026-09-27
 ---
 
 # Level 07 - Black Hole's Edge
@@ -11,23 +11,23 @@ updated: 2026-09-22
 Setting: the rim of a black hole, starlight smeared into arcs around it (see [[Art Direction]]). Length: about 4 minutes. Enemies: every enemy type. Boss: **Singularity Engine** (below).
 
 ## Waves
-Counts are for Pilot; the enemy count multiplier scales each group ([[Wave System]]). The level is
+Counts below are the **authored** values in the level asset, before any difficulty is applied; the enemy count multiplier scales each group ([[Wave System]]). The level is
 a `LevelDefinition` asset: change a wave by editing it in the Inspector.
 
 | # | Wave | Groups |
 | - | ---- | ------ |
-| 1 | Event horizon | 6 Darts + 4 Swarm drones |
-| 2 | Interceptors | 5 Divers, staggered |
-| 3 | Crossfire | 3 Snipers, staggered |
-| 4 | Frigate wall | 2 Frigates + 6 Swarm drones |
-| 5 | Drawn in | 6 solid meteors |
+| 1 | Event horizon | 7 Darts + 4 Swarm drones |
+| 2 | Interceptors | 6 Divers, staggered |
+| 3 | Crossfire | 4 Snipers, staggered |
+| 4 | Frigate wall | 2 Frigates + 7 Swarm drones |
+| 5 | Drawn in | 7 solid meteors |
 | 6 | Gun line | 3 Gunships, staggered |
-| 7 | Mines and weavers | 3 Mine Layers + 4 Weavers |
-| 8 | Swarm | 8 Swarm drones high + 8 low, both V |
-| 9 | Mixed assault | 2 Frigates + 3 Divers + 2 Snipers |
-| 10 | Debris storm | 5 large splitting + 3 solid meteors |
-| 11 | Final rush | 3 Gunships + 4 Divers + 8 Swarm drones |
-| 12 | Last stand | 2 Frigates + 3 Snipers + 6 Darts |
+| 7 | Mines and weavers | 4 Mine Layers + 4 Weavers |
+| 8 | Swarm | 9 Swarm drones high + 10 low, both V |
+| 9 | Mixed assault | 2 Frigates + 3 Divers + 3 Snipers |
+| 10 | Debris storm | 5 large splitting + 4 solid meteors |
+| 11 | Final rush | 3 Gunships + 5 Divers + 9 Swarm drones |
+| 12 | Last stand | 2 Frigates + 4 Snipers + 7 Darts |
 | Boss | Singularity Engine | See below |
 
 ## Boss: Singularity Engine

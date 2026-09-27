@@ -153,8 +153,12 @@ namespace YASS.Core
         {
             if (countMultiplier <= 0f) throw new ArgumentOutOfRangeException(nameof(countMultiplier));
 
-            // Via decimal: 1.3f is really 1.2999999..., so 5 x 1.3f would round to 6 instead of 7. The float-to-decimal
-            // conversion keeps 7 significant digits, which recovers the tuned value exactly.
+            // Via decimal, because a float multiplier lands just under its written value: 10 x 1.15f is
+            // 11.499999523..., which rounds to 11, where the tuned 10 x 1.15 = 11.5 must round to 12. That is
+            // not hypothetical; it is the campaign's last wave on Pilot (Level08, a group of 10). The
+            // float-to-decimal conversion keeps 7 significant digits, which recovers the tuned value exactly.
+            // Every current multiplier fits inside those 7 digits, including the Endless escalations; a
+            // baseline with more decimals than that would start losing midpoints again, silently.
             var scaled = Math.Round(count * (decimal)countMultiplier, MidpointRounding.AwayFromZero);
             return Math.Max(1, (int)scaled);
         }
@@ -168,10 +172,28 @@ namespace YASS.Core
     public sealed class WaveDirector
     {
         /// <summary>
-        /// Breathing space between a cleared wave and the next. Kept short on purpose: an empty screen is dead
-        /// time, and the player should never be sitting still waiting for something to shoot (GDD "Wave System").
+        /// Time between a cleared wave and the next, and it is deliberately none at all: the next wave starts
+        /// on the step the last one is cleared (GDD "Wave System", Pacing).
         /// </summary>
-        public const float GapAfterClear = 1f;
+        /// <remarks>
+        /// This was a second of breathing space, to let a kill land and the screen settle. That second was the
+        /// only moment in a level with nothing on screen to shoot, which is precisely what the pacing rule
+        /// exists to prevent, so the explosion and the incoming wave are allowed to overlap instead.
+        ///
+        /// A wave that has *not* been cleared still waits for <see cref="MaxWaveDuration"/> exactly as before,
+        /// so this is the reward for clearing rather than a way of turning the pacing rules off.
+        ///
+        /// Be honest about what zero does to <c>ShouldStartNextWave</c>, though: since <c>_clearedTime</c> only
+        /// ever holds <c>_time</c> and time only moves forwards, the comparison against it is now always true
+        /// once a wave is cleared, and <c>_clearedTime</c> has degenerated into a flag. It is kept as a time
+        /// rather than collapsed into a <c>bool</c> so that restoring a gap stays a one-constant change, but no
+        /// test can currently tell this code from one with that comparison deleted.
+        ///
+        /// Note also that this removes the gap *between* waves and nothing else. Groups still carry their own
+        /// <c>StartDelay</c>, and members their spacing, so a wave whose first group is delayed will still show
+        /// an empty screen for that long (GDD "Wave System" says so explicitly).
+        /// </remarks>
+        public const float GapAfterClear = 0f;
 
         /// <summary>
         /// A wave never holds the level longer than this, however many stragglers are still drifting off-screen.

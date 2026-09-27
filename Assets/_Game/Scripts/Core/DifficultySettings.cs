@@ -12,14 +12,26 @@ namespace YASS.Core
     /// <summary>Per-difficulty tuning from the GDD page "Difficulty and Balancing".</summary>
     public sealed class DifficultySettings
     {
-        public static readonly DifficultySettings Cadet =
-            new DifficultySettings(Difficulty.Cadet, 5, 100f, 0.75f, 0.85f, 0.75f, 0.7f, 1.25f, 1.0f);
+        // Every value here is the GDD's "Difficulty and Balancing" table, read straight across. Spelled out
+        // with named arguments on purpose: nine positional numbers, six of them bare floats, cannot be
+        // checked against the table without counting, and a transposed pair would look like nothing at all.
+        public static readonly DifficultySettings Cadet = new DifficultySettings(
+            Difficulty.Cadet,
+            startingLives: 5, healthPerLife: 100f, damageTakenMultiplier: 0.75f,
+            enemySpeedMultiplier: 0.85f, enemyCountMultiplier: 0.75f, enemyFireRateMultiplier: 0.7f,
+            pickupDropChanceMultiplier: 1.25f, scoreMultiplier: 1.0f);
 
-        public static readonly DifficultySettings Pilot =
-            new DifficultySettings(Difficulty.Pilot, 3, 100f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.5f);
+        public static readonly DifficultySettings Pilot = new DifficultySettings(
+            Difficulty.Pilot,
+            startingLives: 3, healthPerLife: 100f, damageTakenMultiplier: 1.0f,
+            enemySpeedMultiplier: 1.0f, enemyCountMultiplier: 1.0f, enemyFireRateMultiplier: 1.0f,
+            pickupDropChanceMultiplier: 1.0f, scoreMultiplier: 1.5f);
 
-        public static readonly DifficultySettings Ace =
-            new DifficultySettings(Difficulty.Ace, 2, 100f, 1.5f, 1.2f, 1.3f, 1.3f, 0.75f, 2.5f);
+        public static readonly DifficultySettings Ace = new DifficultySettings(
+            Difficulty.Ace,
+            startingLives: 2, healthPerLife: 100f, damageTakenMultiplier: 1.5f,
+            enemySpeedMultiplier: 1.2f, enemyCountMultiplier: 1.3f, enemyFireRateMultiplier: 1.3f,
+            pickupDropChanceMultiplier: 0.75f, scoreMultiplier: 2.5f);
 
         public Difficulty Difficulty { get; }
         public int StartingLives { get; }

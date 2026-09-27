@@ -3,7 +3,7 @@ tags:
   - gdd
   - content
 status: draft
-updated: 2026-09-22
+updated: 2026-09-27
 ---
 
 # Level 02 - Asteroid Belt
@@ -11,22 +11,22 @@ updated: 2026-09-22
 Setting: a dense belt of tumbling rock lit by a distant sun (see [[Art Direction]]). Length: about 3.5 minutes. Enemies: Dart, Weaver, Swarm drone, Gunship; splitting and solid meteors. Boss: **Rock Crusher** (below).
 
 ## Waves
-Counts are for Pilot; the enemy count multiplier scales each group ([[Wave System]]). The level is
+Counts below are the **authored** values in the level asset, before any difficulty is applied; the enemy count multiplier scales each group ([[Wave System]]). The level is
 a `LevelDefinition` asset: change a wave by editing it in the Inspector.
 
 | # | Wave | Groups |
 | - | ---- | ------ |
-| 1 | Rolling stones | 4 large splitting meteors |
-| 2 | Drone swarm | 8 Swarm drones, V formation |
-| 3 | Darts and rocks | 5 Darts, line + 2 solid meteors |
-| 4 | First gunship | 1 Gunship, high + 4 Darts, low |
+| 1 | Rolling stones | 5 large splitting meteors |
+| 2 | Drone swarm | 9 Swarm drones, V formation |
+| 3 | Darts and rocks | 6 Darts, line + 2 solid meteors |
+| 4 | First gunship | 1 Gunship, high + 5 Darts, low |
 | 5 | Meteor field | 5 large splitting meteors |
-| 6 | Swarm pincer | 6 Swarm drones, column high + 6 more, column low |
-| 7 | Weavers | 4 Weavers, staggered |
-| 8 | Gunship pair | 2 Gunships, staggered + 6 Swarm drones |
-| 9 | Rock storm | 4 large splitting + 2 solid meteors |
-| 10 | Pressure | 6 Darts + 4 Swarm drones + 1 Gunship |
-| 11 | Final rush | 8 Swarm drones + 6 Darts + 3 large meteors |
+| 6 | Swarm pincer | 7 Swarm drones, column high + 7 more, column low |
+| 7 | Weavers | 5 Weavers, staggered |
+| 8 | Gunship pair | 2 Gunships, staggered + 7 Swarm drones |
+| 9 | Rock storm | 5 large splitting + 2 solid meteors |
+| 10 | Pressure | 7 Darts + 4 Swarm drones + 1 Gunship |
+| 11 | Final rush | 10 Swarm drones + 7 Darts + 3 large meteors |
 | Boss | Rock Crusher | See below |
 
 ## Boss: Rock Crusher

@@ -3,7 +3,7 @@ tags:
   - gdd
   - content
 status: draft
-updated: 2026-09-22
+updated: 2026-09-27
 ---
 
 # Level 03 - Solar Corona
@@ -11,22 +11,22 @@ updated: 2026-09-22
 Setting: the outer atmosphere of a star, all arcs of plasma and drifting embers (see [[Art Direction]]). Length: about 3.5 minutes. Enemies: Dart, Weaver, Swarm drone, Gunship, Diver; solid and splitting meteors. Boss: **Sunforge** (below).
 
 ## Waves
-Counts are for Pilot; the enemy count multiplier scales each group ([[Wave System]]). The level is
+Counts below are the **authored** values in the level asset, before any difficulty is applied; the enemy count multiplier scales each group ([[Wave System]]). The level is
 a `LevelDefinition` asset: change a wave by editing it in the Inspector.
 
 | # | Wave | Groups |
 | - | ---- | ------ |
-| 1 | Flare runners | 6 Darts, line |
+| 1 | Flare runners | 7 Darts, line |
 | 2 | First divers | 3 Divers, staggered |
-| 3 | Weaver screen | 5 Weavers, staggered |
-| 4 | Divers and drones | 4 Divers + 8 Swarm drones, V |
+| 3 | Weaver screen | 6 Weavers, staggered |
+| 4 | Divers and drones | 5 Divers + 9 Swarm drones, V |
 | 5 | Burnt rock | 4 solid meteors |
-| 6 | Gun line | 2 Gunships + 5 Darts |
+| 6 | Gun line | 3 Gunships + 6 Darts |
 | 7 | Dive pincer | 3 Divers, column high + 3 more, column low |
-| 8 | Swarm and weavers | 8 Swarm drones, V + 4 Weavers |
-| 9 | Heat | 6 Darts + 3 Divers |
+| 8 | Swarm and weavers | 10 Swarm drones, V + 4 Weavers |
+| 9 | Heat | 7 Darts + 4 Divers |
 | 10 | Corona storm | 4 large splitting + 2 solid meteors |
-| 11 | Final rush | 4 Divers + 8 Swarm drones + 6 Darts |
+| 11 | Final rush | 5 Divers + 9 Swarm drones + 7 Darts |
 | Boss | Sunforge | See below |
 
 ## Boss: Sunforge

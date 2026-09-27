@@ -91,6 +91,12 @@ namespace YASS.Tests.Core
         [TestCase(5, 1.3f, 7)]  // 6.5 rounds away from zero
         [TestCase(1, 0.75f, 1)]
         [TestCase(1, 0.1f, 1)]
+        // Exact midpoints, which are the only cases where the decimal conversion inside ScaledCount
+        // changes the answer. Reachable ones, not invented: Cadet is 0.75 so any even count lands on .5,
+        // and Endless multiplies a difficulty by its own escalation, so Pilot in cycle 2 is exactly 1.15.
+        [TestCase(2, 0.75f, 2)]    // 1.5
+        [TestCase(10, 0.75f, 8)]   // 7.5
+        [TestCase(10, 1.15f, 12)]  // 11.5; in raw float 11.499999523... which would give 11
         public void ScaledCount_RoundsAndNeverDropsBelowOne(int count, float multiplier, int expected)
         {
             Assert.That(FormationLayout.ScaledCount(count, multiplier), Is.EqualTo(expected));
@@ -183,14 +189,25 @@ namespace YASS.Tests.Core
         [Test]
         public void Pacing_NeverLeavesThePlayerWaiting()
         {
-            // GDD "Wave System", Pacing: gaps are breathing space, not waiting. Worst case counts, so the cap on
-            // how long one wave can hold the level is pinned here too.
-            Assert.That(WaveDirector.GapAfterClear, Is.LessThanOrEqualTo(1.5f), "gap between waves");
+            // GDD "Wave System", Pacing: the player is never left with an empty screen, so clearing a wave is
+            // followed by the next one immediately. Pinned at exactly zero rather than "small", because the
+            // second this replaced was the only moment in a level with nothing to shoot.
+            Assert.That(WaveDirector.GapAfterClear, Is.EqualTo(0f), "there is no gap between waves");
             Assert.That(WaveDirector.MaxWaveDuration, Is.LessThanOrEqualTo(10f), "longest a wave can hold the level");
         }
 
+        /// <summary>
+        /// Clearing a wave brings the next one on the very next step, with nothing in between.
+        /// </summary>
+        /// <remarks>
+        /// Written as "one step is enough" rather than "nothing happens for GapAfterClear seconds, then it
+        /// does". The older form ran the director for <c>GapAfterClear - 0.2f</c> seconds and asserted that
+        /// no spawns arrived, which at a gap of zero is a negative duration: <c>Run</c> takes no steps at all
+        /// and the assertion passes without the director having been asked anything. A test that cannot fail
+        /// is worse than no test, so the timing is pinned from the other side.
+        /// </remarks>
         [Test]
-        public void NextWave_StartsAfterTheGapFollowingAClear()
+        public void NextWave_FollowsAClearImmediately()
         {
             var director = Director(1f, new[] { Group(2, Formation.Column) }, new[] { Group(1) });
             var spawns = new List<WaveSpawnRequest>();
@@ -198,11 +215,9 @@ namespace YASS.Tests.Core
             Assert.That(spawns.Count, Is.EqualTo(2));
 
             ClearAll(director, spawns);
-            Run(director, WaveDirector.GapAfterClear - 0.2f, spawns);
-            Assert.That(spawns, Is.Empty, "gap after clear not respected");
 
-            Run(director, 0.4f, spawns);
-            Assert.That(spawns.Count, Is.EqualTo(1));
+            Run(director, Step, spawns);
+            Assert.That(spawns.Count, Is.EqualTo(1), "the next wave should arrive on the step after a clear");
             Assert.That(spawns[0].WaveIndex, Is.EqualTo(1));
         }
 

@@ -3,7 +3,7 @@ tags:
   - gdd
   - content
 status: draft
-updated: 2026-09-22
+updated: 2026-09-27
 ---
 
 # Level 08 - Enemy Homeworld
@@ -11,24 +11,24 @@ updated: 2026-09-22
 Setting: orbit above a world crusted with hive structures (see [[Art Direction]]). Length: about 4.5 minutes. Enemies: every enemy type, in their largest groups. Boss: **The Overmind** (below).
 
 ## Waves
-Counts are for Pilot; the enemy count multiplier scales each group ([[Wave System]]). The level is
+Counts below are the **authored** values in the level asset, before any difficulty is applied; the enemy count multiplier scales each group ([[Wave System]]). The level is
 a `LevelDefinition` asset: change a wave by editing it in the Inspector.
 
 | # | Wave | Groups |
 | - | ---- | ------ |
-| 1 | Defence line | 8 Darts + 8 Swarm drones, V |
-| 2 | Interceptors | 6 Divers, staggered |
-| 3 | Gun line | 3 Gunships, staggered |
+| 1 | Defence line | 9 Darts + 9 Swarm drones, V |
+| 2 | Interceptors | 7 Divers, staggered |
+| 3 | Gun line | 4 Gunships, staggered |
 | 4 | Crossfire | 4 Snipers, staggered |
-| 5 | Frigate wall | 3 Frigates, staggered |
+| 5 | Frigate wall | 4 Frigates, staggered |
 | 6 | Minefield | 4 Mine Layers, staggered |
-| 7 | Bombardment | 5 large splitting + 3 solid meteors |
-| 8 | The swarm | 8 Swarm drones high + 8 low, both V |
-| 9 | Mixed assault | 2 Frigates + 3 Divers + 2 Gunships |
-| 10 | Sniper nest | 4 Snipers + 6 Weavers |
-| 11 | Pressure | 3 Mine Layers + 4 Divers + 8 Swarm drones |
-| 12 | Final rush | 3 Frigates + 3 Gunships + 4 Snipers |
-| 13 | Last stand | 10 Darts + 8 Swarm drones + 4 large meteors |
+| 7 | Bombardment | 6 large splitting + 4 solid meteors |
+| 8 | The swarm | 9 Swarm drones high + 9 low, both V |
+| 9 | Mixed assault | 2 Frigates + 4 Divers + 2 Gunships |
+| 10 | Sniper nest | 5 Snipers + 7 Weavers |
+| 11 | Pressure | 3 Mine Layers + 5 Divers + 9 Swarm drones |
+| 12 | Final rush | 3 Frigates + 4 Gunships + 4 Snipers |
+| 13 | Last stand | 12 Darts + 9 Swarm drones + 5 large meteors |
 | Boss | The Overmind | See below |
 
 ## Boss: The Overmind

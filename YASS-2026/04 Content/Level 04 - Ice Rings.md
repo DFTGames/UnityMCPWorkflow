@@ -3,7 +3,7 @@ tags:
   - gdd
   - content
 status: draft
-updated: 2026-09-22
+updated: 2026-09-27
 ---
 
 # Level 04 - Ice Rings
@@ -11,22 +11,22 @@ updated: 2026-09-22
 Setting: the ring system of a gas giant, pale ice shards against a banded planet (see [[Art Direction]]). Length: about 3.5 minutes. Enemies: Dart, Weaver, Swarm drone, Gunship, Diver, Mine Layer; splitting and solid meteors. Boss: **Frost Lancer** (below).
 
 ## Waves
-Counts are for Pilot; the enemy count multiplier scales each group ([[Wave System]]). The level is
+Counts below are the **authored** values in the level asset, before any difficulty is applied; the enemy count multiplier scales each group ([[Wave System]]). The level is
 a `LevelDefinition` asset: change a wave by editing it in the Inspector.
 
 | # | Wave | Groups |
 | - | ---- | ------ |
-| 1 | Ice shards | 5 large splitting meteors |
-| 2 | First layer | 1 Mine Layer + 4 Darts |
-| 3 | Drone wedge | 8 Swarm drones, V |
+| 1 | Ice shards | 6 large splitting meteors |
+| 2 | First layer | 1 Mine Layer + 5 Darts |
+| 3 | Drone wedge | 9 Swarm drones, V |
 | 4 | Minefield | 2 Mine Layers, staggered |
-| 5 | Divers | 4 Divers, staggered |
+| 5 | Divers | 5 Divers, staggered |
 | 6 | Gunship and mines | 1 Gunship + 2 Mine Layers |
-| 7 | Ring debris | 4 solid + 3 large splitting meteors |
-| 8 | Weaver screen | 6 Weavers, staggered |
-| 9 | Mixed | 2 Mine Layers + 6 Darts + 4 Swarm drones |
-| 10 | Dive storm | 5 Divers, staggered |
-| 11 | Final rush | 2 Gunships + 3 Mine Layers + 8 Swarm drones |
+| 7 | Ring debris | 5 solid + 3 large splitting meteors |
+| 8 | Weaver screen | 7 Weavers, staggered |
+| 9 | Mixed | 2 Mine Layers + 7 Darts + 5 Swarm drones |
+| 10 | Dive storm | 6 Divers, staggered |
+| 11 | Final rush | 2 Gunships + 3 Mine Layers + 9 Swarm drones |
 | Boss | Frost Lancer | See below |
 
 ## Boss: Frost Lancer

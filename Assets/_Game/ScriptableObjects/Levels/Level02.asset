@@ -20,7 +20,7 @@ MonoBehaviour:
     groups:
     - enemy: {fileID: 0}
       meteor: {fileID: 11400000, guid: 25da93abff4b37445bf8a6edcda05d47, type: 2}
-      count: 4
+      count: 5
       formation: 4
       entryHeight: 0.5
       spacing: 0.8
@@ -29,7 +29,7 @@ MonoBehaviour:
     groups:
     - enemy: {fileID: 3196254532910195421, guid: 0cfb3cf45527944479608f9a5294dc02, type: 3}
       meteor: {fileID: 0}
-      count: 8
+      count: 9
       formation: 2
       entryHeight: 0.5
       spacing: 0.4
@@ -38,7 +38,7 @@ MonoBehaviour:
     groups:
     - enemy: {fileID: 2357551711190050276, guid: 85be43d40b4aa19449a6e044da378aa9, type: 3}
       meteor: {fileID: 0}
-      count: 5
+      count: 6
       formation: 0
       entryHeight: 0.5
       spacing: 0.4
@@ -61,7 +61,7 @@ MonoBehaviour:
       startDelay: 0
     - enemy: {fileID: 2357551711190050276, guid: 85be43d40b4aa19449a6e044da378aa9, type: 3}
       meteor: {fileID: 0}
-      count: 4
+      count: 5
       formation: 0
       entryHeight: 0.35
       spacing: 0.4
@@ -79,14 +79,14 @@ MonoBehaviour:
     groups:
     - enemy: {fileID: 3196254532910195421, guid: 0cfb3cf45527944479608f9a5294dc02, type: 3}
       meteor: {fileID: 0}
-      count: 6
+      count: 7
       formation: 1
       entryHeight: 0.8
       spacing: 0.4
       startDelay: 0
     - enemy: {fileID: 3196254532910195421, guid: 0cfb3cf45527944479608f9a5294dc02, type: 3}
       meteor: {fileID: 0}
-      count: 6
+      count: 7
       formation: 1
       entryHeight: 0.2
       spacing: 0.4
@@ -95,7 +95,7 @@ MonoBehaviour:
     groups:
     - enemy: {fileID: 6805865718903888221, guid: 96b04dc88081ae046bdd03c373be9400, type: 3}
       meteor: {fileID: 0}
-      count: 4
+      count: 5
       formation: 3
       entryHeight: 0.5
       spacing: 0.8
@@ -111,7 +111,7 @@ MonoBehaviour:
       startDelay: 0
     - enemy: {fileID: 3196254532910195421, guid: 0cfb3cf45527944479608f9a5294dc02, type: 3}
       meteor: {fileID: 0}
-      count: 6
+      count: 7
       formation: 0
       entryHeight: 0.5
       spacing: 0.4
@@ -120,7 +120,7 @@ MonoBehaviour:
     groups:
     - enemy: {fileID: 0}
       meteor: {fileID: 11400000, guid: 25da93abff4b37445bf8a6edcda05d47, type: 2}
-      count: 4
+      count: 5
       formation: 4
       entryHeight: 0.5
       spacing: 0.8
@@ -136,7 +136,7 @@ MonoBehaviour:
     groups:
     - enemy: {fileID: 2357551711190050276, guid: 85be43d40b4aa19449a6e044da378aa9, type: 3}
       meteor: {fileID: 0}
-      count: 6
+      count: 7
       formation: 0
       entryHeight: 0.65
       spacing: 0.4
@@ -159,14 +159,14 @@ MonoBehaviour:
     groups:
     - enemy: {fileID: 3196254532910195421, guid: 0cfb3cf45527944479608f9a5294dc02, type: 3}
       meteor: {fileID: 0}
-      count: 8
+      count: 10
       formation: 2
       entryHeight: 0.6
       spacing: 0.4
       startDelay: 0
     - enemy: {fileID: 2357551711190050276, guid: 85be43d40b4aa19449a6e044da378aa9, type: 3}
       meteor: {fileID: 0}
-      count: 6
+      count: 7
       formation: 0
       entryHeight: 0.35
       spacing: 0.4
