@@ -3,7 +3,7 @@ tags:
   - gdd
   - ui
 status: approved
-updated: 2026-09-26
+updated: 2026-09-27
 ---
 
 # UI Flow and Screens
@@ -36,6 +36,8 @@ flowchart LR
 
 ## Screens
 - **Title:** "YASS 2026" logo; **Play**, **Leaderboards**, **Settings**, **Credits**, **Quit** (as in the original; "Tell a Friend" is dropped). Quit is hidden on WebGL and mobile. **Play** goes to the difficulty screen, or asks for a pilot name first if the player has never given one.
+- **The title invites the player onto the boards**, between the tagline and Play: a line reading "Sign in to be on the leaderboards." and a button in the accent colour, which is the brightest thing on the screen. It is an **invitation, not a gate**: nothing is covered, Play never goes through it, and a player who would rather not have an account simply ignores it. Once somebody is signed in the line becomes "On the leaderboards as *name*." and the button goes, because there is nothing left to press. A build that cannot sign anybody in shows neither.
+  The button signs in **directly**, without opening another screen first. That is a browser constraint rather than a preference: the sign-in window only opens while the click that asked for it is still being handled, so every step between the press and the request is a chance for it to be blocked. It is also why the sign-in cannot simply be opened when the menu loads, which was the first thing considered.
 - **Difficulty select:** Cadet, Pilot, Ace, each with a one-line description; then the run starts. Pilot is selected by default, being the intended fight. **Endless** is a switch on the same screen, not a fourth difficulty: turning it on means the difficulty chosen next starts an Endless run instead of a campaign. It is shown but dead until the campaign has been completed. _Provisional: chosen while building the mode._
 - **Account:** two screens, because signing in and managing an account are different moments. The **first-run screen** is asked once, on the way into the first run: a pilot name for the boards, **Sign in** (with Unity, or with itch.io on the web build, where Unity Player Accounts does not work at all), and **Play without an account**, which is remembered. The **account screen** lives behind Settings and is where it is changed later: **Sign out**, **Use a different account**, and **Manage account**, which opens the account holder's own portal for changing or recovering a password: Unity's, or itch.io's settings page on the web. The screen names whose account it is rather than assuming Unity, because telling a web player they are signed in with a Unity account would send them looking for one they have never had. Only the buttons that apply are shown, and while an attempt is in flight none of them can be pressed, because the sign-in page is outside the game and a second attempt on top of the first would race it. Whatever the service says comes back on one line above the buttons, in the player's words; that line keeps its place whether or not it says anything, so the buttons do not move under the player's hand.
 - **The game never sees a password.** Signing in opens Unity's page in the system browser and the game waits for a token. Creating an account, changing a password and recovering a forgotten one are all Unity's, which is the point of using Unity accounts: credentials the game cannot see are credentials it cannot leak.

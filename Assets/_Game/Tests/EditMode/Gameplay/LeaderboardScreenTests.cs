@@ -101,6 +101,35 @@ namespace YASS.Tests.Gameplay
             });
         }
 
+        /// <summary>
+        /// The invitation onto the leaderboards, on the title itself. Every reference here is null-guarded at
+        /// run time, so a lost one does not throw: the row simply never appears, and a player who would have
+        /// signed in is never asked. That is invisible from inside the game, which is what this is for.
+        /// </summary>
+        [Test]
+        public void TheTitle_InvitesThePlayerOntoTheBoards()
+        {
+            ScenePeek.In("Title", scene =>
+            {
+                var prompt = ScenePeek.Find<TitleSignInPrompt>(scene);
+                Assert.That(prompt, Is.Not.Null,
+                    "nothing on the title offers a sign-in, so nobody is ever asked");
+
+                ScenePeek.RequireReference(prompt, "row", "the invitation could never be hidden once signed in");
+                ScenePeek.RequireReference(prompt, "label", "the invitation would have nothing to say");
+                ScenePeek.RequireReference(prompt, "signInButton", "there would be nothing to press");
+                ScenePeek.RequireReference(prompt, "buttonLabel", "the button would be blank");
+
+                // The button has to actually call something. A button wired to nothing looks identical to
+                // one that works until somebody presses it.
+                var button = (UnityEngine.UI.Button)new SerializedObject(prompt)
+                    .FindProperty("signInButton").objectReferenceValue;
+
+                Assert.That(button.onClick.GetPersistentEventCount(), Is.GreaterThan(0),
+                    "the sign-in button calls nothing");
+            });
+        }
+
         [Test]
         public void TheTitle_AsksForAName_BeforeTheFirstRun()
         {

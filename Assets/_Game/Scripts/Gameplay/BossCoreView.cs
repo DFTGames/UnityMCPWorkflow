@@ -13,10 +13,28 @@ namespace YASS.Gameplay
         [SerializeField] Color closedColour = new Color(0.25f, 0.25f, 0.3f, 1f);
 
         BossView _boss;
+        CircleCollider2D _circle;
+
+        void Awake() => _circle = GetComponent<CircleCollider2D>();
 
         public bool BlocksPiercing => false;
         public bool IsAlive => _boss != null && _boss.IsAlive;
         public BossView Boss => _boss;
+
+        /// <summary>
+        /// Where the core is and how big it is, in world space, so the armour can work out whether a shot
+        /// that landed on it would have reached the core with the hull out of the way.
+        /// </summary>
+        /// <remarks>
+        /// Taken from the collider rather than the sprite, and scaled: the transform is sized to fit the art,
+        /// which scales the collider with it, so the raw radius describes a hitbox that does not exist.
+        /// </remarks>
+        public Vector2 HitCentre =>
+            _circle == null
+                ? (Vector2)transform.position
+                : (Vector2)transform.position + _circle.offset * transform.lossyScale.x;
+
+        public float HitRadius => _circle == null ? 0f : _circle.radius * transform.lossyScale.x;
 
         public void Init(BossView boss) => _boss = boss;
 

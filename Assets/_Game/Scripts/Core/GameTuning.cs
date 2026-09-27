@@ -22,6 +22,30 @@ namespace YASS.Core
         public const float GamepadAimDeadZone = 0.3f;
 
         /// <summary>
+        /// How far a thumb must push the right virtual stick before it aims, as a fraction of the stick's
+        /// reach. **Deliberately much larger than the gamepad's**, and the reason is arithmetic rather than
+        /// taste.
+        /// </summary>
+        /// <remarks>
+        /// The aim takes the *angle* of the thumb's offset from where the stick centred; its length is not
+        /// used at all. So the only thing deciding how precisely a player can aim is how far out the thumb
+        /// is when the aim is first believed, and that distance is the reach times this fraction.
+        ///
+        /// At the gamepad's 0.3, on a stick reaching 12% of a 1080-pixel screen, that is 39 pixels. A thumb
+        /// resting on glass moves about 8 pixels without its owner meaning anything by it, and 8 pixels at
+        /// 39 is **12 degrees** of swing, inside a firing arc only 35 degrees wide either way. The ship's
+        /// nose wandered and the player was blamed.
+        ///
+        /// At 0.6 the same wobble is about 6 degrees, and every further increase halves it again. Raise this
+        /// if aiming still feels loose: it costs only a longer push before the aim takes over from firing
+        /// straight ahead, and nothing else, because the stick's remaining travel was never read.
+        ///
+        /// A gamepad stick has none of this problem: it is mechanically centred, it springs back, and it is
+        /// read as a true analogue axis rather than as a finger's guess.
+        /// </remarks>
+        public const float TouchAimDeadZone = 0.6f;
+
+        /// <summary>
         /// Side-scroller firing arc: shots (and the ship's tilt) stay within this many degrees of straight ahead,
         /// either way. Aiming further round is clamped, not ignored (GDD "Controls", Aim tilt).
         /// </summary>

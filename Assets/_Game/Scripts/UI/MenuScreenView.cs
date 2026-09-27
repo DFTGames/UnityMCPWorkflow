@@ -56,18 +56,49 @@ namespace YASS.UI
         }
 
         /// <summary>
-        /// Puts the selection on the first button. Interactable is checked because a locked entry (Endless) must
-        /// not swallow the selection and leave the menu unusable from a gamepad.
+        /// Puts the selection on the first button, or on the first usable one if that button is not there.
         /// </summary>
+        /// <remarks>
+        /// **Falling back matters more than it sounds.** Screens hide the buttons that do not apply: the
+        /// account screen hides Sign in once somebody is signed in, and hid it always on the web build
+        /// before itch.io sign-in existed. Its chosen button was that one, so the selection was left null,
+        /// and <c>MenuRouter.RestoreLostSelection</c> then retried the same impossible call every frame.
+        /// The screen was usable with a mouse and dead to a keyboard or a gamepad, which is exactly how it
+        /// was reported: the gamepad works, except sometimes.
+        ///
+        /// Note that <c>IsInteractable</c> is not enough on its own. It reports whether a Selectable is
+        /// switched on, not whether it is *there*, so a deactivated button passes it and then cannot be
+        /// selected. Active is checked separately for that reason.
+        ///
+        /// Interactable is still checked, because a locked entry (Endless) must not swallow the selection
+        /// and leave the menu unusable either.
+        /// </remarks>
         public void SelectFirst()
         {
-            if (firstSelected == null || !firstSelected.IsInteractable()) return;
-
             var events = EventSystem.current;
             if (events == null) return;
 
+            var wanted = Usable(firstSelected) ? firstSelected : FirstUsable();
+            if (wanted == null) return;
+
             events.SetSelectedGameObject(null); // clear first, or a stale selection can keep the highlight
-            events.SetSelectedGameObject(firstSelected.gameObject);
+            events.SetSelectedGameObject(wanted.gameObject);
+        }
+
+        static bool Usable(Selectable candidate) =>
+            candidate != null && candidate.gameObject.activeInHierarchy && candidate.IsInteractable();
+
+        /// <summary>
+        /// Anything on this screen that can take the selection, in the order it is laid out. Only reached
+        /// when the screen's chosen button is unavailable, so the search is not on the usual path.
+        /// </summary>
+        Selectable FirstUsable()
+        {
+            // Inactive ones are not even returned, which is most of what is being guarded against here.
+            foreach (var candidate in Root.GetComponentsInChildren<Selectable>(false))
+                if (Usable(candidate)) return candidate;
+
+            return null;
         }
     }
 }

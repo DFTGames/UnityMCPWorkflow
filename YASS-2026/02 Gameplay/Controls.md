@@ -3,7 +3,7 @@ tags:
   - gdd
   - gameplay
 status: approved
-updated: 2026-09-24
+updated: 2026-09-27
 ---
 
 # Controls
@@ -13,14 +13,14 @@ updated: 2026-09-24
 ## Schemes
 - **Gamepad:** twin-stick. Left stick moves; the right stick aims and fires automatically when deflected beyond a **30% dead zone**. The **right trigger** fires straight forward (to the right) for players who prefer not to aim.
 - **Mouse and keyboard:** WASD or arrow keys move, the mouse aims, the left mouse button fires.
-- **Touch (mobile):** two virtual sticks, each floating: it centres wherever the thumb lands, so there is no fixed spot to find without looking and the reach suits any hand and screen. Left thumb moves, right thumb aims and fires while held. Touch has no separate fire-forward trigger, so a right thumb held still fires straight ahead and pushing it past the dead zone aims: the same rule the gamepad uses, so the dead zone and the firing arc have one answer rather than two. The sticks are drawn only while a thumb is down, and drawn smaller than the thumb's reach: they are there to say where the stick centred, not to cover the fight.
+- **Touch (mobile):** two virtual sticks, each floating: it centres wherever the thumb lands, so there is no fixed spot to find without looking and the reach suits any hand and screen. Left thumb moves, right thumb aims and fires while held. Touch has no separate fire-forward trigger, so a right thumb held still fires straight ahead and pushing it past the dead zone aims: the same **rule** the gamepad uses, and the same firing arc. The dead zone itself is touch's own and is **twice the gamepad's**, which is not a second answer to the same question but the answer to a different one. The aim reads the *angle* of the thumb's offset and never its length, so what sets a player's precision is how far out the thumb is when the aim is first believed. At the gamepad's value that is about 39 pixels on a phone, and the 8 pixels a thumb wanders while resting on glass is 12 degrees of swing there, inside an arc only 35 degrees wide either way: the ship's nose wandered on its own. A gamepad stick has none of this, being mechanically centred, sprung and read as a true axis. The sticks are drawn only while a thumb is down, and drawn smaller than the thumb's reach: they are there to say where the stick centred, not to cover the fight.
 
 ## Input mapping
 | Action | Keyboard and mouse | Gamepad | Touch |
 | ------ | ------------------ | ------- | ----- |
 | Move | WASD / arrow keys | Left stick | Left virtual stick |
 | Aim | Mouse position | Right stick | Right virtual stick |
-| Fire (aimed) | Left mouse button | Right stick beyond 30% dead zone | Right virtual stick held |
+| Fire (aimed) | Left mouse button | Right stick beyond 30% dead zone | Right virtual stick pushed past 60% of its reach; held but still fires straight ahead |
 | Fire (forward) | | Right trigger | |
 | Pause | Esc | Start / Menu | Back button or gesture |
 | Confirm (menus) | Enter | A / Cross (south button) | Tap |

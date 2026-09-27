@@ -3,7 +3,7 @@ tags:
   - gdd
   - content
 status: approved
-updated: 2026-09-20
+updated: 2026-09-27
 ---
 
 # Hive Carrier
@@ -30,6 +30,8 @@ Boss of [[Level 01 - Magenta Nebula]].
 
 Ramming follows the boss rules in [[Mechanics]]. Because the ship can stay overlapping the boss, after a boss collision hurts the player (or hits the shield) further boss contact is ignored for **1 second**. _Provisional._
 
-The armour is three colliders around the core, so shots aimed at the open core always reach it. A shot into a **closed** core hits the shutters over it and counts as a hull hit. Darts launched from the bays belong to no wave.
+The armour is three colliders over the ship, and **a shot landing on an open core always reaches it**, whether or not armour lies over that spot. The armour is not asked; the core is drawn where the art wants it and that is where the weak point is. A shot into a **closed** core hits the shutters over it and counts as a hull hit.
+
+That rule replaced one requiring the armour to keep clear of the core. Making the physics readable by constraining the art was the wrong way round: it pushed the core off its lit circle on six of the eight bosses, one of them far enough to be unkillable, and it left a shot landing where the two overlapped to be resolved by whichever collider the engine reported first, which nothing in the design had chosen. Darts launched from the bays belong to no wave.
 
 Back to [[00 GDD Home]]

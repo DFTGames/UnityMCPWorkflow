@@ -295,6 +295,39 @@ namespace YASS.Tests.UI
             return null;
         }
 
+        /// <summary>
+        /// A screen whose chosen button is hidden still has to be drivable without a mouse.
+        /// </summary>
+        /// <remarks>
+        /// Reported as the gamepad working on the UI "not always" in the web player, and this is the case
+        /// that produced it. The account screen's chosen button is Sign in, and the screen hides that button
+        /// once somebody is signed in, which the web build did for everyone before itch.io sign-in existed.
+        /// The selection was then left null, <c>MenuRouter.RestoreLostSelection</c> retried the same
+        /// impossible call every frame, and the screen stayed usable with a mouse and dead to everything
+        /// else. Nothing threw and nothing looked wrong.
+        /// </remarks>
+        [UnityTest]
+        public IEnumerator AScreenWhoseFirstButtonIsHidden_IsStillReachableWithoutAMouse()
+        {
+            yield return Load(TitleScene);
+
+            Router.Open(MenuScreen.Account);
+            yield return null;
+
+            // The state that causes it: signed in, so the screen has hidden the button it wanted to select.
+            var signIn = FindButton("SignIn");
+            Assert.That(signIn.gameObject.activeInHierarchy, Is.False,
+                "this test only means something while Sign in is hidden");
+
+            var selected = EventSystem.current.currentSelectedGameObject;
+
+            Assert.That(selected, Is.Not.Null,
+                "nothing is selected, so the keyboard and the gamepad have nothing to move from");
+            Assert.That(selected.activeInHierarchy, Is.True, "the selection landed on something not on screen");
+            Assert.That(selected.GetComponentInParent<MenuScreenView>(), Is.Not.Null,
+                "the selection landed outside the open screen");
+        }
+
         /// <summary>Nobody signed in and nothing chosen, as on a machine where the game is new.</summary>
         static void ANewPilot()
         {

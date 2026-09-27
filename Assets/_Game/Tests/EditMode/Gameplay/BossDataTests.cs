@@ -193,9 +193,15 @@ namespace YASS.Tests.Gameplay
         }
 
         /// <summary>
-        /// The one rule the whole boss fight rests on: the armour must never cover the core, or shots aimed at an
-        /// open core would be absorbed by the hull instead.
+        /// The core has to be something a shot can land on. It no longer has to be clear of the armour:
+        /// an open core takes the shot wherever it is drawn (<see cref="YASS.Core.BossHits"/>), so the two
+        /// are allowed to overlap and the art decides where the weak point is.
         /// </summary>
+        /// <remarks>
+        /// This used to assert that no armour box came within the core's radius. It was the wrong rule: it
+        /// made the art obey the physics, and it pushed the core off where it belonged on six of the eight
+        /// bosses. What is left is the part that still matters, which is that there is a hitbox at all.
+        /// </remarks>
         [TestCase("HiveCarrier")]
         [TestCase("RockCrusher")]
         [TestCase("Sunforge")]
@@ -204,32 +210,22 @@ namespace YASS.Tests.Gameplay
         [TestCase("Tempest")]
         [TestCase("SingularityEngine")]
         [TestCase("Overmind")]
-        public void EveryBoss_LeavesItsCoreExposed(string name)
+        public void EveryBoss_HasACoreThatCanBeHit(string name)
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabFolder + name + ".prefab");
             var core = prefab.GetComponentInChildren<BossCoreView>(true);
             Assert.That(core, Is.Not.Null, name + " has no core");
 
             var circle = core.GetComponent<CircleCollider2D>();
-            Assert.That(circle, Is.Not.Null);
-            Assert.That(circle.isTrigger, Is.True);
+            Assert.That(circle, Is.Not.Null, name + "'s core has no collider, so nothing could ever hit it");
+            Assert.That(circle.isTrigger, Is.True, name + "'s core would push shots away instead of taking them");
 
-            // The core's transform is scaled to fit its sprite, and that scales the collider with it: measuring
-            // the raw radius would check a hitbox that does not exist.
-            var scale = core.transform.localScale.x;
-            var centre = (Vector2)core.transform.localPosition + circle.offset * scale;
-            var radius = circle.radius * scale;
+            // Scaled, because the transform is sized to fit the art and takes the collider with it.
+            var radius = circle.radius * core.transform.localScale.x;
+            Assert.That(radius, Is.GreaterThan(0f), name + "'s core has no size, so no shot can land on it");
 
-            var hull = prefab.GetComponents<BoxCollider2D>();
-            Assert.That(hull.Length, Is.GreaterThan(0), name + " has no armour");
-            foreach (var box in hull)
-            {
-                var min = box.offset - box.size * 0.5f;
-                var max = box.offset + box.size * 0.5f;
-                var closest = new Vector2(Mathf.Clamp(centre.x, min.x, max.x), Mathf.Clamp(centre.y, min.y, max.y));
-                Assert.That(Vector2.Distance(closest, centre), Is.GreaterThanOrEqualTo(radius),
-                    $"{name}: an armour collider overlaps the core");
-            }
+            Assert.That(prefab.GetComponents<BoxCollider2D>().Length, Is.GreaterThan(0),
+                name + " has no armour");
         }
 
         /// <summary>

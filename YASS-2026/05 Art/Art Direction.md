@@ -3,7 +3,7 @@ tags:
   - gdd
   - art
 status: review
-updated: 2026-09-26
+updated: 2026-09-27
 ---
 
 # Art Direction
@@ -76,7 +76,7 @@ The menu palette, taken from the nebula backdrops (magenta and purple) and the p
 | Background | `#120A1E` | Menu backdrop |
 | Panel | `#1E1033` (95% alpha) | Screens drawn over the game |
 | Text | `#F2E9FF` | Body text and button labels |
-| Accent | `#FF4FC3` | Logo, headings, slider fills, pressed buttons |
+| Accent | `#FF4FC3` | Logo, headings, slider fills, pressed buttons, and the title's sign-in button, which is the one place it is used as a button's own background: it has to be the brightest thing on the screen. Red was considered and rejected, because nothing else in this palette is red and it would read as something being wrong rather than as an invitation |
 | Secondary | `#FFB13B` | Highlights that must not read as "danger": slider handles, checkmarks, Sector Clear |
 | Button | `#2A1A47` | Button background |
 | Button hover / selected | `#46246E` / `#5B2E8C` | Mouse-over and keyboard or gamepad selection |

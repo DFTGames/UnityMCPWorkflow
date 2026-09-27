@@ -204,7 +204,10 @@ namespace YASS.Gameplay
         /// <summary>What the two sticks mean, as the rest of the game understands input.</summary>
         public PlayerCommand ReadCommand()
         {
-            var firing = TouchControls.ResolveAim(_aim.Deflection, _aim.IsHeld, GameTuning.GamepadAimDeadZone,
+            // Touch's own dead zone, not the gamepad's: a thumb on glass has no centring spring and no
+            // analogue axis, so the aim is only believed once the thumb is far enough out for its angle
+            // to mean something. See GameTuning.TouchAimDeadZone.
+            var firing = TouchControls.ResolveAim(_aim.Deflection, _aim.IsHeld, GameTuning.TouchAimDeadZone,
                 out var direction);
 
             return new PlayerCommand(_move.Deflection, firing, direction);

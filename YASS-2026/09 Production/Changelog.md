@@ -3,12 +3,18 @@ tags:
   - gdd
   - production
 status: draft
-updated: 2026-09-26
+updated: 2026-09-27
 ---
 
 # Changelog
 
 %% Newest first. Record significant design decisions and which pages changed. %%
+
+## 2026-09-27
+- **The right virtual stick aims later, and so aims straight.** Reported from play as unusable on a phone. The aim reads the angle of the thumb's offset and never its length, so the only thing setting precision is how far out the thumb is when the aim is first believed: at the gamepad's 30% dead zone that is about 39 pixels, where the 8 pixels a thumb wanders on glass is 12 degrees of swing, inside a firing arc 35 degrees wide either way. Touch now has its own dead zone at 60%, halving that. It costs only a longer push before aiming takes over from firing straight ahead, because the stick's remaining travel was never read. Pages updated: Controls.
+- The core's hit burst plays **on the core** rather than at the ship's centre of mass. It is the one thing on a boss that rewards aiming, and an explosion in the middle of the hull read as the shot having been absorbed, which is the opposite of what happened.
+- **An open core takes any shot that lands on it, armour or no armour.** The armour is three boxes over the ship and the core is a lit circle drawn wherever the art wants it, and the two were required never to overlap. That was the wrong way round: it made the art obey the physics, and enforcing it had pushed the core off its own circle on six of the eight bosses, the Sunforge's far enough inside an armour box to be unkillable. Overlap is now allowed and means nothing: a hit that would have reached the core with the hull out of the way is a core hit, with the core's own explosion. It also settles something that was never decided by anyone, since a shot in the overlap used to go to whichever trigger the engine reported first. Pages updated: Hive Carrier.
+- **The title invites the player onto the leaderboards**, on every platform: a line and an accent-coloured button between the tagline and Play. An invitation rather than a gate, because nobody is made to have an account ([[Scoring]]): it covers nothing, Play does not go through it, and it turns into a quiet confirmation once somebody is signed in. Considered and rejected: opening the sign-in when the menu loads. A browser only opens that window while the click asking for it is still being handled, so a popup with no click behind it is blocked every time, and asking before the player has pressed anything overrides somebody who has already chosen to play without an account. Pages updated: UI Flow and Screens, Art Direction.
 
 ## 2026-09-26
 - **The bosses' and the Sniper's beam is rebuilt.** It was one stretched quad of Unity's built-in white square on a lit material: a flat rectangle that began in mid-air wherever the muzzle happened to be, which is how it was reported. It is now three additive layers, a white hot shaft, a wide soft glow and a flare over the muzzle, sunk back into the emitter so it is continuous with the thing firing it. The shimmer and the warning's build are rules in Core, and the beam has a sorting band of its own (4) because sharing one with alpha-blended enemy shots left their order undefined. Pages updated: Art Direction, Asset List.

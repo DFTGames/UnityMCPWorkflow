@@ -41,6 +41,47 @@ namespace YASS.Tests.Gameplay
             spawned(boss);
         }
 
+        /// <summary>
+        /// A shot landing on an open core hits the core, even where the armour lies over it.
+        /// </summary>
+        /// <remarks>
+        /// The Sunforge is the case worth using: its core sits **inside** one of its armour boxes, so under
+        /// the old arrangement a shot there was taken by whichever trigger the physics engine happened to
+        /// report first. That was never a decision this project made, and the fix was to stop requiring the
+        /// art to keep clear of the hitboxes. <c>BossHitsTests</c> covers the rule; this covers the wiring,
+        /// which the rule cannot reach: whether the armour actually asks before it absorbs.
+        /// </remarks>
+        [UnityTest]
+        public IEnumerator AShotOnAnOpenCore_ReachesIt_ThroughTheArmourOverIt()
+        {
+            BossView boss = null;
+            yield return SpawnBoss("Sunforge", found => boss = found);
+
+            // The core opens on its own cycle rather than from damage: closed for a spell, then open for
+            // one. Waiting for it is the whole setup.
+            // Generously, rather than reading the cycle off the definition, which does not expose it: no
+            // boss stays shut for anything like this long, and a test should not widen an API to run.
+            yield return WaitUntil(() => boss.CoreIsOpen, 15f, "the Sunforge's core to open");
+
+            Assert.That(boss.IsAlive, Is.True, "the boss died before the core could be tested");
+
+            // Nowhere near the core, so the armour is the only thing that can take it.
+            var away = boss.Position + new Vector2(0f, 3f);
+
+            var armourBefore = boss.ArmourHits;
+
+            // Dead centre of the core, which is also inside an armour box on this boss.
+            boss.TakeHit(5f, 0, boss.CoreCentre);
+
+            Assert.That(boss.ArmourHits, Is.EqualTo(armourBefore),
+                "the armour swallowed a shot that landed on the open core");
+
+            // And the armour still takes everything that missed it.
+            boss.TakeHit(5f, 0, away);
+            Assert.That(boss.ArmourHits, Is.EqualTo(armourBefore + 1),
+                "a shot nowhere near the core should still be a hull hit");
+        }
+
         /// <summary>Where a boss stops: its hold inset in from the right edge.</summary>
         bool HasArrived(BossView boss) =>
             boss.Position.x <= Runner.Playfield.MaxX - boss.Definition.HoldInset + 0.05f;

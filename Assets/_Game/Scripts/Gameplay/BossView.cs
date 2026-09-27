@@ -54,6 +54,12 @@ namespace YASS.Gameplay
         /// <summary>Test seam: number of shots that have landed on the hull.</summary>
         internal int ArmourHits { get; private set; }
 
+        /// <summary>Test seam: whether the core is open, which is the one thing the hit rule turns on.</summary>
+        internal bool CoreIsOpen => _brain != null && _brain.IsCoreOpen;
+
+        /// <summary>Test seam: the core's hitbox in world space, as the hit rule sees it.</summary>
+        internal Vector2 CoreCentre => core != null ? core.HitCentre : Position;
+
         /// <summary>Test seam: whether it is mid-dash (null when this boss never dashes).</summary>
         internal BossDash.DashPhase? DashPhase => _dash?.Phase;
 
@@ -169,9 +175,24 @@ namespace YASS.Gameplay
         /// boss anywhere is worth doing and the fight is not a wait for the core to open. The projectile is used
         /// up either way.
         /// </summary>
+        /// <remarks>
+        /// **An open core takes the shot first, even where the armour covers it.** The armour is three boxes
+        /// laid over the ship and the core is drawn wherever the art wants it, so they overlap; what the
+        /// player aimed at is the lit circle, and that is what they should hit. Without this the winner was
+        /// whichever trigger the physics engine reported first, which is not a decision this project made.
+        /// </remarks>
         public void TakeHit(float damage, int playerIndex, Vector2 hitPoint)
         {
             if (!IsAlive) return;
+
+            if (core != null && BossHits.CoreTakesIt(hitPoint.ToNumerics(), core.HitCentre.ToNumerics(),
+                    core.HitRadius, _brain.IsCoreOpen))
+            {
+                // Safe from bouncing back here: TakeCoreHit only returns a shot to the armour when the core
+                // is closed, and this only sends one when it is open.
+                TakeCoreHit(damage, playerIndex);
+                return;
+            }
 
             ArmourHits++;
             if (_brain.TakeHullHit(damage))
@@ -199,7 +220,10 @@ namespace YASS.Gameplay
             if (!_brain.TakeCoreHit(damage))
             {
                 if (_flash != null) _flash.Flash();
-                Cue.Spawn(Effect.SmallExplosion, Position, Sfx.SmallExplosion);
+                // On the core, not on the middle of the ship. The core is what the player aimed at and the
+                // only thing on a boss that rewards aiming, so the burst has to appear where they hit: on
+                // the body's centre of mass it reads as a hull hit, which is the opposite of what happened.
+                Cue.Spawn(Effect.SmallExplosion, CoreCentre, Sfx.SmallExplosion);
                 return;
             }
 
