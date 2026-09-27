@@ -3,7 +3,7 @@ tags:
   - gdd
   - art
 status: draft
-updated: 2026-09-26
+updated: 2026-09-27
 ---
 
 # Asset List
@@ -28,6 +28,8 @@ updated: 2026-09-26
 | Beams and warning lines (Sniper and three bosses) | Three additive layers driven by `BeamView`: a white hot shaft, a wide soft glow, and a flare covering the muzzle. `BeamShaft.png`, `BeamGlow.png`, `BeamFlare.png` on `Materials/Beam.mat` | `Prefabs/Sniper.prefab`, `Sunforge`, `Overmind`, `Tempest` | Procedural | Built |
 | Rock Crusher, Sunforge, Frost Lancer, Dreadnought, Tempest, Singularity Engine, The Overmind | Sprites | `Resources/Bosses/` (outside the atlas, loaded by name) | AI (Gemini 3.1 Flash) | Prototype |
 | Backdrops for levels 2 to 8 | Sprites, 2048x1152, unlit, darkening baked in | `Textures/Backgrounds/` | AI (Gemini 3.1 Flash) | Prototype |
+| Game icon | Eight square textures, 1024 down to 16, for Windows; a 432 background and foreground pair for Android's adaptive icon | `Icons/` | Ship AI (Gemini 3.1 Flash), cut out and composited over a procedural violet gradient | Built |
+| Logo | Sprite, 1252x424, transparent, outside the atlas so it compresses itself (sides divisible by 4). The wordmark plus the tagline as one lockup; cropped on visible alpha, with the glow finishing inside the canvas rather than at its edge | `Sprites/UI/Logo.png` | Typographic (Segoe UI Black Italic, Bahnschrift), composited procedurally | Built |
 
 All paths are under `Assets/_Game/`.
 
