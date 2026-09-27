@@ -236,7 +236,7 @@ namespace YASS.UI
             var shown = accounts.IsSignedIn ? accounts.PilotName : GameFlow.Settings.PlayerName;
 
             var offer = AccountScreen.Offer(accounts.IsSignedIn, accounts.AccountLabel,
-                shown, _waiting, accounts.CanSignIn, accounts.CanManageAccount);
+                shown, _waiting, accounts.CanSignIn, accounts.CanManageAccount, accounts.ServiceName);
 
             if (summaryText != null) summaryText.text = offer.Summary;
 

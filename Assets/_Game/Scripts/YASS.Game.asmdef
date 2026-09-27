@@ -10,7 +10,8 @@
         "Unity.Services.Core.Environments",
         "Unity.Services.Authentication",
         "Unity.Services.Authentication.PlayerAccounts",
-        "Unity.Services.Leaderboards"
+        "Unity.Services.Leaderboards",
+        "Unity.Services.CloudCode"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

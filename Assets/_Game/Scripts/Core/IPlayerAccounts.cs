@@ -77,6 +77,13 @@ namespace YASS.Core
         bool CanSignIn { get; }
 
         /// <summary>
+        /// Whose account this is, in the player's words: "Unity", or "itch.io" on the web build. Shown, so it
+        /// has to be the truth: telling a web player they are signed in with a Unity account would send them
+        /// looking for one they have never had.
+        /// </summary>
+        string ServiceName { get; }
+
+        /// <summary>
         /// The pilot name the service holds for whoever is signed in, which is the name the boards print.
         /// Empty when nobody is signed in, or when the service has not said yet. The service keeps names
         /// unique by appending a number; this is the part before it, which is what the player typed.

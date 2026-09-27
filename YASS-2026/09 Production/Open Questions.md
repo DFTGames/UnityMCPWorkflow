@@ -3,7 +3,7 @@ tags:
   - gdd
   - production
 status: draft
-updated: 2026-09-25
+updated: 2026-09-26
 ---
 
 # Open Questions
@@ -32,6 +32,9 @@ updated: 2026-09-25
 - [ ] Enemy and boss health, speed and damage values.
 - [ ] Gameplay colour palette: the menus now have one ([[Art Direction]]); should the ships and hazards be bound to it too?
 - [ ] Sound effects list.
+- [ ] **One person, two accounts.** The web build signs in with itch.io and every other build with Unity Player Accounts, so somebody who plays both is two players with two sets of scores ([[Scoring]]). Joining them would mean linking one identity to the other, and a player with runs under both would have to be told which set they were about to lose. Left alone until somebody asks: the alternative was offering itch on desktop too, which solves it only for players who have an itch account at all.
+- [ ] **A token stolen by another itch game.** itch serves every HTML5 game from the same few hosts, so the callback page's origin check cannot tell our game from anyone else's on itch. Another game there could open our authorize URL (the client id and redirect are public), and a player who had already granted the app would be sent through without a prompt, handing that game their itch token. It could then file scores as them. This is inherent to itch's implicit-only OAuth on a shared origin rather than something the allowlist can fix; the scope granted is `profile:me`, so the damage is confined to leaderboard impersonation and reading a public profile. The real fix is serving the web build from an origin of ours instead of itch's. Accepted for now, and written down so it is not rediscovered as a surprise. See [[itch.io Sign-in Setup]].
+- [ ] **Whether an itch-embedded game can open a sign-in window.** itch.io does not document the sandbox attributes on its game iframe, so a popup may be blocked outright. The build falls back to saying so rather than silently doing nothing, but if it turns out to be blocked the flow needs a plain link that opens a tab instead. Wants proving on a real itch page.
 
 Back to [[00 GDD Home]]
 

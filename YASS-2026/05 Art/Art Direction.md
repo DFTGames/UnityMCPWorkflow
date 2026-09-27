@@ -3,7 +3,7 @@ tags:
   - gdd
   - art
 status: review
-updated: 2026-09-23
+updated: 2026-09-26
 ---
 
 # Art Direction
@@ -62,10 +62,11 @@ Small and large explosions; a multi-stage explosion for boss deaths; a white hit
 Screen shake is a pool of "trauma" that events add to and time drains (about 0.6 s from full), squared into the displacement so a shake tails off softly and several hits build rather than restarting: a hit adds 0.45, losing a life 0.7, a boss dying 1.0, up to 0.45 world units on each axis (so about 0.64 diagonally). The effect prefabs are ordinary assets under `Prefabs/Effects/`: their tuning lives in the particle systems themselves and is edited there.
 
 ## Rendering conventions
-- Sorting order (default layer): background -20, the arriving sky of a dissolve -19, starfield -10, engine exhaust -2, pickups 0, enemies and meteors 1, player shots 2, enemy shots 3, player ship 5, shield 6.
+- Sorting order (default layer): background -20, the arriving sky of a dissolve -19, starfield -10, engine exhaust -2, pickups 0, enemies and meteors 1, player shots 2, enemy shots 3, **beams 4**, player ship 5, shield 6.
+- **A beam has a band to itself, and that is not fussiness.** Its three layers are additive, so their order among themselves genuinely does not matter: addition is commutative. That argument stops at the edge of the additive set. An enemy shot is alpha blended, and two renderers sharing a sorting order are tie-broken in a way that is not stable from frame to frame, so a bullet crossing a beam would punch an opaque hole through it on some frames and not others.
 - Gameplay sprites (ships, hazards, pickups, procedural shapes) are packed into one sprite atlas, `Sprites/Gameplay.spriteatlasv2`, compressed as a whole; source sprites stay uncompressed with sizes divisible by 4.
 - Backgrounds render unlit; any darkening is baked into the texture.
-- Boss art is not packed into the sprite atlas. Only one boss is ever on screen, and an atlas page is loaded whole, so each boss's sprite stands alone and is loaded while that boss is being fought. The eight bodies are 1.31 MB together as BC7 (143 to 213 KB each), and a fight holds one of them. The cost is batching: the boss body draws at sorting order 1, the same band as enemies and meteors, so it splits that batch. One extra batch in the common case, two when atlas sprites are drawn either side of it. The core and the beam are still atlas sprites and still batch.
+- Boss art is not packed into the sprite atlas. Only one boss is ever on screen, and an atlas page is loaded whole, so each boss's sprite stands alone and is loaded while that boss is being fought. The eight bodies are 1.31 MB together as BC7 (143 to 213 KB each), and a fight holds one of them. The cost is batching: the boss body draws at sorting order 1, the same band as enemies and meteors, so it splits that batch. One extra batch in the common case, two when atlas sprites are drawn either side of it. The core is still an atlas sprite and still batches. **The beam no longer does**: it needs additive blending to look like light rather than paint, so it has its own material (`Materials/Beam.mat`, on the `YASS/Sprite Additive` shader), and a different material cannot share a batch however the sprites are packed. Three draws, for the beams that are on screen at all, which is one boss or a Sniper or two.
 
 ## Colour palette
 The menu palette, taken from the nebula backdrops (magenta and purple) and the player's orange-yellow ship. _Provisional: gameplay sprites are not yet bound to it._

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 using Unity.Services.Authentication;
 using Unity.Services.Authentication.PlayerAccounts;
@@ -37,7 +36,7 @@ namespace YASS.UI
         /// How long to wait for the service. A captive portal or a black-holed connection does not refuse,
         /// it simply never answers, and the screen must not wait for ever.
         /// </summary>
-        public const float TimeoutSeconds = 15f;
+        public const float TimeoutSeconds = UgsCalls.TimeoutSeconds;
 
         /// <summary>
         /// How long to wait for the player to finish on Unity's page. Generous, because they may have to
@@ -67,10 +66,11 @@ namespace YASS.UI
         int _generation;
 
         /// <summary>
-        /// The last name the service gave us. The package does cache the name into PlayerName as well, but
-        /// the whole screen hangs off this value, so it is worth holding rather than assuming.
+        /// The pilot name, shared with the itch.io flow rather than copied. Both establish a session the same
+        /// way once they have one, and the lesson inside it (ask with auto-generation on, or the service
+        /// hands back nothing and the game invents a name the boards do not print) is worth having once.
         /// </summary>
-        string _knownName = string.Empty;
+        readonly UgsPilotName _pilot = new UgsPilotName(nameof(UgsAccounts));
 
         public UgsAccounts(ISettingsStore store = null) => _store = store;
 
@@ -78,10 +78,13 @@ namespace YASS.UI
 
         public string AccountLabel { get; private set; } = string.Empty;
 
+        public string ServiceName => "Unity";
+
         /// <summary>
         /// WebGL cannot open Unity's page in a way that comes back to the game, so the option is not
         /// offered there rather than offered and then failing. Everywhere else the flow is a system browser
-        /// on desktop and a deep link back on mobile.
+        /// on desktop and a deep link back on mobile. The web build does not use this class at all: it signs
+        /// in with itch.io instead, which is the account its players already have.
         /// </summary>
         public bool CanSignIn =>
 #if UNITY_WEBGL && !UNITY_EDITOR
@@ -119,92 +122,11 @@ namespace YASS.UI
         /// The name the service holds, without the number it appends to keep names unique. Read from the
         /// service's own cache, which survives a restart, so this is right without a round trip.
         /// </summary>
-        public string PilotName
-        {
-            get
-            {
-                if (!IsSignedIn) return string.Empty;
+        public string PilotName => _pilot.Current(IsSignedIn);
 
-                try
-                {
-                    if (UnityServices.State != ServicesInitializationState.Initialized) return _knownName;
+        public void FetchPilotName(Action<string> done) => _pilot.Fetch(IsSignedIn, done);
 
-                    var live = WithoutTheNumber(AuthenticationService.Instance.PlayerName);
-                    return string.IsNullOrEmpty(live) ? _knownName : live;
-                }
-                catch (Exception problem)
-                {
-                    Log("read the pilot name", problem);
-                    return _knownName;
-                }
-            }
-        }
-
-        public async void FetchPilotName(Action<string> done)
-        {
-            if (!IsSignedIn)
-            {
-                Answer(done, string.Empty);
-                return;
-            }
-
-            try
-            {
-                // Auto-generating, which is the default and the right thing: a player who has never chosen
-                // a name still has one on the service, and that generated name is what every board prints.
-                // Asking with autoGenerate off was a mistake: it returned nothing, so the game had no name
-                // to show and displayed something of its own instead, guaranteeing that the screen and the
-                // boards disagreed. Whatever the service says is the answer, invented by it or not.
-                var name = await WithDeadline(
-                    AuthenticationService.Instance.GetPlayerNameAsync(), TimeoutSeconds);
-
-                _knownName = WithoutTheNumber(name);
-                Answer(done, _knownName);
-            }
-            catch (Exception problem)
-            {
-                Log("fetch the pilot name", problem);
-                Answer(done, PilotName);
-            }
-        }
-
-        public async void SetPilotName(string name, Action<AccountResult> done)
-        {
-            if (!IsSignedIn)
-            {
-                Answer(done, new AccountResult(AccountStatus.Refused,
-                    "Sign in first: the name on the boards belongs to your account."));
-                return;
-            }
-
-            var wanted = Leaderboards.CleanName(name);
-
-            try
-            {
-                await WithDeadline(AuthenticationService.Instance.UpdatePlayerNameAsync(wanted), TimeoutSeconds);
-
-                _knownName = wanted;
-                Answer(done, AccountResult.Ok);
-            }
-            catch (Exception problem)
-            {
-                Log("set the pilot name", problem);
-
-                // The service rate-limits renames and has its own rules, so a refusal here is ordinary and
-                // must be said rather than swallowed: the player has just watched their name not change.
-                Answer(done, new AccountResult(AccountStatus.Refused,
-                    "The service would not take that name. Try another, or try again shortly."));
-            }
-        }
-
-        /// <summary>Drops the "#1234" the service appends to keep player names unique.</summary>
-        static string WithoutTheNumber(string name)
-        {
-            if (string.IsNullOrEmpty(name)) return string.Empty;
-
-            var hash = name.IndexOf('#');
-            return hash > 0 ? name.Substring(0, hash) : name;
-        }
+        public void SetPilotName(string name, Action<AccountResult> done) => _pilot.Set(IsSignedIn, name, done);
 
         public void Resume(Action<bool> signedIn)
         {
@@ -501,8 +423,8 @@ namespace YASS.UI
             IsSignedIn = signedIn;
             AccountLabel = signedIn ? LabelForTheSignedInAccount() : string.Empty;
 
-            if (!signedIn) _knownName = string.Empty;
-            else if (string.IsNullOrEmpty(_knownName)) FetchPilotName(null); // warm it; the answer lands later
+            if (!signedIn) _pilot.Forget();
+            else if (!_pilot.Known) _pilot.Fetch(true, null); // warm it; the answer lands later
 
             // Written only when an account was actually involved, and cleared on the way out. This is what
             // lets the next launch tell a resumable account session from a device-local one.
@@ -562,45 +484,12 @@ namespace YASS.UI
 
         static void Answer(Action<AccountResult> caller, AccountResult result) => caller?.Invoke(result);
 
-        /// <summary>
-        /// Waits for the service, but not for ever. The timer is cancelled when the work wins, so a call
-        /// does not leave a timer behind it, and work that is abandoned is still observed, so a failure
-        /// arriving late does not surface as an unobserved task exception.
-        /// </summary>
-        /// <summary>As below, for work that answers with something.</summary>
-        static async Task<T> WithDeadline<T>(Task<T> work, float seconds)
-        {
-            await WithDeadline((Task)work, seconds);
-            return work.Result;
-        }
+        static Task<T> WithDeadline<T>(Task<T> work, float seconds) => UgsCalls.WithDeadline(work, seconds);
 
-        static async Task WithDeadline(Task work, float seconds)
-        {
-            using (var timer = new CancellationTokenSource())
-            {
-                var waiting = Task.Delay(TimeSpan.FromSeconds(seconds), timer.Token);
-                if (await Task.WhenAny(work, waiting) != work)
-                {
-                    Observe(work);
-                    throw new TimeoutException("the service did not answer");
-                }
+        static Task WithDeadline(Task work, float seconds) => UgsCalls.WithDeadline(work, seconds);
 
-                timer.Cancel();
-                await work;
-            }
-        }
+        static void Observe(Task work) => UgsCalls.Observe(work);
 
-        static void Observe(Task work) =>
-            work.ContinueWith(t => _ = t.Exception, TaskContinuationOptions.OnlyOnFaulted);
-
-        /// <summary>
-        /// The code, never the message. The service writes its messages for developers and they can carry
-        /// details of the request; the code is what identifies the fault in a log somebody may send on.
-        /// </summary>
-        static void Log(string what, Exception problem)
-        {
-            var code = problem is RequestFailedException failed ? failed.ErrorCode.ToString() : problem.GetType().Name;
-            Debug.LogWarning($"{nameof(UgsAccounts)}: could not {what} (code {code}).");
-        }
+        static void Log(string what, Exception problem) => UgsCalls.Log(nameof(UgsAccounts), what, problem);
     }
 }

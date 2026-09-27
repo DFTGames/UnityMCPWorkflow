@@ -17,10 +17,10 @@ namespace YASS.Tests.Core
         const string Pilot = "Ace";
 
         static AccountOffer SignedOut(bool canOpen = true) =>
-            AccountScreen.Offer(false, null, Pilot, false, canOpen, true);
+            AccountScreen.Offer(false, null, Pilot, false, canOpen, true, "Unity");
 
         static AccountOffer SignedIn(string who = "pilot@example.com") =>
-            AccountScreen.Offer(true, who, Pilot, false, true, true);
+            AccountScreen.Offer(true, who, Pilot, false, true, true, "Unity");
 
         [Test]
         public void SignedOut_OffersSignInAndPlayingWithout()
@@ -53,7 +53,7 @@ namespace YASS.Tests.Core
             Assert.That(SignedIn("pilot@example.com").Summary, Does.Contain("pilot@example.com"));
 
             // A signed-in session with no label is still a signed-in session, and must not read as blank.
-            var nameless = AccountScreen.Offer(true, "   ", Pilot, false, true, true);
+            var nameless = AccountScreen.Offer(true, "   ", Pilot, false, true, true, "Unity");
             Assert.That(nameless.Summary, Is.Not.Empty);
             Assert.That(nameless.CanSignOut, Is.True);
         }
@@ -77,7 +77,7 @@ namespace YASS.Tests.Core
         [Test]
         public void WithNoPilotName_TheDefaultIsExplained()
         {
-            var offer = AccountScreen.Offer(false, null, "  ", false, true, true);
+            var offer = AccountScreen.Offer(false, null, "  ", false, true, true, "Unity");
 
             Assert.That(offer.Summary, Is.Not.Empty);
             Assert.That(offer.Summary, Does.Contain("Pilot"));
@@ -103,10 +103,30 @@ namespace YASS.Tests.Core
         [Test]
         public void SignedInWithNoEmail_DoesNotInventAName()
         {
-            var summary = AccountScreen.Offer(true, string.Empty, Pilot, false, true, true).Summary;
+            var summary = AccountScreen.Offer(true, string.Empty, Pilot, false, true, true, "Unity").Summary;
 
             Assert.That(summary, Does.Contain("Unity account"));
             Assert.That(summary, Does.Not.Contain("player "));
+        }
+
+        /// <summary>
+        /// The web build signs in with itch.io, because Unity Player Accounts has no browser implementation
+        /// there at all. Telling those players they are signed in with a Unity account would send them
+        /// looking for one they have never had, so whose account it is is passed in rather than assumed.
+        /// </summary>
+        [Test]
+        public void TheAccountIsNamedByWhoseItIs_NotAlwaysUnity()
+        {
+            var web = AccountScreen.Offer(true, string.Empty, Pilot, false, true, true, "itch.io").Summary;
+
+            Assert.That(web, Does.Contain("itch.io account"));
+            Assert.That(web, Does.Not.Contain("Unity"));
+
+            // An empty or missing service must never leave "Signed in with your  account." on the screen.
+            Assert.That(AccountScreen.Offer(true, string.Empty, Pilot, false, true, true, " ").Summary,
+                Does.Contain("Unity account"));
+            Assert.That(AccountScreen.Offer(true, string.Empty, Pilot, false, true, true, null).Summary,
+                Does.Contain("Unity account"));
         }
 
         /// <summary>
@@ -116,7 +136,7 @@ namespace YASS.Tests.Core
         [Test]
         public void WhileAnAttemptIsInFlight_NothingCanBePressed()
         {
-            var busy = AccountScreen.Offer(false, null, Pilot, true, true, true);
+            var busy = AccountScreen.Offer(false, null, Pilot, true, true, true, "Unity");
 
             Assert.That(busy.CanSignIn, Is.False);
             Assert.That(busy.CanSignOut, Is.False);
@@ -127,7 +147,7 @@ namespace YASS.Tests.Core
             Assert.That(busy.Summary, Is.Not.Empty, "and it says why everything is dead");
 
             // Being signed in already does not make it safe to press things mid-attempt either.
-            Assert.That(AccountScreen.Offer(true, "someone", Pilot, true, true, true).CanSignOut, Is.False);
+            Assert.That(AccountScreen.Offer(true, "someone", Pilot, true, true, true, "Unity").CanSignOut, Is.False);
         }
 
         /// <summary>
@@ -148,7 +168,7 @@ namespace YASS.Tests.Core
         [Test]
         public void WhenTheBuildCannotOpenThePage_SwitchingIsNotOfferedEither()
         {
-            var offer = AccountScreen.Offer(true, "someone", Pilot, false, canOpenSignIn: false, canOpenPortal: true);
+            var offer = AccountScreen.Offer(true, "someone", Pilot, false, canOpenSignIn: false, canOpenPortal: true, "Unity");
 
             Assert.That(offer.CanSwitch, Is.False);
             Assert.That(offer.CanSignOut, Is.True, "signing out needs no page");
@@ -157,7 +177,7 @@ namespace YASS.Tests.Core
 
         [Test]
         public void WhenThePortalIsUnavailable_ManagingIsNotOffered() =>
-            Assert.That(AccountScreen.Offer(true, "someone", Pilot, false, true, canOpenPortal: false).CanManage,
+            Assert.That(AccountScreen.Offer(true, "someone", Pilot, false, true, canOpenPortal: false, "Unity").CanManage,
                 Is.False);
 
         /// <summary>
@@ -211,7 +231,7 @@ namespace YASS.Tests.Core
         [Test]
         public void SignedInWithNoNameYet_DoesNotClaimTheyHaveNone()
         {
-            var summary = AccountScreen.Offer(true, "pilot@example.com", "", false, true, true).Summary;
+            var summary = AccountScreen.Offer(true, "pilot@example.com", "", false, true, true, "Unity").Summary;
 
             Assert.That(summary.ToLowerInvariant(), Does.Not.Contain("no pilot name"));
             Assert.That(summary, Is.Not.Empty);
@@ -222,5 +242,40 @@ namespace YASS.Tests.Core
         public void ARefusalWithAReason_ShowsTheReason() =>
             Assert.That(AccountScreen.Explain(new AccountResult(AccountStatus.Refused, "Account is locked.")),
                 Is.EqualTo("Account is locked."));
+
+        /// <summary>
+        /// The general wording used to win outright for these two, throwing away whatever the caller had
+        /// worked out. It cost a real message: a web player whose browser blocked the sign-in window was
+        /// told only that signing in was unavailable in this version, which they can do nothing with, while
+        /// the line naming the pop-up blocker was discarded one call short of the screen.
+        /// </summary>
+        [Test]
+        public void AFailureThatKnowsWhy_SaysWhy_WhateverItsKind()
+        {
+            Assert.That(
+                AccountScreen.Explain(new AccountResult(AccountStatus.Unsupported, "Your browser blocked it.")),
+                Is.EqualTo("Your browser blocked it."));
+
+            Assert.That(
+                AccountScreen.Explain(new AccountResult(AccountStatus.Unreachable, "Cloud Code threw.")),
+                Is.EqualTo("Cloud Code threw."));
+
+            // And the general wording is still there for a failure that knows nothing.
+            Assert.That(AccountScreen.Explain(new AccountResult(AccountStatus.Unreachable)),
+                Does.Contain("connection"));
+        }
+
+        /// <summary>
+        /// Cancelling is the exception: it never borrows a Problem, because a player who changed their mind
+        /// must not be handed an explanation of a failure that did not happen.
+        /// </summary>
+        [Test]
+        public void Cancelling_IsNeverDressedUpAsAFailure()
+        {
+            var said = AccountScreen.Explain(new AccountResult(AccountStatus.Cancelled, "Cloud Code threw."));
+
+            Assert.That(said, Is.EqualTo("Signing in was not finished."));
+            Assert.That(said, Does.Not.Contain("threw"));
+        }
     }
 }

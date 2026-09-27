@@ -50,10 +50,19 @@ namespace YASS.Core
         /// <param name="pilotName">The handle the boards show. Told to the player on every state.</param>
         /// <param name="busy">Whether an attempt is in flight.</param>
         /// <param name="canOpenSignIn">Whether this build can open the sign-in page at all.</param>
-        /// <param name="canOpenPortal">Whether Unity's account portal can be opened from here.</param>
+        /// <param name="canOpenPortal">Whether the account portal can be opened from here.</param>
+        /// <param name="service">
+        /// Whose account it is, in the player's words: "Unity" on most builds, "itch.io" on the web, where
+        /// Unity Player Accounts has no browser implementation. Named rather than assumed, because telling a
+        /// web player they are signed in with a Unity account sends them looking for one they do not have.
+        /// Deliberately not defaulted: a default would quietly restore that exact bug for any caller that
+        /// forgot it, which is the failure this parameter exists to prevent.
+        /// </param>
         public static AccountOffer Offer(bool signedIn, string account, string pilotName, bool busy,
-            bool canOpenSignIn, bool canOpenPortal)
+            bool canOpenSignIn, bool canOpenPortal, string service)
         {
+            var whose = string.IsNullOrWhiteSpace(service) ? "Unity" : service.Trim();
+
             if (busy)
                 return new AccountOffer(false, false, false, false, false,
                     "Finish in the page that opened, then come back.");
@@ -77,7 +86,7 @@ namespace YASS.Core
                 // after the one they signed in on. "Signed in with your Unity account" is true and useful;
                 // the player id that used to stand in here meant nothing to anybody.
                 var who = string.IsNullOrWhiteSpace(account)
-                    ? "Signed in with your Unity account."
+                    ? $"Signed in with your {whose} account."
                     : $"Signed in as {account.Trim()}.";
 
                 return new AccountOffer(
@@ -115,13 +124,15 @@ namespace YASS.Core
                     return string.Empty;
 
                 case AccountStatus.Cancelled:
+                    // Fixed wording, and no Problem is ever shown: a player who changed their mind must not
+                    // be handed an explanation of a failure that did not happen.
                     return "Signing in was not finished.";
 
                 case AccountStatus.Unreachable:
-                    return "Could not reach the service. Check your connection and try again.";
+                    return Said(result, "Could not reach the service. Check your connection and try again.");
 
                 case AccountStatus.Unsupported:
-                    return "Signing in is not available in this version.";
+                    return Said(result, "Signing in is not available in this version.");
 
                 case AccountStatus.Working:
                     // Not a failure: an attempt is still open somewhere else. Telling the player it did
@@ -130,10 +141,22 @@ namespace YASS.Core
                     return "Finish in the page that opened, then come back.";
 
                 default:
-                    return string.IsNullOrWhiteSpace(result.Problem)
-                        ? "That did not work. Please try again."
-                        : result.Problem;
+                    return Said(result, "That did not work. Please try again.");
             }
         }
+
+        /// <summary>
+        /// What the attempt itself said, or the general wording for its kind when it said nothing.
+        /// </summary>
+        /// <remarks>
+        /// The general wording used to win outright for <see cref="AccountStatus.Unreachable"/> and
+        /// <see cref="AccountStatus.Unsupported"/>, which quietly threw away the specific thing the caller
+        /// had gone to the trouble of working out. The cost was real: a web player whose browser had blocked
+        /// the sign-in window was told only that signing in was unavailable in this version, which is both
+        /// wrong and not something they can act on, while the message naming the pop-up blocker was
+        /// discarded one call short of the screen.
+        /// </remarks>
+        static string Said(AccountResult result, string generally) =>
+            string.IsNullOrWhiteSpace(result.Problem) ? generally : result.Problem;
     }
 }

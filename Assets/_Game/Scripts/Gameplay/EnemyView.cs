@@ -255,7 +255,10 @@ namespace YASS.Gameplay
         {
             if (_sniper == null) return;
 
-            var origin = position + muzzleOffset;
+            // The Beam object's own place in the prefab, so the line can be dragged onto the gun barrel
+            // and be seen there. muzzleOffset stays what bullets come out of. One origin for the aim, the
+            // drawing and the burn, or the beam would hurt somewhere it is not drawn.
+            var origin = position + (beam != null ? beam.LocalOrigin : muzzleOffset);
             _sniper.Tick(deltaTime, origin.ToNumerics(), _runner.NearestPlayerPosition(origin).ToNumerics());
 
             // Always the line it committed to when the warning began: a warning that followed the ship would be

@@ -63,6 +63,8 @@ namespace YASS.Tests.UI
 
             public bool CanSignIn { get; set; } = true;
 
+            public string ServiceName => "Unity";
+
             public bool CanManageAccount => CanSignIn && IsSignedIn;
 
             public int PortalOpened { get; private set; }

@@ -3,7 +3,7 @@ tags:
   - gdd
   - art
 status: draft
-updated: 2026-09-23
+updated: 2026-09-26
 ---
 
 # Asset List
@@ -25,7 +25,7 @@ updated: 2026-09-23
 | Explosions, hit flashes | Effects | | | Not started |
 | Swarm drone, Gunship, Diver, Mine Layer, Frigate, Sniper | Sprites | `Sprites/Ships/` | AI (Gemini 3.1 Flash) | Prototype |
 | Proximity mine | Sprite | `Sprites/Hazards/Mine.png` | AI (Gemini 3.1 Flash) | Prototype |
-| Sniper warning line and beam | Stretched `UIWhite` sprite driven by `BeamView` | `Prefabs/Sniper.prefab` | Procedural | Prototype |
+| Beams and warning lines (Sniper and three bosses) | Three additive layers driven by `BeamView`: a white hot shaft, a wide soft glow, and a flare covering the muzzle. `BeamShaft.png`, `BeamGlow.png`, `BeamFlare.png` on `Materials/Beam.mat` | `Prefabs/Sniper.prefab`, `Sunforge`, `Overmind`, `Tempest` | Procedural | Built |
 | Rock Crusher, Sunforge, Frost Lancer, Dreadnought, Tempest, Singularity Engine, The Overmind | Sprites | `Resources/Bosses/` (outside the atlas, loaded by name) | AI (Gemini 3.1 Flash) | Prototype |
 | Backdrops for levels 2 to 8 | Sprites, 2048x1152, unlit, darkening baked in | `Textures/Backgrounds/` | AI (Gemini 3.1 Flash) | Prototype |
 

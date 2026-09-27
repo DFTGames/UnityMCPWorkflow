@@ -44,7 +44,13 @@ Separate Unity Gaming Services leaderboards per mode (Campaign, Endless) and dif
 
 Because the account is the identity, **scores follow the player to any device**, and two people sharing a machine keep their own. Pilot names are not unique, so two players may both call themselves Ace; what tells their runs apart is the account behind them.
 
-**One button, not two.** Unity's page signs a player in or signs them up as it finds appropriate, so the game no longer has to ask which they meant, and cannot create an account for somebody who mistyped a name they already have.
+**The web build signs in with itch.io instead.** Unity Player Accounts has no browser implementation on WebGL at all, so that build could offer no sign-in and its players were the only ones with no way onto the online boards. The game is published on itch.io, so itch is the account those players already have: the same one button opens itch's own sign-in page in a second window, and the game never sees that password either. Managing the account means itch's settings page rather than Unity's portal.
+
+The identity is the itch **user id**, not the username, so a player who renames themselves on itch keeps their scores. A player signing in for the first time has their itch handle taken as their pilot name, because it is the name they are already known by; a returning player's chosen name is never overwritten. Somebody who has been playing the web build without signing in keeps the scores they have already set, because signing in attaches the itch account to the player they already were rather than starting them again.
+
+**A web player and a desktop player are two different players**, even when they are the same person, because the two builds sign in with different services. This is a deliberate limit rather than an oversight: joining them would mean one account linking to the other, and a player with runs under both identities would need to be told which set they were about to lose. Revisit it if anyone actually asks. Recorded in [[Open Questions]].
+
+**One button, not two.** Unity's page signs a player in or signs them up as it finds appropriate, so the game no longer has to ask which they meant, and cannot create an account for somebody who mistyped a name they already have. itch's page behaves the same way.
 
 **Nobody is made to have one.** The first-run screen offers playing without an account, which is remembered, so the question is asked once rather than at the start of every session. That player gets the whole game; their runs are kept on this machine and go on no online board. The choice is not final: the account screen signs them in later. The pilot name stays editable in Settings whether or not anybody is signed in, because it is a label rather than an account.
 

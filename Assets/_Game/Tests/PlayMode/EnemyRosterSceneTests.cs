@@ -243,9 +243,14 @@ namespace YASS.Tests.Gameplay
             sniper.Init(Runner, Session.Settings, new Vector2(Runner.Playfield.MaxX - 1f, ShipPosition.y), null);
 
             Assert.That(sniper.BeamIsFiring, Is.False, "a reused Sniper is not still mid-shot");
+            // Every part of it, not just the shaft. The beam is a shaft, a glow and a muzzle flare, and any
+            // one of them left burning on a recycled Sniper is a beam hanging in mid-air with nothing
+            // firing it. Matched by name prefix so a part added later is covered without anybody
+            // remembering to come back here.
             foreach (var renderer in sniper.GetComponentsInChildren<SpriteRenderer>(true))
-                if (renderer.GetComponent<BeamView>() != null || renderer.transform.name == "Beam")
-                    Assert.That(renderer.enabled, Is.False, "and its beam is out");
+                if (renderer.GetComponent<BeamView>() != null ||
+                    renderer.transform.name.StartsWith("Beam", System.StringComparison.Ordinal))
+                    Assert.That(renderer.enabled, Is.False, $"and its beam is out ({renderer.transform.name})");
             Assert.That(beam, Is.Not.Null);
         }
 

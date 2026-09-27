@@ -56,7 +56,32 @@ namespace YASS.UI
         /// own between runs, so without that flag a purely anonymous session is indistinguishable from a
         /// signed-in one and the account screen would offer to manage an account nobody has.
         /// </summary>
-        public static IPlayerAccounts Accounts => _accounts ??= new UgsAccounts(new PlayerPrefsSettingsStore());
+        public static IPlayerAccounts Accounts => _accounts ??= AccountsForThisBuild();
+
+        /// <summary>
+        /// Unity Player Accounts everywhere it works, and itch.io on the web, where it does not work at all:
+        /// the package has no browser implementation for WebGL, so that build could offer no sign-in and its
+        /// players were stuck on boards kept in their own browser. The game is published on itch.io, so itch
+        /// is the account those players already have.
+        /// </summary>
+        /// <remarks>
+        /// Chosen at compile time rather than by asking the platform at runtime, so the web build does not
+        /// carry the Player Accounts flow it can never use, and no other build carries the itch one.
+        ///
+        /// Consequence worth knowing: a player who plays both the web build and a desktop build is two
+        /// players, with two sets of scores, because the two are signed in with different accounts. Linking
+        /// the two was considered and deliberately left out; see the GDD.
+        /// </remarks>
+        static IPlayerAccounts AccountsForThisBuild()
+        {
+            var store = new PlayerPrefsSettingsStore();
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+            return new ItchAccounts(store);
+#else
+            return new UgsAccounts(store);
+#endif
+        }
 
         /// <summary>The board to fall back to when the service cannot be reached.</summary>
         public static ILeaderboardService LocalBoards =>

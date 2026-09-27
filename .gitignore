@@ -81,6 +81,10 @@ mono_crash.*
 *.unitypackage.meta
 *.app
 
+# Burst's output from a WebGL build, which lands at the repository root. Generated, a megabyte of
+# wasm, and rebuilt by any build that needs it.
+/Data/
+
 # Crashlytics generated file
 crashlytics-build.properties
 

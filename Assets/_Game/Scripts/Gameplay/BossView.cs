@@ -140,6 +140,13 @@ namespace YASS.Gameplay
         }
 
         /// <summary>
+        /// Where the beam leaves this boss: the Beam object's own place in the prefab, so it can be dragged
+        /// onto the gun and seen. <c>muzzle</c> stays what bullets and meteors come out of, which is not
+        /// always the same hole; bosses with no beam fall back to it.
+        /// </summary>
+        Vector2 BeamOrigin => beam != null ? beam.LocalOrigin : muzzle;
+
+        /// <summary>
         /// Everything the player sees, on the frame rate rather than the fixed step. The hull is an interpolated
         /// body, so a beam drawn from the physics position would lag the boss it is coming out of.
         /// </summary>
@@ -151,7 +158,7 @@ namespace YASS.Gameplay
             if (beam == null) return;
 
             if (IsAlive && _sweep != null)
-                beam.Show(Position + muzzle, _sweep.Direction.ToUnity(), definition.BeamLength,
+                beam.Show(Position + BeamOrigin, _sweep.Direction.ToUnity(), definition.BeamLength,
                     definition.BeamHalfWidth, true, 1f);
             else
                 beam.Hide();
@@ -358,8 +365,10 @@ namespace YASS.Gameplay
 
             // Tested every step, burned at most every interval: the beam sweeps past a distant ship far faster
             // than its damage clock, so waiting for the clock would miss almost everyone it crossed.
+            // The same origin the beam is drawn from, and that matters: a burn that started somewhere
+            // other than the light would hurt where nothing is visible.
             if (_sweep.CanBurn &&
-                _runner.FireBeam(position + muzzle, _sweep.Direction.ToUnity(), definition.BeamLength,
+                _runner.FireBeam(position + BeamOrigin, _sweep.Direction.ToUnity(), definition.BeamLength,
                     definition.BeamHalfWidth, definition.BeamDamage) > 0)
                 _sweep.Burned();
 
