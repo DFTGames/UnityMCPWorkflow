@@ -134,3 +134,11 @@ InitTestScene*.unity*
 # Credentials for the live UGS leaderboard tests (username and password, one per line).
 # The account lives in the 'test' environment and is created on first use.
 /.ugs/
+
+# Written by the Unity Performance Testing package on every test run. They land in
+# Resources, which ships whole whatever references it, so committing them would put
+# test-runner metadata inside the game and churn the diff on every run.
+/Assets/Resources/PerformanceTestRunInfo.json
+/Assets/Resources/PerformanceTestRunInfo.json.meta
+/Assets/Resources/PerformanceTestRunSettings.json
+/Assets/Resources/PerformanceTestRunSettings.json.meta
