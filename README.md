@@ -117,10 +117,20 @@ Unity.exe -batchmode -projectPath . -runTests -testPlatform EditMode -testResult
 
 ## Credits
 
-Built by [DFT Games Studios](https://dftgames.itch.io/) with [Claude Code](https://claude.com/claude-code).
+Built by [DFT Games Studios](https://dftgames.com) with [Claude Code](https://claude.com/claude-code).
 
-Based on the original *YASS*, released 22 April 2010 on Xbox Live Indie Games. No original source or assets survived; this remake was rebuilt from videos and memory.
+Based on [the original *YASS*](https://dftgames.com/yass/), released 22 April 2010 on Xbox Live Indie Games. No original source or assets survived; this remake was rebuilt from videos and memory.
 
 Art and audio are generated with Unity AI asset generation and then curated for consistency; see [`05 Art/Asset List.md`](YASS-2026/05%20Art/Asset%20List.md) for the source of every asset.
 
-The game is **free and non-commercial**. No ads, no purchases, nothing to buy.
+The game is **free to play and non-commercial**. No ads, no purchases, nothing to buy.
+
+---
+
+## Licence
+
+Licensed under the [Apache License, Version 2.0](LICENSE).
+
+You may use, modify and redistribute this project, including commercially, **provided the attribution travels with it**. Section 4(d) requires that anyone distributing this work or a derivative of it includes the contents of [`NOTICE`](NOTICE), which credits DFT Games Studios as the author of *YASS*. That obligation is the point of choosing this licence rather than a bare permissive one: credit is a condition, not a courtesy.
+
+The licence covers the code and the assets in this repository. It does **not** grant any right to the *YASS* name or branding, which Apache 2.0 explicitly withholds (section 6, Trademarks). Build on this freely, but release the result under a name of your own.
