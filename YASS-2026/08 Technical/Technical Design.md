@@ -3,13 +3,13 @@ tags:
   - gdd
   - technical
 status: review
-updated: 2026-09-23
+updated: 2026-10-28
 ---
 
 # Technical Design
 
 ## Engine and packages
-- Unity 6 (6000.6.0f1), URP with the 2D renderer
+- Unity 6 (6000.6.6f1), URP with the 2D renderer
 - Input System (new) only: gamepad, mouse and keyboard, and touch (on-screen sticks)
 - Unity Gaming Services: Authentication and Leaderboards (cross-platform, including WebGL)
 - Future: Photon Fusion for online co-op (up to 4 players)

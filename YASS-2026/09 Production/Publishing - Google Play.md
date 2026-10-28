@@ -26,7 +26,7 @@ Being live means the other three gates were cleared too: the upload was an Andro
 
 The privacy policy is published at **https://dftgames.com/privacy-statement/**, which is the address given to the Play Console.
 
-Worth knowing: `AndroidTargetArchitectures` is ARM64 only, which Play accepts. `minSdkVersion` is 26. Check the **target API level** against Play's current requirement before each submission, since Google raises it annually and rejects anything below it.
+Worth knowing: `AndroidTargetArchitectures` is ARM64 only, which Play accepts. `minSdkVersion` is 29. Check the **target API level** against Play's current requirement before each submission, since Google raises it annually and rejects anything below it.
 
 ## Store listing
 

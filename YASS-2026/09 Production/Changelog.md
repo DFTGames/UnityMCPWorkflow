@@ -3,12 +3,15 @@ tags:
   - gdd
   - production
 status: draft
-updated: 2026-10-26
+updated: 2026-10-28
 ---
 
 # Changelog
 
 %% Newest first. Record significant design decisions and which pages changed. %%
+
+## 2026-10-28
+- **Unity 6000.6.6f1, and Android minimum SDK 29.** The editor moved from 6000.6.0f1 and the Android minimum SDK from 26 to 29, both as part of setting up the Google Play release. Pages updated: Technical Design, Publishing - Google Play.
 
 ## 2026-10-26
 - **Google Play publishing page added**, holding every piece of text the Play Console asks for (app name, short and full descriptions, release notes, a privacy policy draft) plus the decisions behind the content rating and data safety questionnaires. All copy measured against Google's character limits. Pages updated: Publishing - Google Play (new), 00 GDD Home.

@@ -97,7 +97,7 @@ CLAUDE.md                  the agent's operating manual
 
 ## Running it yourself
 
-You need **Unity 6000.6.0f1** (see [`ProjectSettings/ProjectVersion.txt`](ProjectSettings/ProjectVersion.txt)).
+You need **Unity 6000.6.6f1** (see [`ProjectSettings/ProjectVersion.txt`](ProjectSettings/ProjectVersion.txt)).
 
 1. Clone the repository. It uses **Git LFS** for art and audio, so make sure LFS is installed before cloning.
 2. Open the project in Unity.

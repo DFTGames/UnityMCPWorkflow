@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A Unity 6 (editor `6000.6.0f1`, see `ProjectSettings/ProjectVersion.txt`) 2D project created from the Universal 2D template, used as a tutorial for driving Unity from Claude Code over MCP. Product name is "YASS 2026". Claude writes all game code and creates all assets (see "Development workflow"). `Assets/Welcome/` and `Assets/TextMesh Pro/` are template/package content, not project code.
+A Unity 6 (editor `6000.6.6f1`, see `ProjectSettings/ProjectVersion.txt`) 2D project created from the Universal 2D template, used as a tutorial for driving Unity from Claude Code over MCP. Product name is "YASS 2026". Claude writes all game code and creates all assets (see "Development workflow"). `Assets/Welcome/` and `Assets/TextMesh Pro/` are template/package content, not project code.
 
 ## Project folder structure (required)
 
@@ -74,7 +74,7 @@ Assets/_Game/
   - **Aspect ratio is a property of the model, not of the prompt.** `gemini-3.1-flash` ignores `width`/`height` and always returns 1024x1024, so a non-square image has to be cropped. The models whose `GetModels` description lists `SupportsCustomResolutions` (`flux-2-dev` among them) honour the arguments and render the shape directly, which is much the better route when the target size is fixed: the store cover came out of `flux-2-dev` at 1280x1024 and needed 8 rows trimmed, against a third of the height lost to cropping a square.
   - **Never describe the crop to the model.** Asking Gemini to keep the subject "inside the central horizontal band of the image because the top and bottom will be cropped away" made it paint the bands: a literal triptych, three framed strips with the real composition in the middle one. Describe the picture wanted, and handle framing in PIL afterwards.
 - **`PlayerSettings` writes go to the active build profile, not to the project.** A Unity 6 build profile carries its own copy of the player settings, and the static `PlayerSettings` API writes to whichever profile is active. With `Web - Desktop - Release` active, `PlayerSettings.SetIcons` filed the Windows and Android icons inside `Assets/Settings/Build Profiles/Web - Desktop - Release.asset` (which stores the settings block as a list of `line:` strings) and never touched `ProjectSettings/ProjectSettings.asset`. **Every read-back said the icons were assigned**, because the API reads back the same profile it wrote, and neither `AssetDatabase.SaveAssets()` nor `File/Save Project` wrote anything, because the real settings object was never dirtied. The tell is that `Resources.FindObjectsOfTypeAll<PlayerSettings>()` returns **two** objects: the one that counts has `AssetDatabase.GetAssetPath` equal to `ProjectSettings/ProjectSettings.asset`, and the profile's override has an empty path. To write project-wide settings, stand the profile down first with `BuildProfile.SetActiveBuildProfile(null)` (`UnityEditor.Build.Profile`), write, save, then restore it; the active build target does not change, so nothing is reimported. **Confirm settings on disk, never by reading the API back.**
-- Android offers **only** the `Adaptive` icon kind here, because `minSdkVersion` is 26 and adaptive icons arrived in API 26, so Round and Legacy are dropped. Six sizes (432 down to 81), each taking exactly two layers, passed to `PlatformIcon.SetTextures(background, foreground)` in that order. The layer is masked to its central 66.7%, so icon art must sit well inside that or the launcher crops it.
+- Android offers **only** the `Adaptive` icon kind here, because `minSdkVersion` is 29, above API 26 where adaptive icons arrived, so Round and Legacy are dropped. Six sizes (432 down to 81), each taking exactly two layers, passed to `PlatformIcon.SetTextures(background, foreground)` in that order. The layer is masked to its central 66.7%, so icon art must sit well inside that or the launcher crops it.
 - Play mode only advances while the Editor is focused unless `Application.runInBackground = true` (set it at runtime through `Unity_RunCommand`; PlayMode tests set it in their setup). `Unity_Camera_Capture` fails on game cameras; to see the game, render `Camera.main` into a `RenderTexture`, save a PNG under `Temp/` and read it.
 
 ## Development workflow (required)
@@ -140,7 +140,7 @@ Player Settings has `runInBackground` on. It must stay on: play mode does not ad
 If running tests headless, the Editor must **not** already have the project open:
 
 ```
-"D:\UnityInstalls\6000.6.0f1\Editor\Unity.exe" -batchmode -projectPath . -runTests -testPlatform EditMode -testResults TestResults.xml
+"D:\UnityInstalls\6000.6.6f1\Editor\Unity.exe" -batchmode -projectPath . -runTests -testPlatform EditMode -testResults TestResults.xml
 ```
 
 Use `-testPlatform PlayMode` for play mode tests and `-testFilter <FullyQualifiedName>` to run a single test.
