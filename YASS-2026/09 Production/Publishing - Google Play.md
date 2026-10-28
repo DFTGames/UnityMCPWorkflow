@@ -24,7 +24,7 @@ The package name is **`com.DFTGamesStudios.YASS2026`**, set in `ProjectSettings`
 
 Being live means the other three gates were cleared too: the upload was an Android App Bundle, the signing key was settled (`AndroidKeystoreName` points outside the repository, at `D:/git/Tutorials/user.keystore` with alias `android`, and must stay outside it), and a privacy policy is published at a public URL.
 
-- [ ] **Record the live privacy policy URL here.** The draft at the end of this page is what was written; whichever address it was published at is not yet written down, and the next update needs it.
+The privacy policy is published at **https://dftgames.com/privacy-statement/**, which is the address given to the Play Console.
 
 Worth knowing: `AndroidTargetArchitectures` is ARM64 only, which Play accepts. `minSdkVersion` is 26. Check the **target API level** against Play's current requirement before each submission, since Google raises it annually and rejects anything below it.
 
@@ -122,7 +122,7 @@ Margins are 7% right and 11% bottom. Play can crop this graphic in some placemen
 | Tags | Arcade, Action, Shooter, Retro, Single player (max 5) |
 | Email | The published support address for DFT Games Studios |
 | Website | `https://dftgames.com` |
-| Privacy policy | The URL chosen above |
+| Privacy policy | https://dftgames.com/privacy-statement/ |
 
 ## Content rating (IARC questionnaire)
 
@@ -169,7 +169,7 @@ Declare additionally:
 
 ## Privacy policy (draft)
 
-Needs a public URL and a read by someone willing to stand behind it. Replace the contact address before publishing.
+Published at https://dftgames.com/privacy-statement/. The text below is the draft that was written here; **the live page is the authoritative version**, so check against it before reusing this, and change both together if either changes.
 
 ```
 Privacy Policy for YASS 2026
