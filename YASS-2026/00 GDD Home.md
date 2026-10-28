@@ -62,4 +62,5 @@ Each page has a `status` property: `draft` (being written), `review` (ready for 
 - [[Scope and Milestones]]
 - [[Open Questions]]
 - [[itch.io Sign-in Setup]]
+- [[Publishing - Google Play]]
 - [[Changelog]]

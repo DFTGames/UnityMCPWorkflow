@@ -3,12 +3,18 @@ tags:
   - gdd
   - production
 status: draft
-updated: 2026-09-27
+updated: 2026-10-26
 ---
 
 # Changelog
 
 %% Newest first. Record significant design decisions and which pages changed. %%
+
+## 2026-10-26
+- **Google Play publishing page added**, holding every piece of text the Play Console asks for (app name, short and full descriptions, release notes, a privacy policy draft) plus the decisions behind the content rating and data safety questionnaires. All copy measured against Google's character limits. Pages updated: Publishing - Google Play (new), 00 GDD Home.
+	- **Two findings that are blockers rather than copy.** The application identifier is still empty in `ProjectSettings`, and a package name is permanent once published, so it has to be chosen deliberately before the first upload. And the game has no privacy policy, which Play requires because signing in sends an email address to Unity Player Accounts.
+	- **Player-chosen pilot names make the game user-generated content** under Play's policy, because they are shown to other players on the leaderboards. `Leaderboards.CleanName` deliberately makes no judgement about what a name says, so there is no moderation in the game at all. Three ways out are recorded on the page and the choice is now in [[Open Questions]].
+	- The feature graphic (1024 x 500) was made from the existing cover art rather than generated afresh; how it is composed, and why the logo sits bottom right, is recorded on the page so it can be remade consistently.
 
 ## 2026-09-27
 - **15% more enemies, and no gap between waves.** The campaign now authors 779 enemies against 677 (+15.07%), spread so every level lands between +14.3% and +15.4%, and a cleared wave is followed by the next on the very next fixed step instead of a second later. Pages updated: Wave System, Difficulty and Balancing, all eight level pages.

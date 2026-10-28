@@ -5,6 +5,8 @@
 **Yet Another Space Shooter.** Fast, hard, and unapologetically arcade.
 
 [**▶ Play it in your browser on itch.io**](https://dftgames.itch.io/yass-2026)
+&nbsp;&nbsp;·&nbsp;&nbsp;
+[**▶ Get it on Google Play**](https://play.google.com/store/apps/details?id=com.DFTGamesStudios.YASS2026)
 
 </div>
 
@@ -12,11 +14,11 @@
 
 This repository is two things at once.
 
-It is a **complete arcade shoot-em-up** for browser, PC and mobile: eight sectors, eight bosses, an endless mode and online leaderboards.
+It is a **complete arcade shoot-em-up**, published on Google Play and playable free in the browser: eight sectors, eight bosses, an endless mode and online leaderboards.
 
 It is also a **tutorial on building software with an agentic AI workflow**. Every line of game code, every test, every sprite and every sound in this project was produced by an AI agent ([Claude Code](https://claude.com/claude-code)) driving the Unity Editor directly over MCP, with a human directing, reviewing and deciding. The whole history is here, including the mistakes and the reasoning.
 
-If you came for the game, play it on [itch.io](https://dftgames.itch.io/yass-2026). If you came for the workflow, start with [`CLAUDE.md`](CLAUDE.md).
+If you came for the game, play it in your browser on [itch.io](https://dftgames.itch.io/yass-2026) or install it from [Google Play](https://play.google.com/store/apps/details?id=com.DFTGamesStudios.YASS2026). If you came for the workflow, start with [`CLAUDE.md`](CLAUDE.md).
 
 ---
 

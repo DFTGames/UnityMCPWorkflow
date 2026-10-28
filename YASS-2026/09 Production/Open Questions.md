@@ -3,13 +3,15 @@ tags:
   - gdd
   - production
 status: draft
-updated: 2026-09-27
+updated: 2026-10-28
 ---
 
 # Open Questions
 
 %% Undecided design questions. Once answered, move the decision into the relevant page and log it in the Changelog. %%
 
+- [ ] **Pilot names on the leaderboards are unmoderated, and that makes the game user-generated content on Google Play.** Players choose a name that other players then see on a public board. `Leaderboards.CleanName` strips whitespace and caps the length but, deliberately, makes no judgement about what a name says. Play's UGC policy expects a moderation approach and a way to report. Choose one before the Android release: rely on Unity Gaming Services' own name moderation and say so, add a filter and a report route in-game, or stop showing player-chosen names publicly. See [[Publishing - Google Play]].
+- [x] **The Android application identifier is settled.** It is `com.DFTGamesStudios.YASS2026`, and the game is published on Google Play under it, so it is now permanent: it cannot be changed and cannot be reused even if the app is taken down. See [[Publishing - Google Play]].
 - [ ] Health pickup: confirm the provisional 25 health.
 - [ ] **On iOS there is no way to pause on purpose.** [[Controls]] says touch pauses with the "Back button or gesture" and rules out an on-screen button. The `Cancel` action binds `<Keyboard>/escape` and `<Gamepad>/buttonEast` only; Android's Back arrives as Escape so Android is covered, but iOS has no Back button and no gesture is implemented. The only pause left there is the automatic one when the OS backgrounds the app. Add a gesture (a two-finger tap, or an edge swipe), allow an on-screen button on iOS only, or accept it and say so.
 - [x] **Auto-rotation is enabled with all four orientations**, in a side-scroller. Locking to landscape would suit the game, keep the two thumbs where the sticks expect them, and remove a whole class of mid-rotation input bug. Confirm whether portrait play is wanted at all.
